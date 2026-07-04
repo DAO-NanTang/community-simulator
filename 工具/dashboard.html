@@ -2542,6 +2542,11 @@ function renderStep1() {
   var cd = data.camp_dates || {};
   document.getElementById('wizStartDate').value = cd.start || '';
   document.getElementById('wizDuration').value = cd.duration_days || 15;
+  // Sync from schedule if calendar exists
+  if (data.schedule && data.schedule.dates && data.schedule.dates.length > 1) {
+    document.getElementById('wizDuration').value = data.schedule.dates.length - 1;
+    document.getElementById('wizStartDate').value = data.camp_dates.start || cd.start || '';
+  }
   recalcMilestonesUI();
   renderDailySchedule();
   // Budget parameters
@@ -2607,6 +2612,8 @@ function calcMilestoneDate(startD, endD, duration, offset) {
 }
 
 function generateMilestones() {
+  // Rebuild schedule dates from camp settings first
+  rebuildScheduleDates();
   // Read from calendar: index 0 = D0报到日, index 1 = D1开营日
   var schedDates = (data.schedule && data.schedule.dates && data.schedule.dates.length > 1) ? data.schedule.dates : null;
   if (!schedDates) { alert('请先生成每日日历（至少2天：报到日+开营日）'); return; }
