@@ -573,7 +573,7 @@ select.inline-input { cursor: pointer; }
         <div style="overflow-x:auto;max-height:400px;overflow-y:auto" id="wizScheduleGrid"></div>
         <div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);font-size:.75rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <span>📐 初始：<span id="wizSchedInit"></span>｜ 当前：<span id="wizSchedActual"></span></span>
-          <button class="btn pri" onclick="generateMilestones()" style="font-size:.78rem">🔮 确认天数并生成里程碑 →</button>
+          <button class="btn pri" id="wizConfirmBtn" onclick="confirmAndGenerateMilestones()" style="font-size:.78rem">🔮 确认日历并生成里程碑 →</button>
         </div>
       </div>
       <!-- Milestones -->
@@ -2611,13 +2611,30 @@ function calcMilestoneDate(startD, endD, duration, offset) {
   return d;
 }
 
+var calendarConfirmed = false;
+function confirmAndGenerateMilestones() {
+  if (!calendarConfirmed) {
+    // First click: confirm calendar, lock it
+    calendarConfirmed = true;
+    document.getElementById('wizConfirmBtn').textContent = '🔮 重新生成里程碑 →';
+    if (!data.schedule || !data.schedule.dates || data.schedule.dates.length < 2) { alert('请先生成每日日历'); return; }
+    // Save confirmed calendar state
+    if (!data.camp_dates) data.camp_dates = {};
+    data.camp_dates._confirmed_dates = data.schedule.dates.slice();
+    data.camp_dates._confirmed_weekdays = (data.schedule.weekdays||[]).slice();
+    localStorage.setItem('camp_data', JSON.stringify(data));
+    setStatus('日历已确认，正在生成里程碑...');
+  }
+  // Generate milestones from confirmed calendar
+  generateMilestones();
+}
+
 function generateMilestones() {
-  // Clear old milestones to force regeneration
-  if (data.camp_dates) data.camp_dates.milestones = null;
-  // Rebuild schedule dates from camp settings first
-  rebuildScheduleDates();
-  // Read from calendar: index 0 = D0报到日, index 1 = D1开营日
-  var schedDates = (data.schedule && data.schedule.dates && data.schedule.dates.length > 1) ? data.schedule.dates : null;
+  // Use confirmed calendar dates if available, else current
+  var schedDates = (data.camp_dates && data.camp_dates._confirmed_dates) ? data.camp_dates._confirmed_dates : null;
+  if (!schedDates) {
+    schedDates = (data.schedule && data.schedule.dates && data.schedule.dates.length > 1) ? data.schedule.dates : null;
+  }
   if (!schedDates) { alert('请先生成每日日历（至少2天：报到日+开营日）'); return; }
   // Camp duration = calendar days minus D0
   var campDays = schedDates.length - 1;
