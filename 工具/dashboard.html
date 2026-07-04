@@ -2754,7 +2754,7 @@ function rebuildScheduleDates() {
 function renderDailySchedule() {
   var grid = document.getElementById('wizScheduleGrid'); if (!grid) return;
   // Always populate template dropdown
-  var impSel = document.getElementById('wizScheduleTpl'); if (impSel) { var tpls=loadTemplates(); impSel.innerHTML='<option value="">默认空模板</option>'+Object.entries(tpls).filter(function(e){return e[1].pool==='schedule';}).map(function(e){return '<option value="'+escAttr(e[0])+'">'+esc(e[0])+'</option>';}).join(''); }
+  var impSel = document.getElementById('wizScheduleTpl'); if (impSel) { var tpls=loadTemplates(); var schedTpls=Object.entries(tpls).filter(function(e){return e[1].pool==='schedule';}); if(schedTpls.length===0){ impSel.innerHTML='<option value="">默认空模板</option>'; } else { impSel.innerHTML=schedTpls.map(function(e){return '<option value="'+escAttr(e[0])+'" selected>'+esc(e[0])+'</option>';}).join(''); } }
   // Ensure camp_dates from input
   if (!data.camp_dates) data.camp_dates = {};
   var sv = document.getElementById('wizStartDate'); if (sv && sv.value) data.camp_dates.start = sv.value;
@@ -2836,7 +2836,14 @@ function migrateSlots8to11() {
 }
 
 function initDailySchedule() {
-  var tplName = document.getElementById('wizScheduleTpl').value;
+  var tplSel = document.getElementById('wizScheduleTpl');
+  var tplName = tplSel ? tplSel.value : '';
+  // Auto-select first schedule template if none selected
+  if (!tplName && tplSel && tplSel.options.length > 0) {
+    var tpls = loadTemplates();
+    var sched = Object.keys(tpls).filter(function(k){return tpls[k].pool==='schedule';});
+    if (sched.length > 0) tplName = sched[0];
+  }
   // Ensure camp_dates is set from inputs
   if (!data.camp_dates) data.camp_dates = {};
   var startVal = document.getElementById('wizStartDate').value;
