@@ -2863,18 +2863,6 @@ function initDailySchedule() {
       }
     }
   }
-  // Override slot 0 (🎯 活动日) with milestone node names
-  var mid = Math.floor(days / 2), exh = days - 2, last = days - 1;
-  var nodeNames = {};
-  nodeNames[0] = '接待日';           // D0
-  nodeNames[1] = '开营第一天';        // D1
-  if (mid > 1) nodeNames[mid] = '中期拍照与娱乐活动日';
-  if (exh-2 > 1) nodeNames[exh-2] = '装裱布展日';
-  if (exh-1 > 1) nodeNames[exh-1] = '展览日';
-  if (last > 1) nodeNames[last] = '结营日';
-  for (var d = 0; d < days; d++) {
-    data.schedule.slots[0].activities[d] = nodeNames[d] || '—';
-  }
   localStorage.setItem('camp_data',JSON.stringify(data));
   renderDailySchedule();
   setStatus('已生成日程'+(tplName?'（'+tplName+'）':''));
