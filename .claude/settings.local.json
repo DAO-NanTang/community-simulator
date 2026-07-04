@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python gnt_stats.py)",
+      "Bash(python \"c:\\\\Users\\\\苏砚仁\\\\thinknote\\\\gnt计算机制\\\\计算机制\\\\gnt_stats.py\")",
+      "Bash(python -c ' *)",
+      "Bash(python -X utf8 gnt_stats.py)",
+      "Bash(python -X utf8 -c \"import docx; print\\('python-docx version:', docx.__version__\\)\")",
+      "Bash(ls *'\\('*)",
+      "Bash(ls *' 1.'*)",
+      "Bash(ls *'纪要'*)",
+      "Bash(python -X utf8 计算机制/gnt_stats.py)",
+      "Bash(python -X utf8 -c ' *)",
+      "Bash(python -X utf8 -c \"import openpyxl; print\\(openpyxl.__version__\\)\")",
+      "Bash(python -X utf8 -c \"import xlsxwriter; print\\(xlsxwriter.__version__\\)\")",
+      "Bash(pip install *)",
+      "Bash(python \"计算机制/gnt_stats.py\")",
+      "Bash(chcp 65001)",
+      "Bash(python \"c:/Users/苏砚仁/thinknote/gnt计算机制/计算机制/gnt_stats.py\")",
+      "WebSearch",
+      "Bash(python update_records.py)",
+      "PowerShell(Get-CimInstance -Namespace \"root\\\\cimv2\\\\mdm\\\\dmmap\" -ClassName \"MDM_Policy_Config01_EventLogService02\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-CimInstance -Namespace \"ROOT\\\\StandardCimv2\" -ClassName \"MSFT_NetFirewallRule\" -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

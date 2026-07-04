@@ -1,0 +1,5 @@
+_temp_*
+_backup_*
+*.xlsx
+node_modules/
+.DS_Store

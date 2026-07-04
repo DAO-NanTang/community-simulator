@@ -1,0 +1,1713 @@
+{
+  "generated_at": "2026-07-02",
+  "mode": "manual_from_phase3_docs",
+  "phase": "第三期",
+  "period": "2026年6月",
+  "core_team": [
+    "砚仁",
+    "朝林",
+    "小红",
+    "若曦"
+  ],
+  "participants": 10,
+  "extension": "3天",
+  "summary": {
+    "total_meetings": 1,
+    "total_tasks": 46,
+    "total_decisions": 3,
+    "meetings": [
+      {
+        "file": "第三期共创营综合数据",
+        "title": "南塘艺术共创营（第三期）",
+        "date": "2026-06",
+        "organization": "南塘DAO",
+        "task_count": 46,
+        "decision_count": 3
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "M1 开营破冰：自我介绍 + 了解营期日程",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月第1天",
+      "confirmer": "朝林",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M2 工笔画基础理论课（40分钟）",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月第2天",
+      "confirmer": "朝林",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M3 临摹阶段：瓜果花卉（零基础入门）",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月第3天",
+      "confirmer": "若曦",
+      "points": 10,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M4 临摹阶段：进阶题材",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月第5天",
+      "confirmer": "若曦",
+      "points": 10,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M5 写生创作：户外写生",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月第7天",
+      "confirmer": "若曦",
+      "points": 10,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M6 创作阶段：独立创作",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月第9天",
+      "confirmer": "若曦",
+      "points": 10,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M7 装裱教学与实践",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月第11天",
+      "confirmer": "朝林",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M8 布展：村展（大地书房）",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月22日",
+      "confirmer": "朝林",
+      "points": 8,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M9 布展：城市快闪展（宝龙广场）",
+      "category": "宣传",
+      "assignee": "砚仁",
+      "deadline": "6月24日",
+      "confirmer": "小红",
+      "points": 8,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M10 每日进度检查（拍立得展示板）",
+      "category": "管理",
+      "assignee": "砚仁",
+      "deadline": "每日",
+      "confirmer": "朝林",
+      "points": 3,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M11 课前有奖问答",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "每日",
+      "confirmer": "若曦",
+      "points": 3,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "M12 NT审核与发放（24小时内）",
+      "category": "管理",
+      "assignee": "砚仁",
+      "deadline": "每日",
+      "confirmer": "朝林",
+      "points": 3,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "C1 务农劳动（NT→食宿兑换）",
+      "category": "生活",
+      "assignee": "共创人小组",
+      "deadline": "营期内",
+      "confirmer": "朝林",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "C2 社区打扫与维护",
+      "category": "生活",
+      "assignee": "共创人小组",
+      "deadline": "营期内",
+      "confirmer": "朝林",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "C3 晨练活动组织",
+      "category": "生活",
+      "assignee": "若曦",
+      "deadline": "每日",
+      "confirmer": "砚仁",
+      "points": 3,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "C4 礼物交换活动",
+      "category": "生活",
+      "assignee": "若曦",
+      "deadline": "6月第1天",
+      "confirmer": "砚仁",
+      "points": 3,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "C5 茶话会组织",
+      "category": "生活",
+      "assignee": "若曦",
+      "deadline": "6月第2天",
+      "confirmer": "砚仁",
+      "points": 3,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "C6 共创人作品互评会",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月第10天",
+      "confirmer": "若曦",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "C7 展览开幕式筹备",
+      "category": "宣传",
+      "assignee": "小红",
+      "deadline": "6月21日",
+      "confirmer": "砚仁",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "S1 在地农产品采购体验",
+      "category": "生活",
+      "assignee": "朝林",
+      "deadline": "营期内",
+      "confirmer": "砚仁",
+      "points": 3,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "S2 乡村探索与社区走访",
+      "category": "生活",
+      "assignee": "若曦",
+      "deadline": "营期内",
+      "confirmer": "砚仁",
+      "points": 3,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "S3 个人创作日记（文字/摄影）",
+      "category": "宣传",
+      "assignee": "小红",
+      "deadline": "营期内",
+      "confirmer": "砚仁",
+      "points": 5,
+      "status": "进行中",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "S4 宣传工作：每日公众号推文",
+      "category": "宣传",
+      "assignee": "小红",
+      "deadline": "每日",
+      "confirmer": "砚仁",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "S5 宣传工作：拍摄记录",
+      "category": "宣传",
+      "assignee": "小红",
+      "deadline": "每日",
+      "confirmer": "砚仁",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "S6 宣传工作：视频剪辑",
+      "category": "宣传",
+      "assignee": "小红",
+      "deadline": "6月25日",
+      "confirmer": "砚仁",
+      "points": 8,
+      "status": "待开始",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "S7 后勤：每日食宿安排",
+      "category": "生活",
+      "assignee": "朝林",
+      "deadline": "每日",
+      "confirmer": "砚仁",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "S8 后勤：物料采购与管理",
+      "category": "生活",
+      "assignee": "朝林",
+      "deadline": "营期前+营期中",
+      "confirmer": "砚仁",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "S9 活动协调：共创人沟通",
+      "category": "管理",
+      "assignee": "若曦",
+      "deadline": "每日",
+      "confirmer": "砚仁",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "H1 发现并记录社区故事（触发式）",
+      "category": "宣传",
+      "assignee": "若曦",
+      "deadline": "营期内",
+      "confirmer": "砚仁",
+      "points": 5,
+      "status": "已确认",
+      "type": "新增",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "H2 帮助其他共创人完成作品",
+      "category": "课程",
+      "assignee": "共创人",
+      "deadline": "营期内",
+      "confirmer": "砚仁",
+      "points": 3,
+      "status": "已确认",
+      "type": "新增",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "H3 自发组织小型分享会",
+      "category": "管理",
+      "assignee": "共创人",
+      "deadline": "营期内",
+      "confirmer": "砚仁",
+      "points": 3,
+      "status": "已确认",
+      "type": "新增",
+      "source": "第三期NT任务系统",
+      "note": ""
+    },
+    {
+      "name": "延期：3天食宿安排调整",
+      "category": "生活",
+      "assignee": "朝林",
+      "deadline": "6月23日",
+      "confirmer": "砚仁",
+      "points": 5,
+      "status": "已确认",
+      "type": "变更",
+      "source": "提案变更S6-7",
+      "note": ""
+    },
+    {
+      "name": "延期：延时NT服务费计算与发放",
+      "category": "财务",
+      "assignee": "砚仁",
+      "deadline": "6月26日",
+      "confirmer": "朝林",
+      "points": 5,
+      "status": "已确认",
+      "type": "变更",
+      "source": "提案变更S6-7",
+      "note": ""
+    },
+    {
+      "name": "延期：额外展览作品补充装裱",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "6月24日",
+      "confirmer": "若曦",
+      "points": 3,
+      "status": "已确认",
+      "type": "新增",
+      "source": "提案变更S6-7",
+      "note": ""
+    },
+    {
+      "name": "⚠️ 工作人员动员会（开营前48小时）",
+      "category": "管理",
+      "assignee": "砚仁",
+      "deadline": "开营前2天",
+      "confirmer": "朝林",
+      "points": 3,
+      "status": "待开始",
+      "type": "初始",
+      "source": "砚仁反思-第三期缺失",
+      "note": "第三期没做，第四期必须做"
+    },
+    {
+      "name": "⚠️ 态度对齐与流程彩排",
+      "category": "管理",
+      "assignee": "砚仁",
+      "deadline": "开营前2天",
+      "confirmer": "朝林",
+      "points": 3,
+      "status": "待开始",
+      "type": "初始",
+      "source": "砚仁反思-第三期缺失",
+      "note": "接待分工/礼物交换规则/自我介绍全没准备"
+    },
+    {
+      "name": "⚠️ 进度可视化面板（拍立得+网站）",
+      "category": "管理",
+      "assignee": "砚仁",
+      "deadline": "每日",
+      "confirmer": "朝林",
+      "points": 3,
+      "status": "进行中",
+      "type": "初始",
+      "source": "砚仁反思-改进建议",
+      "note": "第三期没有统一进度展示，展览前几天才发现画不完"
+    },
+    {
+      "name": "⚠️ 应急准备小组（突发事件+矛盾调解）",
+      "category": "管理",
+      "assignee": "砚仁",
+      "deadline": "营期前",
+      "confirmer": "",
+      "points": 5,
+      "status": "待开始",
+      "type": "初始",
+      "source": "砚仁反思-改进建议",
+      "note": "第三期所有突发问题压在砚仁一人身上"
+    },
+    {
+      "name": "⚠️ 沉默关注流程（察觉→碰头→指定人聊）",
+      "category": "管理",
+      "assignee": "砚仁",
+      "deadline": "营期中",
+      "confirmer": "若曦",
+      "points": 3,
+      "status": "待开始",
+      "type": "初始",
+      "source": "砚仁反思-改进建议",
+      "note": "第三期延期事件中有人沉默、被裹挟"
+    },
+    {
+      "name": "⚠️ 结项报告汇总",
+      "category": "结项",
+      "assignee": "砚仁",
+      "deadline": "6月29日",
+      "confirmer": "",
+      "points": 8,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期结项",
+      "note": ""
+    },
+    {
+      "name": "⚠️ 财务结项（精确数字核对）",
+      "category": "结项",
+      "assignee": "砚仁",
+      "deadline": "6月30日",
+      "confirmer": "朝林",
+      "points": 5,
+      "status": "待开始",
+      "type": "初始",
+      "source": "第三期结项-待核对",
+      "note": "精确数字待与朝林及合作社核对"
+    },
+    {
+      "name": "⚠️ Bug记录提交给开发者社区",
+      "category": "管理",
+      "assignee": "砚仁",
+      "deadline": "营期中",
+      "confirmer": "",
+      "points": 3,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期NT系统-已完成",
+      "note": ""
+    },
+    {
+      "name": "⚠️ 结项报告提交南塘DAO",
+      "category": "结项",
+      "assignee": "砚仁",
+      "deadline": "6月29日",
+      "confirmer": "",
+      "points": 5,
+      "status": "已确认",
+      "type": "初始",
+      "source": "第三期结项",
+      "note": ""
+    },
+    {
+      "name": "第四期课程优化方案",
+      "category": "课程",
+      "assignee": "砚仁",
+      "deadline": "7月",
+      "confirmer": "",
+      "points": 5,
+      "status": "待开始",
+      "type": "初始",
+      "source": "砚仁反思-改进建议",
+      "note": ""
+    },
+    {
+      "name": "NT定价可视化展示（黑板/白板/网站）",
+      "category": "宣传",
+      "assignee": "小红",
+      "deadline": "开营前",
+      "confirmer": "砚仁",
+      "points": 3,
+      "status": "待开始",
+      "type": "初始",
+      "source": "砚仁反思-改进建议",
+      "note": "第三期NT定价淹没在任务里，共创人不知道能拿多少"
+    },
+    {
+      "name": "临时会议有效性门槛机制",
+      "category": "管理",
+      "assignee": "砚仁",
+      "deadline": "开营前",
+      "confirmer": "",
+      "points": 3,
+      "status": "待开始",
+      "type": "初始",
+      "source": "砚仁反思-改进建议",
+      "note": "发起人先拿方案，过半共创人同意才生效"
+    }
+  ],
+  "decisions": [
+    {
+      "type": "提案",
+      "content": "S6-3 南塘艺术共创营（第三期）项目提案 — 4人团队, NT任务系统首次实战内测",
+      "source": "第三期提案",
+      "status": "通过"
+    },
+    {
+      "type": "修正案",
+      "content": "S6-7 延期3天 — 10位共创人集体提出, 共创人支付延时NT 1,250",
+      "source": "提案变更",
+      "status": "通过"
+    },
+    {
+      "type": "决策",
+      "content": "展览新增城市快闪展（宝龙广场） — 合作伙伴：禧九诚食、童彩美述馆、萝卜公司",
+      "source": "第三期结项报告",
+      "status": "通过"
+    }
+  ],
+  "members": {
+    "砚仁": {
+      "name": "砚仁",
+      "role": "总负责/教学/NT审核",
+      "tasks": 25,
+      "nt_earned": 8750,
+      "avatar_seed": 0,
+      "gender": "male",
+      "bio": "统筹全局，把共创营办好"
+    },
+    "朝林": {
+      "name": "朝林",
+      "role": "后勤/生活",
+      "tasks": 6,
+      "nt_earned": 2000,
+      "avatar_seed": 7,
+      "gender": "male",
+      "bio": "后勤保障，让大家吃好住好"
+    },
+    "小红": {
+      "name": "小红",
+      "role": "宣传/协调",
+      "tasks": 8,
+      "nt_earned": 2500,
+      "avatar_seed": 15,
+      "gender": "female",
+      "bio": "宣传工作交给我"
+    },
+    "若曦": {
+      "name": "若曦",
+      "role": "活动/沟通",
+      "tasks": 8,
+      "nt_earned": 1500,
+      "avatar_seed": 22,
+      "gender": "female",
+      "bio": "活动策划与共创人沟通"
+    },
+    "Gloria": {
+      "name": "Gloria",
+      "role": "共创人",
+      "nt_actual": 3228,
+      "avatar_seed": 5,
+      "gender": "female",
+      "bio": "喜山乐水，钟情自然，独自游历四方。期待在色彩与线条中，重新找回绘画的快乐。步履与创作，永无止境｜Journey never ends!"
+    },
+    "宏心": {
+      "name": "宏心",
+      "role": "共创人",
+      "nt_actual": 2902,
+      "avatar_seed": 12,
+      "gender": "male",
+      "bio": "28岁自由职业，南艺毕业，以画入道，常驻寺院，深山隐居，修行智慧，写字画画，参禅打坐。灵魂是艺术的创作，艺术是灵魂的表达。"
+    },
+    "躺平记事": {
+      "name": "躺平记事",
+      "role": "共创人",
+      "nt_actual": 2414,
+      "avatar_seed": 18,
+      "gender": "female",
+      "bio": "躺平也是一种态度，用画笔记录生活的每一刻。"
+    },
+    "霜霜": {
+      "name": "霜霜",
+      "role": "共创人",
+      "nt_actual": 2279,
+      "avatar_seed": 3,
+      "gender": "female",
+      "bio": "i/E人格反复横跳，想法很多的射手座，正在探寻自己的更多可能性，对没接触过的事都蛮有兴趣的。"
+    },
+    "墨染辰光": {
+      "name": "墨染辰光",
+      "role": "共创人",
+      "nt_actual": 1000,
+      "avatar_seed": 9,
+      "gender": "male",
+      "bio": "大家好啊，我是墨染辰光，大家可以叫我辰光，来自湖北。期待这次旅程，和大家成为朋友，共创美好时光！"
+    },
+    "西瓜": {
+      "name": "西瓜",
+      "role": "共创人",
+      "nt_actual": 44,
+      "avatar_seed": 25,
+      "gender": "male",
+      "bio": "INFP，我觉得自己是个无趣的普通人，间歇性努力，持续性摆烂。现在的愿望是提前退休。"
+    },
+    "茵籽": {
+      "name": "茵籽",
+      "role": "共创人",
+      "nt_actual": 140,
+      "avatar_seed": 30,
+      "gender": "female",
+      "bio": "前金融国企搬砖人，开朗的i人，间歇性叛逆，随性爱探索。期待这些天和大家结伴、学习、听风、寻趣、共行。"
+    },
+    "陈若雨": {
+      "name": "陈若雨",
+      "role": "共创人",
+      "nt_actual": 178,
+      "avatar_seed": 33,
+      "gender": "female",
+      "bio": "喜欢自然的学前教育大三学生。"
+    },
+    "慢慢": {
+      "name": "慢慢",
+      "role": "共创人",
+      "nt_actual": 60,
+      "avatar_seed": 37,
+      "gender": "female",
+      "bio": "如你所见，是个美女，来自东北的小冻梨。早起养生的八段锦和夜晚后的微醺小酒我都可以。"
+    },
+    "晴子": {
+      "name": "晴子",
+      "role": "共创人",
+      "nt_actual": 84,
+      "avatar_seed": 40,
+      "gender": "female",
+      "bio": "我是晴子，24岁，爱旅行，爱尝试，爱体验。希望能和大家度过一段有趣的时光。"
+    },
+    "念儿": {
+      "name": "念儿",
+      "role": "共创人",
+      "nt_actual": 178,
+      "avatar_seed": 42,
+      "gender": "female",
+      "bio": "大家好，这里是niya！一位正在gap的自由设计师，还没想好未来要怎么走的迷茫午后在茫茫信息流中遇见了DAO，所以先来南塘和伙伴们相遇吧！"
+    },
+    "淑惠": {
+      "name": "淑惠",
+      "role": "FC/开发者",
+      "nt_actual": 0,
+      "avatar_seed": 1,
+      "gender": "female",
+      "bio": "工具开发与议事服务"
+    },
+    "fc": {
+      "name": "fc",
+      "role": "议事规则专家",
+      "nt_actual": 0,
+      "avatar_seed": 6,
+      "gender": "male",
+      "bio": "萝卜公司议事规则专家"
+    },
+    "跳大爷": {
+      "name": "跳大爷",
+      "role": "协作者",
+      "nt_actual": 0,
+      "avatar_seed": 14,
+      "gender": "male",
+      "bio": "免费人工还是得拉上"
+    }
+  },
+  "budget": {
+    "tuition": 5990,
+    "sponsor": 25000,
+    "salary": 14750,
+    "material": 2000,
+    "reserve": 3000,
+    "income": 30990,
+    "expense": 19750,
+    "diff": 11240,
+    "nt_raised": 30000,
+    "nt_auction": 5736,
+    "nt_total_out": 34307,
+    "nt_remaining": 3084
+  },
+  "stats": {
+    "total_tasks_all": "60+ (48 listed)",
+    "records": 555,
+    "nt_distributed": 24293,
+    "people_covered": 26,
+    "completion_rate": "74-80%",
+    "extension_days": 3,
+    "core_team_count": 4,
+    "participant_count": 10
+  },
+  "finance_cny": {
+    "summary": {
+      "rmb_spent": 19052.64,
+      "rmb_remaining": 4552.64,
+      "rmb_total_budget": 23605.28,
+      "nt_spent": 70448.08,
+      "nt_remaining": 4333.92,
+      "nt_income_total": 37391,
+      "nt_income_main": 7250
+    },
+    "transactions": [
+      {
+        "type": "宣传",
+        "person": "砚仁",
+        "desc": "小红书流量费5.6",
+        "rmb": 150.0,
+        "nt": null
+      },
+      {
+        "type": "宣传",
+        "person": "砚仁",
+        "desc": "小红书流量费5.11",
+        "rmb": 150.0,
+        "nt": null
+      },
+      {
+        "type": "宣传",
+        "person": "砚仁",
+        "desc": "小红书流量费5.21",
+        "rmb": 150.0,
+        "nt": null
+      },
+      {
+        "type": "宣传",
+        "person": "砚仁",
+        "desc": "小红书流量费5.21",
+        "rmb": 300.0,
+        "nt": null
+      },
+      {
+        "type": "宣传",
+        "person": "小红",
+        "desc": "小红书流量费5.15（已经结算）",
+        "rmb": 79.3,
+        "nt": null
+      },
+      {
+        "type": "宣传",
+        "person": "小红",
+        "desc": "公众号模板（已经结算）",
+        "rmb": 10.0,
+        "nt": null
+      },
+      {
+        "type": "宣传",
+        "person": "砚仁",
+        "desc": "小红书流量费5.15",
+        "rmb": 150.0,
+        "nt": null
+      },
+      {
+        "type": "宣传",
+        "person": "砚仁",
+        "desc": "b站投流测试",
+        "rmb": 50.0,
+        "nt": null
+      },
+      {
+        "type": "物料",
+        "person": "砚仁",
+        "desc": "信封",
+        "rmb": 14.0,
+        "nt": null
+      },
+      {
+        "type": "宣传",
+        "person": "砚仁",
+        "desc": "微信直播推流",
+        "rmb": 10.0,
+        "nt": null
+      },
+      {
+        "type": "人工费",
+        "person": "砚仁",
+        "desc": "599报名费*9个人微信",
+        "rmb": 5391.0,
+        "nt": null
+      },
+      {
+        "type": "人工费",
+        "person": "砚仁",
+        "desc": "599报名费*1个人支付宝",
+        "rmb": 599.0,
+        "nt": null
+      },
+      {
+        "type": "活动",
+        "person": "小红",
+        "desc": "破冰活动材料费100￥（已经结算）",
+        "rmb": 100.0,
+        "nt": null
+      },
+      {
+        "type": "其他",
+        "person": "朝林",
+        "desc": "生活用品（已经结算）",
+        "rmb": 339.03,
+        "nt": null
+      },
+      {
+        "type": "其他",
+        "person": "砚仁",
+        "desc": "可操作的民主*10（已经结算）",
+        "rmb": 350.0,
+        "nt": null
+      },
+      {
+        "type": "课程物料",
+        "person": "砚仁",
+        "desc": "课程买花",
+        "rmb": 140.0,
+        "nt": null
+      },
+      {
+        "type": "其他",
+        "person": "砚仁",
+        "desc": "疫苗（未完成）",
+        "rmb": 348.6,
+        "nt": null
+      },
+      {
+        "type": "其他",
+        "person": "砚仁",
+        "desc": "加买保险",
+        "rmb": 135.0,
+        "nt": null
+      },
+      {
+        "type": "其他",
+        "person": "砚仁",
+        "desc": "水胶带",
+        "rmb": 20.0,
+        "nt": null
+      },
+      {
+        "type": "物料",
+        "person": "砚仁",
+        "desc": "信封",
+        "rmb": 17.0,
+        "nt": null
+      },
+      {
+        "type": "其他",
+        "person": "砚仁",
+        "desc": "便利贴",
+        "rmb": 5.0,
+        "nt": null
+      },
+      {
+        "type": "其他",
+        "person": "砚仁",
+        "desc": "转账nt手续费",
+        "rmb": 40.0,
+        "nt": null
+      },
+      {
+        "type": "资助收入",
+        "person": "砚仁",
+        "desc": "娱乐基金（已经结算）",
+        "rmb": 600.0,
+        "nt": null
+      },
+      {
+        "type": "食宿",
+        "person": "砚仁",
+        "desc": "素舍住宿19天",
+        "rmb": 4560.0,
+        "nt": 960.0
+      },
+      {
+        "type": "其他",
+        "person": "砚仁",
+        "desc": "素食",
+        "rmb": 2400.0,
+        "nt": null
+      },
+      {
+        "type": "课程物料",
+        "person": "砚仁",
+        "desc": "展览费用（已经结算）",
+        "rmb": 449.0,
+        "nt": null
+      },
+      {
+        "type": "课程物料",
+        "person": "砚仁",
+        "desc": "画材",
+        "rmb": 360.0,
+        "nt": null
+      },
+      {
+        "type": "课程物料",
+        "person": "砚仁",
+        "desc": "装裱工具+框",
+        "rmb": 90.0,
+        "nt": null
+      },
+      {
+        "type": "食宿",
+        "person": "砚仁",
+        "desc": "结营聚餐喜九",
+        "rmb": 400.0,
+        "nt": null
+      },
+      {
+        "type": "物料",
+        "person": "若曦",
+        "desc": "抄经和自由书写用 材料报销（已经结算）",
+        "rmb": 38.9,
+        "nt": null
+      },
+      {
+        "type": "物料",
+        "person": "砚仁",
+        "desc": "打印",
+        "rmb": 20.0,
+        "nt": null
+      },
+      {
+        "type": "食宿",
+        "person": "砚仁",
+        "desc": "素舍7号欢迎晚餐",
+        "rmb": 112.0,
+        "nt": 140.0
+      },
+      {
+        "type": "其他",
+        "person": "砚仁",
+        "desc": "延期素食费支付素社",
+        "rmb": 40.0,
+        "nt": 80.0
+      },
+      {
+        "type": "食宿",
+        "person": "fc",
+        "desc": "住宿费收入126（已经结算）",
+        "rmb": 1260.0,
+        "nt": null
+      },
+      {
+        "type": "课程物料",
+        "person": "fc",
+        "desc": "24日展览打车费",
+        "rmb": 127.3,
+        "nt": null
+      },
+      {
+        "type": "课程物料",
+        "person": "fc",
+        "desc": "24日展览货车费",
+        "rmb": 47.51,
+        "nt": null
+      },
+      {
+        "type": "人工费",
+        "person": "砚仁",
+        "desc": "延期3天服务费",
+        "rmb": null,
+        "nt": 1250.0
+      },
+      {
+        "type": "食宿",
+        "person": "砚仁",
+        "desc": "延期3天住宿费",
+        "rmb": null,
+        "nt": 390.0
+      },
+      {
+        "type": "其他",
+        "person": "若曦",
+        "desc": "支线任务与身份任务支出",
+        "rmb": null,
+        "nt": 3438.0
+      },
+      {
+        "type": "食宿",
+        "person": "砚仁",
+        "desc": "素食午餐3nt*5人",
+        "rmb": null,
+        "nt": 15.0
+      },
+      {
+        "type": "课程物料",
+        "person": "砚仁",
+        "desc": "主线任务，共创任务，城市展览任务，课程奖励。",
+        "rmb": null,
+        "nt": 13391.88
+      },
+      {
+        "type": "资助收入",
+        "person": "砚仁",
+        "desc": "社区募捐",
+        "rmb": null,
+        "nt": 30000.0
+      },
+      {
+        "type": "活动",
+        "person": "文峰",
+        "desc": "组织社区活动——支出走读南塘（100nt）",
+        "rmb": null,
+        "nt": 100.0
+      },
+      {
+        "type": "活动",
+        "person": "标哥",
+        "desc": "组织社区活动——合作社介绍（100nt）",
+        "rmb": null,
+        "nt": 100.0
+      },
+      {
+        "type": "活动",
+        "person": "若曦",
+        "desc": "组织社区活动——nt系统介绍（100nt）",
+        "rmb": null,
+        "nt": 100.0
+      },
+      {
+        "type": "活动",
+        "person": "砚仁",
+        "desc": "组织社区活动——南塘dao介绍（100nt）",
+        "rmb": null,
+        "nt": 100.0
+      },
+      {
+        "type": "人工费",
+        "person": "砚仁",
+        "desc": "生活负责人薪资",
+        "rmb": null,
+        "nt": 4500.0
+      },
+      {
+        "type": "活动",
+        "person": "若曦",
+        "desc": "nt系统与社区活动负责人薪资",
+        "rmb": null,
+        "nt": 3000.0
+      },
+      {
+        "type": "宣传",
+        "person": "小红",
+        "desc": "宣传负责人薪资",
+        "rmb": null,
+        "nt": 3000.0
+      },
+      {
+        "type": "人工费",
+        "person": "朝林",
+        "desc": "生活负责人薪资",
+        "rmb": null,
+        "nt": 3000.0
+      },
+      {
+        "type": "课程物料",
+        "person": "小红",
+        "desc": "拍卖收入",
+        "rmb": null,
+        "nt": 5736.0
+      },
+      {
+        "type": "物料",
+        "person": "宏心",
+        "desc": "《心花怒放》1020              *20%",
+        "rmb": null,
+        "nt": 204.0
+      },
+      {
+        "type": "其他",
+        "person": "墨染",
+        "desc": "《行走南塘》520              *20%",
+        "rmb": null,
+        "nt": 104.0
+      },
+      {
+        "type": "其他",
+        "person": "若雨",
+        "desc": "《与柚眠》888              *20%",
+        "rmb": null,
+        "nt": 177.6
+      },
+      {
+        "type": "其他",
+        "person": "茵籽",
+        "desc": "《沃土新翼》700              *20%",
+        "rmb": null,
+        "nt": 140.0
+      },
+      {
+        "type": "其他",
+        "person": "慢慢",
+        "desc": "《属于我的只有自己》300              *20%",
+        "rmb": null,
+        "nt": 60.0
+      },
+      {
+        "type": "其他",
+        "person": "晴子",
+        "desc": "《“鸭” 比囧囧囧》420              *20%",
+        "rmb": null,
+        "nt": 84.0
+      },
+      {
+        "type": "其他",
+        "person": "gg",
+        "desc": "《书中自成风景》260              *20%",
+        "rmb": null,
+        "nt": 52.0
+      },
+      {
+        "type": "其他",
+        "person": "西瓜",
+        "desc": "《真・假》220              *20%",
+        "rmb": null,
+        "nt": 44.0
+      },
+      {
+        "type": "其他",
+        "person": "念儿",
+        "desc": "《共栖之境》888              *20%",
+        "rmb": null,
+        "nt": 177.6
+      },
+      {
+        "type": "其他",
+        "person": "霜霜",
+        "desc": "《赤色呼吸》520              *20%",
+        "rmb": null,
+        "nt": 104.0
+      }
+    ],
+    "by_person": {
+      "砚仁": {
+        "rmb": 17050.6,
+        "nt": 50826.88,
+        "count": 35
+      },
+      "fc": {
+        "rmb": 1434.81,
+        "nt": 0.0,
+        "count": 3
+      },
+      "朝林": {
+        "rmb": 339.03,
+        "nt": 3000.0,
+        "count": 2
+      },
+      "小红": {
+        "rmb": 189.3,
+        "nt": 8736.0,
+        "count": 5
+      },
+      "若曦": {
+        "rmb": 38.9,
+        "nt": 6538.0,
+        "count": 4
+      },
+      "文峰": {
+        "rmb": 0.0,
+        "nt": 100.0,
+        "count": 1
+      },
+      "标哥": {
+        "rmb": 0.0,
+        "nt": 100.0,
+        "count": 1
+      },
+      "宏心": {
+        "rmb": 0.0,
+        "nt": 204.0,
+        "count": 1
+      },
+      "墨染": {
+        "rmb": 0.0,
+        "nt": 104.0,
+        "count": 1
+      },
+      "若雨": {
+        "rmb": 0.0,
+        "nt": 177.6,
+        "count": 1
+      },
+      "茵籽": {
+        "rmb": 0.0,
+        "nt": 140.0,
+        "count": 1
+      },
+      "慢慢": {
+        "rmb": 0.0,
+        "nt": 60.0,
+        "count": 1
+      },
+      "晴子": {
+        "rmb": 0.0,
+        "nt": 84.0,
+        "count": 1
+      },
+      "gg": {
+        "rmb": 0.0,
+        "nt": 52.0,
+        "count": 1
+      },
+      "西瓜": {
+        "rmb": 0.0,
+        "nt": 44.0,
+        "count": 1
+      },
+      "念儿": {
+        "rmb": 0.0,
+        "nt": 177.6,
+        "count": 1
+      },
+      "霜霜": {
+        "rmb": 0.0,
+        "nt": 104.0,
+        "count": 1
+      }
+    },
+    "by_type": {
+      "营队支出｜应付未付": {
+        "rmb": 7686.81,
+        "nt": 14680.0,
+        "count": 11
+      },
+      "营队收入": {
+        "rmb": 7250.0,
+        "nt": 37391.0,
+        "count": 8
+      },
+      "营队支出": {
+        "rmb": 4115.83,
+        "nt": 18377.079999999994,
+        "count": 42
+      }
+    }
+  },
+  "schedule": {
+    "dates": [
+      "06/06",
+      "06/07",
+      "06/08",
+      "06/09",
+      "06/10",
+      "06/11",
+      "06/12",
+      "06/13",
+      "06/14",
+      "06/15",
+      "06/16",
+      "06/17",
+      "06/18",
+      "06/19",
+      "06/20",
+      "06/21",
+      "06/22",
+      "06/23",
+      "06/24",
+      "06/25",
+      "06/26"
+    ],
+    "weekdays": [
+      "星期六",
+      "星期日",
+      "星期一",
+      "星期二",
+      "星期三",
+      "星期四",
+      "星期五",
+      "星期六",
+      "星期日",
+      "星期一",
+      "星期二",
+      "星期三",
+      "星期四",
+      "星期五",
+      "星期六",
+      "星期日",
+      "星期一",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday"
+    ],
+    "slots": [
+      {
+        "section": "行动",
+        "time": "6:30-7:30",
+        "activities": [
+          "报到",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "南塘三晨",
+          "结营 & 返程",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "行动",
+        "time": "7:30-8:00",
+        "activities": [
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/自由活动",
+          "早餐/整理行李",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "行动",
+        "time": "8:00-9:00",
+        "activities": [
+          "报到",
+          "南塘合作社介绍",
+          "走读南塘·社区感知",
+          "早间散步",
+          "行禅",
+          "行禅",
+          "行禅 + 抄经",
+          "自由晨练",
+          "行禅（户外）",
+          "行禅 + 抄经",
+          "行禅",
+          "自由晨练",
+          "行禅 + 抄经",
+          "行禅",
+          "自由晨练",
+          "《寻找》画展开幕",
+          "撤展、物资整理",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "行动",
+        "time": "9:00-10:30",
+        "activities": [
+          "",
+          "负责人：标哥 / 南塘DAO介绍 / 负责人：砚仁",
+          "社区走访感受",
+          "静心练习介绍 / 自由写生/农务/入户闲谈",
+          "社区融合活动 / 自由写生/农务/入户闲谈",
+          "集体会议（2） / 共创小组主题",
+          "社区融合活动 / 自由写生/农务/入户闲谈",
+          "核心课程第3节 / 工笔画临摹 / 局部临摹",
+          "合照",
+          "大扫除",
+          "社区融合活动 / 自由写生/农务/入户闲谈",
+          "集体会议（4） / 共创展览",
+          "社区融合活动 / 帮厨/农务/入户闲谈",
+          "核心课程第8节 / 工笔画创作 / 创作指导",
+          "装框 / 布展",
+          "开幕式（10:00） / 公众开放、导览讲解",
+          "房间清扫、交接",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "行动",
+        "time": "10:30-11:30",
+        "activities": [
+          "自由活动",
+          "NT游戏任务介绍：若曦 / 负责人：砚仁",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "自由活动/帮厨/打扫",
+          "村民、嘉宾互动交流",
+          "结营仪式准备",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "吃饭沟通",
+        "time": "11:30-14:30",
+        "activities": [
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "午餐 & 午休",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "吃饭沟通",
+        "time": "14:30-15:00",
+        "activities": [
+          "报到",
+          "议事规则工作坊 / 主讲：富章",
+          "集体会议（一） / 制定共居公约",
+          "工具发放与课程导览 / 发放画材、课程安排",
+          "临摹练习布置 / 3张经典白描临摹",
+          "线描写生实践 / 社区内\"观察\"",
+          "核心课程第2节 / 工笔画临摹",
+          "集体会议（3） / 共创活动内容，展览筹备",
+          "社区娱乐活动",
+          "核心课程第4节 / 工笔画创作",
+          "核心课程第5节 / 工笔画创作",
+          "核心课程第6节 / 工笔画创作",
+          "核心课程第7节 / 工笔画创作",
+          "装裱",
+          "布展实施（全天） / 作品悬挂、灯光调试",
+          "作品拍卖会暨成果发布会 / 线上线下同步拍卖",
+          "结营仪式与正式告别 / 总结发言、交换联系",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "吃饭沟通",
+        "time": "15:00-16:30",
+        "activities": [
+          "",
+          "议事规则实践案例",
+          "分组建立 / 4组，每组5人",
+          "",
+          "临摹练习时间",
+          "叶子的练习继续",
+          "局部临摹",
+          "",
+          "",
+          "创作指导",
+          "创作指导",
+          "创作指导",
+          "创作指导",
+          "",
+          "动线布置、展签完善",
+          "AI文创产品展示 / 颁发\"共建者\"证书",
+          "合影、陆续返程",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "吃饭沟通",
+        "time": "16:30-17:30",
+        "activities": [
+          "自由活动",
+          "自由活动/整理笔记",
+          "",
+          "自由活动/自习",
+          "自由活动/自习",
+          "自由活动/自习",
+          "自由活动/自习",
+          "自由活动/自习",
+          "自由活动/自习",
+          "自由活动/自习",
+          "自由活动/自习",
+          "自由活动/自习",
+          "自由活动/自习",
+          "自由活动/自习",
+          "布展收尾工作",
+          "拍卖会继续/自由交流",
+          "返程继续",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "小组会议",
+        "time": "17:30-19:30",
+        "activities": [
+          "晚餐（素社）",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "晚餐",
+          "结营庆典晚宴",
+          "陆续返程",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "小组会议",
+        "time": "19:30-22:00",
+        "activities": [
+          "【欢迎晚会】破冰活动与日程介绍",
+          "休息/自由交流",
+          "",
+          "娱乐活动（一） / 电影夜/桌游夜",
+          "",
+          "观念头 + 自由书写",
+          "",
+          "观念头 + 自由书写",
+          "娱乐晚会",
+          "",
+          "观念头 + 自由书写",
+          "",
+          "观念头 + 自由书写",
+          "",
+          "集体会议（5）展览前夜准备工作 / 最终检查、宣传就位",
+          "星空下茶话会 / 分享感言、展望未来",
+          "活动正式结束",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "section": "延期",
+        "time": "全天",
+        "activities": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "村展-大地书房",
+          "补充装裱",
+          "城市快闪展-宝龙广场",
+          "撤展"
+        ]
+      }
+    ]
+  }
+}
