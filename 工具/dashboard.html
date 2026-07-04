@@ -2716,7 +2716,7 @@ function removeMilestoneWiz(idx) {
 
 // ── Daily Schedule ──
 var DEFAULT_SLOTS = [
-  { section:'🌅 晨起·南塘三晨', time:'6:30-7:30' },
+  { section:'🎯 活动日', time:'6:30-7:30' },
   { section:'🍵 早餐', time:'7:30-8:00' },
   { section:'🚶 晨间活动', time:'8:00-9:00' },
   { section:'📚 上午主课', time:'9:00-10:30' },
@@ -2862,6 +2862,18 @@ function initDailySchedule() {
         data.schedule.slots[si].activities[d] = dayActs[si] || '';
       }
     }
+  }
+  // Override slot 0 (🎯 活动日) with milestone node names
+  var mid = Math.floor(days / 2), exh = days - 2, last = days - 1;
+  var nodeNames = {};
+  nodeNames[0] = '接待日';           // D0
+  nodeNames[1] = '开营第一天';        // D1
+  if (mid > 1) nodeNames[mid] = '中期拍照与娱乐活动日';
+  if (exh-2 > 1) nodeNames[exh-2] = '装裱布展日';
+  if (exh-1 > 1) nodeNames[exh-1] = '展览日';
+  if (last > 1) nodeNames[last] = '结营日';
+  for (var d = 0; d < days; d++) {
+    data.schedule.slots[0].activities[d] = nodeNames[d] || '—';
   }
   localStorage.setItem('camp_data',JSON.stringify(data));
   renderDailySchedule();
@@ -4174,7 +4186,7 @@ const PRESET_TEMPLATES = {
   },
       '📅 默认日程模板（17天）': { pool: 'schedule', data: {
     slots: [
-      { section:'🌅 晨起·南塘三晨', time:'6:30-7:30' }, { section:'🍵 早餐', time:'7:30-8:00' },
+      { section:'🎯 活动日', time:'6:30-7:30' }, { section:'🍵 早餐', time:'7:30-8:00' },
       { section:'🚶 晨间活动', time:'8:00-9:00' }, { section:'📚 上午主课', time:'9:00-10:30' },
       { section:'🎯 自主时间', time:'10:30-11:30' }, { section:'🍚 午餐&午休', time:'11:30-14:30' },
       { section:'🎨 下午主课', time:'14:30-15:00' }, { section:'✍️ 练习时间', time:'15:00-16:30' },
