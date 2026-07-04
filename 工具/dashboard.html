@@ -4368,18 +4368,12 @@ const PRESET_TEMPLATES = {
 // ── 模板管理函数 ──
 
 function loadTemplates() {
-  var stored = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+  // Always rebuild from PRESET_TEMPLATES to keep clean
   var templates = {};
-  if (stored) { try { templates = JSON.parse(stored); } catch(e) { templates = {}; } }
-  // Always merge/update preset templates
-  var changed = false;
   Object.keys(PRESET_TEMPLATES).forEach(function(name) {
-    if (!templates[name] || PRESET_TEMPLATES.hasOwnProperty(name)) {
-      templates[name] = JSON.parse(JSON.stringify(PRESET_TEMPLATES[name]));
-      changed = true;
-    }
+    templates[name] = JSON.parse(JSON.stringify(PRESET_TEMPLATES[name]));
   });
-  if (changed) localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templates));
+  localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templates));
   return templates;
 }
 
