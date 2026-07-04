@@ -2612,6 +2612,8 @@ function calcMilestoneDate(startD, endD, duration, offset) {
 }
 
 function generateMilestones() {
+  // Clear old milestones to force regeneration
+  if (data.camp_dates) data.camp_dates.milestones = null;
   // Rebuild schedule dates from camp settings first
   rebuildScheduleDates();
   // Read from calendar: index 0 = D0报到日, index 1 = D1开营日
@@ -2635,10 +2637,12 @@ function generateMilestones() {
   PRESET_MILESTONES.forEach(function(pm) {
     var d = calcMilestoneDate(startD, endD, campDays, pm.offset);
     var existing = (data.camp_dates.milestones || []).find(function(m) { return m.id === pm.id; });
+    // Always recalculate date; preserve user's manual lock state
+    var isLocked = (existing && existing._userLocked) ? true : pm.locked;
     ms.push({
       id: pm.id, name: pm.name, icon: pm.icon, offset: pm.offset,
-      date: (existing && existing.locked && existing.date) ? existing.date : d.toISOString().slice(0,10),
-      locked: existing ? existing.locked : pm.locked
+      date: d.toISOString().slice(0,10),
+      locked: isLocked
     });
   });
   data.camp_dates.milestones = ms;
@@ -2681,6 +2685,7 @@ function updateMilestoneDate(idx, val) {
 function toggleMilestoneLock(idx, locked) {
   if (data.camp_dates && data.camp_dates.milestones) {
     data.camp_dates.milestones[idx].locked = locked;
+    data.camp_dates.milestones[idx]._userLocked = locked;
   }
   localStorage.setItem('camp_data', JSON.stringify(data));
 }
