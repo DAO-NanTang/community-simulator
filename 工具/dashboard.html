@@ -2763,6 +2763,40 @@ function renderDailySchedule() {
   var actEl = document.getElementById('wizSchedActual'); if (actEl) actEl.textContent = (data.camp_dates&&data.camp_dates.start?data.camp_dates.start:'?') + ' 开营 · ' + actualDays + ' 天' + (actualDays!==initDays?' ('+(actualDays>initDays?'+':'')+(actualDays-initDays)+'天)':'（未变）');
 }
 
+function migrateSlots8to11() {
+  if (!data.schedule || !data.schedule.slots) return;
+  var oldSlots = data.schedule.slots;
+  if (oldSlots.length >= 11) return; // already new format
+  // Map: old 8-slot → new 11-slot
+  var map = [
+    { oldIdx:0, newIdx:0 },  // 行动 6:30 → 🌅晨起
+    { oldIdx:1, newIdx:1 },  // 行动 7:30 → 🍵早餐
+    { oldIdx:2, newIdx:2 },  // 行动 8:00 → 🚶晨间
+    { oldIdx:3, newIdx:3 },  // 行动 9:00 → 📚上午(前半)
+  ];
+  var newSlots = DEFAULT_SLOTS.map(function(s){ return {section:s.section,time:s.time,activities:[]}; });
+  var days = (data.schedule.dates||[]).length;
+  // Copy matching slots
+  [0,1,2].forEach(function(i){ if(oldSlots[i]) newSlots[i].activities = oldSlots[i].activities||[]; });
+  // Slot 3 (9:00-11:30) split into 📚上午(3) + 🎯自主(4)
+  if (oldSlots[3]) { newSlots[3].activities = (oldSlots[3].activities||[]).slice(); newSlots[4].activities = new Array(days).fill('—'); }
+  // Slot 4 (10:30-11:30) old → 🎯自主(4) if exists, else fill from old slot 4
+  if (oldSlots[4] && oldSlots[4].activities) newSlots[4].activities = oldSlots[4].activities.slice();
+  // Slot 5 (11:30-14:30) → 🍚午餐(5)
+  if (oldSlots[5]) newSlots[5].activities = oldSlots[5].activities||[];
+  // Slot 6 (14:30-17:30) split into 🎨下午(6) + ✍️练习(7) + ☕自由(8)
+  if (oldSlots[6]) { newSlots[6].activities = (oldSlots[6].activities||[]).slice(); newSlots[7].activities = new Array(days).fill('—'); newSlots[8].activities = new Array(days).fill('—'); }
+  // Slot 7 (17:30-19:30) → 🍲晚餐(9)
+  if (oldSlots[7]) newSlots[9].activities = oldSlots[7].activities||[];
+  // Slot 8 (19:30-22:00) → 🌙晚间(10)
+  if (oldSlots[8]) newSlots[10].activities = oldSlots[8].activities||[];
+  // Pad all to correct length
+  newSlots.forEach(function(s){ while(s.activities.length < days) s.activities.push(''); if(s.activities.length > days) s.activities.length = days; });
+  data.schedule.slots = newSlots;
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  setStatus('已从旧8时段迁移到新11时段');
+}
+
 function initDailySchedule() {
   var tplName = document.getElementById('wizScheduleTpl').value;
   // Ensure camp_dates is set from inputs
@@ -2772,7 +2806,8 @@ function initDailySchedule() {
   data.camp_dates.duration_days = parseInt(document.getElementById('wizDuration').value) || 15;
   if (!data.camp_dates.start) { alert('请先设置营期起始日期'); return; }
   if (data.schedule && data.schedule.slots && data.schedule.slots.length > 0) {
-    if (!confirm('已有日程数据，生成将覆盖。确定继续？')) return;
+    if (data.schedule.slots.length < 11) { migrateSlots8to11(); setStatus('已自动迁移到11时段'); }
+    else if (!confirm('已有日程数据，生成将覆盖。确定继续？')) return;
   }
   rebuildScheduleDates();
   var days = (data.schedule.dates||[]).length;
@@ -2846,7 +2881,26 @@ function copyPrevDaySchedule() {
 }
 function addScheduleSlot() { if (!data.schedule) data.schedule = {}; if (!data.schedule.slots) data.schedule.slots = []; data.schedule.slots.push({section:'新时段',time:'',activities:new Array((data.schedule.dates||[]).length).fill('')}); localStorage.setItem('camp_data',JSON.stringify(data)); renderDailySchedule(); }
 function removeScheduleSlot(idx) { if (!data.schedule||!data.schedule.slots) return; data.schedule.slots.splice(idx,1); localStorage.setItem('camp_data',JSON.stringify(data)); renderDailySchedule(); }
-function saveScheduleTemplate(){ var n=prompt('模板名：'); if(!n)return; var tpl={slots:(data.schedule.slots||[]).map(function(s){return{section:s.section,time:s.time};})}; var tpls=loadTemplates(); tpls[n]={pool:'schedule',data:tpl}; localStorage.setItem(TEMPLATE_STORAGE_KEY,JSON.stringify(tpls)); renderDailySchedule(); setStatus('已保存:'+n); }
+function saveScheduleTemplate() {
+  var n = prompt('模板名：'); if (!n) return;
+  var saveActs = confirm('同时保存每日活动内容？\n\n"确定"=保存完整内容（下期可直接填充）\n"取消"=只保存时段结构');
+  var tpl = { slots: (data.schedule.slots||[]).map(function(s){ return {section:s.section,time:s.time}; }) };
+  if (saveActs && data.schedule.slots.length > 0) {
+    var days = (data.schedule.dates||[]).length;
+    var activities = [];
+    for (var d = 0; d < days; d++) {
+      var dayActs = [];
+      data.schedule.slots.forEach(function(s){ dayActs.push((s.activities||[])[d]||''); });
+      activities.push(dayActs);
+    }
+    tpl.activities = activities;
+  }
+  var tpls = loadTemplates();
+  tpls[n] = { pool: 'schedule', data: tpl };
+  localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(tpls));
+  renderDailySchedule();
+  setStatus('已保存模板：' + n + (saveActs?'（含活动内容）':'（仅时段结构）'));
+}
 var colDragSrc = -1, selectedCol = -1;
 function selectColumn(di) {
   selectedCol = (selectedCol === di) ? -1 : di;
