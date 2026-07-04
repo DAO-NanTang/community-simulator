@@ -2607,19 +2607,26 @@ function calcMilestoneDate(startD, endD, duration, offset) {
 }
 
 function generateMilestones() {
-  var startDate = document.getElementById('wizStartDate').value;
-  var duration = parseInt(document.getElementById('wizDuration').value) || 15;
-  if (!startDate) { alert('请先选择营期起始日期'); return; }
+  // Read from calendar: index 0 = D0报到日, index 1 = D1开营日
+  var schedDates = (data.schedule && data.schedule.dates && data.schedule.dates.length > 1) ? data.schedule.dates : null;
+  if (!schedDates) { alert('请先生成每日日历（至少2天：报到日+开营日）'); return; }
+  // Camp duration = calendar days minus D0
+  var campDays = schedDates.length - 1;
+  // D1 = index 1 (开营日), last day = last index
+  var d1Parts = schedDates[1].split('/');
+  var lastParts = schedDates[schedDates.length-1].split('/');
+  var startD = new Date(2026, parseInt(d1Parts[0])-1, parseInt(d1Parts[1]));
+  var endD = new Date(2026, parseInt(lastParts[0])-1, parseInt(lastParts[1]));
+  // Update camp_dates
   if (!data.camp_dates) data.camp_dates = {};
-  data.camp_dates.start = startDate;
-  data.camp_dates.duration_days = duration;
-  var startD = new Date(startDate + 'T00:00:00');
-  var endD = new Date(startD);
-  endD.setDate(endD.getDate() + duration - 1);
+  data.camp_dates.start = startD.toISOString().slice(0,10);
   data.camp_dates.end = endD.toISOString().slice(0,10);
+  data.camp_dates.duration_days = campDays;
+  var wi = document.getElementById('wizStartDate'); if (wi) wi.value = data.camp_dates.start;
+  var wd = document.getElementById('wizDuration'); if (wd) wd.value = campDays;
   var ms = [];
   PRESET_MILESTONES.forEach(function(pm) {
-    var d = calcMilestoneDate(startD, endD, duration, pm.offset);
+    var d = calcMilestoneDate(startD, endD, campDays, pm.offset);
     var existing = (data.camp_dates.milestones || []).find(function(m) { return m.id === pm.id; });
     ms.push({
       id: pm.id, name: pm.name, icon: pm.icon, offset: pm.offset,
@@ -2697,11 +2704,13 @@ function rebuildScheduleDates() {
   if (!data || !data.camp_dates || !data.camp_dates.start) return;
   var parts = data.camp_dates.start.split('-');
   var startD = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
-  var days = data.camp_dates.duration_days || 15;
+  // D0 = 报到日 = 开营前一日，所以日历从 startD-1 开始
+  var d0 = new Date(startD); d0.setDate(d0.getDate() - 1);
+  var days = (data.camp_dates.duration_days || 15) + 1; // +D0
   var wdNames = ['周日','周一','周二','周三','周四','周五','周六'];
   var dates = [], weekdays = [];
   for (var d = 0; d < days; d++) {
-    var cur = new Date(startD); cur.setDate(cur.getDate() + d);
+    var cur = new Date(d0); cur.setDate(cur.getDate() + d);
     dates.push(('0'+(cur.getMonth()+1)).slice(-2)+'/'+('0'+cur.getDate()).slice(-2));
     weekdays.push(wdNames[cur.getDay()]);
   }
@@ -2742,7 +2751,7 @@ function renderDailySchedule() {
     html += '<th onclick="selectColumn('+i+')" style="text-align:center;font-size:.7rem;font-weight:700;cursor:'+(isAnchor?'default':'pointer')+';'+
       (isAnchor?'color:var(--accent);':'')+(isSel?'background:#fdf5e0;box-shadow:inset 0 0 0 2px var(--accent);':'')+'" '+
       (isAnchor?'':'draggable="true" ondragstart="colDragStart(event,'+i+')" ondragover="colDragOver(event)" ondrop="colDrop(event,'+i+')"')+
-      '>'+(isAnchor?'🔒':'')+'D'+(i+1)+'</th>';
+      '>'+(isAnchor?'🔒':'')+(i===0?'报到日':('D'+i))+'</th>';
   });
   html += '</tr></thead><tbody>';
   slots.forEach(function(slot,si){
