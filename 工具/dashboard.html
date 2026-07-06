@@ -264,6 +264,45 @@ select.inline-input { cursor: pointer; }
 
 /* Template select */
 .template-select { padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-family:var(--font); font-size:.82rem; background:var(--card); color:var(--text); max-width:200px; }
+
+/* ── Builder mode color scheme ── */
+body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6b7d60; --accent: #5a8a3c; --green: #4a7c32; --red: #c05540; --yellow: #b8862e; --border: #c8d8b8; --tab-bg: #d8e8cc; --tab-hover: #c8dcb8; --tab-active-bg: #f8fbf5; --btn-bg: #dce8d0; --btn-hover: #cde0bc; --btn-border: #8aa878; --header-start: #d8e8cc; --header-end: #eef5e8; }
+
+/* ── Login page ── */
+.login-page { position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center; }
+.login-page::after { content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,30,15,.6),rgba(20,15,8,.75),rgba(40,30,15,.6));z-index:1; }
+body.builder-mode .login-page::after { background:linear-gradient(180deg,rgba(30,50,20,.5),rgba(20,40,15,.7),rgba(30,50,20,.5)); }
+.login-card { position:relative;z-index:2;background:rgba(255,253,249,.92);border-radius:16px;padding:32px 28px;max-width:520px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.3); }
+body.builder-mode .login-card { background:rgba(248,251,245,.92); }
+.login-card h1,.login-card h2 { color:#3d3629;margin:0 0 8px; }
+body.builder-mode .login-card h1,body.builder-mode .login-card h2 { color:#2d3a28; }
+.login-card p { color:#9b9078;font-size:.9rem; }
+body.builder-mode .login-card p { color:#6b7d60; }
+.login-card input { display:block;width:100%;margin:12px 0;padding:10px;border:2px solid #e5ddce;border-radius:8px;font-size:.9rem;text-align:center;background:#fffdf9;color:#3d3629; }
+body.builder-mode .login-card input { border-color:#c8d8b8;background:#f8fbf5;color:#2d3a28; }
+.login-card input:focus { outline:none;border-color:var(--accent); }
+
+/* ── Avatar chip ── */
+.avatar-chip { cursor:pointer;border-radius:12px;transition:.2s;text-align:center; }
+.avatar-chip:hover { background:rgba(0,0,0,.04);transform:translateY(-2px); }
+.avatar-grid { display:flex;gap:8px;flex-wrap:wrap;justify-content:center; }
+
+/* ── Admin toolbar visibility ── */
+#adminToolbar { display:none; }
+body.builder-mode #adminToolbar { display:flex; }
+
+/* ── Quest cards ── */
+.quest-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px; }
+.quest-card { border:2px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--card); }
+.quest-card-header { display:flex;align-items:center;gap:6px;margin-bottom:4px; }
+.quest-card-badge { font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--accent);color:#fff; }
+.quest-card-type { font-size:.7rem;color:var(--muted); }
+.quest-card-title { font-weight:700;font-size:.85rem;margin-bottom:4px; }
+.quest-card-meta { display:flex;gap:10px;font-size:.7rem;color:var(--muted);margin-bottom:6px;flex-wrap:wrap; }
+.quest-card-reward { font-weight:700;color:var(--accent);font-size:.82rem; }
+
+/* ── Preview banner ── */
+#previewBanner { background:#c8a860;color:#1a1410;text-align:center;padding:8px;font-weight:600;font-size:.85rem; }
 </style>
 </head>
 <body>
@@ -277,48 +316,77 @@ select.inline-input { cursor: pointer; }
 </header>
 
 <main>
-  <!-- Tabs + toolbar on same row -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px;flex-wrap:nowrap;overflow-x:auto">
-    <div class="tabs" style="margin-bottom:0;border-bottom:none;padding-bottom:2px">
-      <button class="tab" onclick="switchTab('settings')" style="border-bottom:2px solid transparent;margin-bottom:0">📝 营地设置</button>
-      <button class="tab" onclick="switchTab('members')" style="border-bottom:2px solid transparent;margin-bottom:0">👥 南塘NPC</button>
-      <button class="tab" onclick="switchTab('taskhall')" style="border-bottom:2px solid transparent;margin-bottom:0">📋 任务大厅</button>
-      <button class="tab" onclick="switchTab('players')" style="border-bottom:2px solid transparent;margin-bottom:0">⚔️ 游戏玩家</button>
-      <button class="tab" onclick="switchTab('map')" style="border-bottom:2px solid transparent;margin-bottom:0">🗺️ 攻略地图</button>
-      <button class="tab" onclick="switchTab('timeline')" style="border-bottom:2px solid transparent;margin-bottom:0">📅 日历系统</button>
-      <button class="tab" onclick="switchTab('budget')" style="border-bottom:2px solid transparent;margin-bottom:0">💰 公会资金池</button>
-      <button class="tab" onclick="switchTab('settlement')" style="border-bottom:2px solid transparent;margin-bottom:0">🧾 结算界面</button>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="display:flex;gap:8px"><button class="btn" onclick="loadData()">📂 加载</button><button class="btn" onclick="exportData()">💾 导出</button></div><span style="font-size:.68rem;color:#8a7a5e" id="statusDot"></span></div>
-  </div>
 
-
-  <!-- Default Welcome View (fullscreen overlay) -->
-  <div id="defaultView" style="position:fixed;inset:0;z-index:999;text-align:center;display:flex;align-items:center;justify-content:center">
-    <img src="ai_expand_image1783014990973.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(3px) brightness(.75);z-index:0">
-    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,30,15,.6),rgba(20,15,8,.75),rgba(40,30,15,.6));z-index:1"></div>
-    <div style="position:relative;z-index:2">
-      <div style="font-size:4rem;margin-bottom:8px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))">🏰</div>
-      <h2 style="font-size:1.6rem;color:#f0e0c0;margin:0 0 4px;text-shadow:0 2px 8px rgba(0,0,0,.5)">南塘实景游戏</h2>
-      <p style="font-size:.9rem;color:#c8b898;margin:0 auto 36px;text-shadow:0 1px 4px rgba(0,0,0,.4)">选择你的身份，开始冒险</p>
-      <div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:620px;margin:0 auto">
-        <div onclick="startGame('staff')" style="cursor:pointer;flex:1;min-width:210px;max-width:270px;padding:32px 24px;border-radius:16px;background:rgba(255,253,249,.9);border:2px solid var(--accent);transition:.2s"
-             onmouseenter="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 28px rgba(200,135,64,.4)';this.style.background='rgba(255,253,249,.97)'"
-             onmouseleave="this.style.transform='translateY(0)';this.style.boxShadow='none';this.style.background='rgba(255,253,249,.9)'">
-          <div style="font-size:2.8rem;margin-bottom:12px">🧙</div>
-          <div style="font-weight:700;font-size:1.05rem;color:var(--accent);margin-bottom:6px">游戏策划组</div>
-          <div style="font-size:.78rem;color:var(--muted);line-height:1.6">工作人员入口<br>管理任务、预算、日程</div>
-        </div>
-        <div onclick="startGame('player')" style="cursor:pointer;flex:1;min-width:210px;max-width:270px;padding:32px 24px;border-radius:16px;background:rgba(255,253,252,.9);border:2px solid #5b8cb8;transition:.2s"
-             onmouseenter="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 28px rgba(91,140,184,.4)';this.style.background='rgba(255,253,252,.97)'"
-             onmouseleave="this.style.transform='translateY(0)';this.style.boxShadow='none';this.style.background='rgba(255,253,252,.9)'">
-          <div style="font-size:2.8rem;margin-bottom:12px">⚔️</div>
-          <div style="font-weight:700;font-size:1.05rem;color:#5b8cb8;margin-bottom:6px">游戏玩家</div>
-          <div style="font-size:.78rem;color:var(--muted);line-height:1.6">共创人入口<br>查看攻略、接取任务</div>
-        </div>
+  <!-- ═══ Login Page ═══ -->
+  <div id="loginPage" class="login-page">
+    <div id="loginEntry" class="login-card" style="text-align:center">
+      <div style="font-size:4rem;margin-bottom:8px">🏰</div>
+      <h1 style="font-size:1.6rem">🌍 南塘·第四期</h1>
+      <p style="margin:0 0 4px">「寻找」—— 艺术共创生活副本</p>
+      <p id="loginDateRange" style="font-size:.8rem;margin:0 0 32px">—</p>
+      <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+        <button class="btn pri" onclick="showIdentityPicker()" style="font-size:.9rem;padding:12px 24px">✨ 我是新来的</button>
+        <button class="btn" onclick="showUserList()" style="font-size:.9rem;padding:12px 24px">📋 我有账号</button>
       </div>
     </div>
+    <div id="identityPicker" class="hidden login-card" style="text-align:center">
+      <h2>你是谁？</h2>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:20px">
+        <div onclick="showRegister('adventurer')" class="avatar-chip" style="padding:20px 22px;min-width:130px"><div style="font-size:2.5rem">⚔️</div><div style="font-weight:700;margin-top:4px">我是冒险者</div><div style="font-size:.72rem;color:var(--muted)">需要世界码</div></div>
+        <div onclick="showRegister('npc')" class="avatar-chip" style="padding:20px 22px;min-width:130px"><div style="font-size:2.5rem">👥</div><div style="font-weight:700;margin-top:4px">我是南塘NPC</div><div style="font-size:.72rem;color:var(--muted)">在地伙伴</div></div>
+        <div onclick="showRegister('visitor')" class="avatar-chip" style="padding:20px 22px;min-width:130px"><div style="font-size:2.5rem">🏕️</div><div style="font-weight:700;margin-top:4px">我只是来看看</div><div style="font-size:.72rem;color:var(--muted)">游客</div></div>
+      </div>
+      <button class="btn" onclick="showLoginEntry()" style="margin-top:16px">← 返回</button>
+    </div>
+    <div id="registerForm" class="hidden login-card" style="text-align:center;max-width:420px">
+      <h2 id="registerTitle"></h2>
+      <div style="margin:16px 0;cursor:pointer" id="regAvatarPreview"></div>
+      <button class="btn" onclick="cycleRegAvatar()" style="font-size:.7rem">🎨 换头像</button>
+      <input type="text" id="regName" placeholder="你的名字">
+      <input type="password" id="regPassword" placeholder="设置密码（至少2位）">
+      <div id="regInviteRow" class="hidden"><div id="regInviteLabel" style="font-size:.75rem;color:var(--muted);margin-bottom:4px"></div><input type="text" id="regInviteCode" placeholder=""></div>
+      <div id="regError" style="color:var(--red);font-size:.82rem;margin:8px 0"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px"><button class="btn" onclick="showLoginEntry()">← 返回</button><button class="btn pri" onclick="doRegister()">确认注册 →</button></div>
+    </div>
+    <div id="userListPanel" class="hidden login-card" style="text-align:center;max-width:600px"></div>
   </div>
+
+  <!-- Password Modal -->
+  <div id="passwordModal" class="modal-overlay"><div class="modal" style="text-align:center">
+    <h2>输入密码</h2><div id="pwdModalAvatar" style="margin:12px 0"></div><div id="pwdModalName" style="font-weight:700;margin-bottom:12px"></div>
+    <input type="password" id="pwdModalInput" placeholder="密码">
+    <label style="font-size:.78rem;cursor:pointer;display:block;margin:8px 0"><input type="checkbox" id="pwdRememberMe"> 记住我</label>
+    <div id="pwdModalError" style="color:var(--red);font-size:.82rem;margin:4px 0"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn" onclick="closePasswordModal()">取消</button><button class="btn pri" onclick="doLogin()">登录</button></div>
+  </div></div>
+
+  <!-- ═══ World HUD ═══ -->
+  <div id="worldHUD" class="hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;flex-wrap:wrap;gap:6px"><span style="font-weight:600" id="hudCurrentUser"></span><div style="display:flex;gap:8px;align-items:center"><span style="font-size:.8rem;color:var(--muted)">💎 <b id="hudNT">—</b></span><button class="btn" onclick="logoutUser()" style="font-size:.75rem;padding:4px 10px">🚪 退出</button><button class="btn" onclick="showInviteManager()" style="font-size:.72rem" title="管理邀请码">🔑</button></div></div></div>
+
+  <!-- ═══ Builder Mode Bar ═══ -->
+  <div id="builderModeBar" class="hidden" style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap"><button class="btn mode-btn" data-mode="genesis" onclick="switchBuilderMode('genesis')">🌍 创世</button><button class="btn mode-btn" data-mode="oversee" onclick="switchBuilderMode('oversee')">📊 监察</button><button class="btn" onclick="switchToAdventurerPreview()" style="font-size:.75rem">👁️ 冒险者视角</button></div>
+
+  <!-- ═══ Builder Tabs ═══ -->
+  <div id="builderTabs" class="tabs hidden">
+    <button class="tab" data-tab="settings" onclick="switchTab('settings')">🌍 创世终端</button>
+    <button class="tab" data-tab="members" onclick="switchTab('members')">📋 成员档案</button>
+    <button class="tab" data-tab="taskhall" onclick="switchTab('taskhall')">📋 猎人公会</button>
+    <button class="tab" data-tab="ntadmin" onclick="switchTab('ntadmin')">🎯 NT管理</button>
+    <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 世界时间线</button>
+    <button class="tab" data-tab="budget" onclick="switchTab('budget')">💰 资源金库</button>
+    <button class="tab" data-tab="settlement" onclick="switchTab('settlement')">🧾 通关结算</button>
+  </div>
+
+  <!-- ═══ Adventurer Tabs ═══ -->
+  <div id="adventurerTabs" class="tabs hidden">
+    <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务公告栏</button>
+    <button class="tab" data-tab="profile" onclick="switchTab('profile')">⚔️ 我的资料</button>
+    <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 世界时间线</button>
+    <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
+  </div>
+
+  <!-- ═══ Admin Toolbar ═══ -->
+  <div id="adminToolbar" style="justify-content:flex-end;align-items:center;gap:8px;margin-bottom:6px"><button class="btn" onclick="loadData()">📂 加载</button><button class="btn" onclick="exportData()">💾 导出</button><span style="font-size:.68rem;color:var(--muted)" id="statusDot"></span></div>
 
   <!-- Tab: Task Hall (Staff Daily View) -->
   <div id="tab-taskhall" class="hidden">
@@ -409,6 +477,12 @@ select.inline-input { cursor: pointer; }
 
   <!-- Tab: Members -->
   <div id="tab-members" class="hidden">
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="memberSubNav">
+      <button class="btn pri" onclick="filterMembers('builder')">🧙 共建者</button>
+      <button class="btn" onclick="filterMembers('adventurer')">⚔️ 冒险者</button>
+      <button class="btn" onclick="filterMembers('npc')">👥 南塘NPC</button>
+      <button class="btn" onclick="filterMembers('visitor')">🏕️ 游客</button>
+    </div>
     <div class="ms-avatar-row" id="memberAvatars">
       <button class="ms-avatar-btn ms-add-btn" onclick="showAddMember()" style="opacity:.6">
         <div class="ms-av-circle" style="background:#e0dcd4;border:2px dashed var(--border)"><span style="font-size:1.2rem;color:var(--muted)">＋</span></div>
@@ -821,6 +895,52 @@ select.inline-input { cursor: pointer; }
       <div class="empty-state" id="settlementEmpty">👆 点击头像查看结算详情</div>
     </div>
   </div>
+
+  <!-- Tab: NT Admin -->
+  <div id="tab-ntadmin" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><h2 style="margin:0">🎯 NT 任务管理</h2><button class="btn pri" onclick="showPostTask()">＋ 发布新任务</button></div>
+    <div class="card" id="ntadminTaskList"></div><div class="card" id="ntadminReviewList"></div><div class="card" id="ntadminPoolStats"></div>
+  </div>
+
+  <!-- Tab: Profile (Adventurer) -->
+  <div id="tab-profile" class="hidden"><div id="profileContent"></div></div>
+
+  <!-- Tab: Quest Board (Adventurer) -->
+  <div id="tab-questboard" class="hidden">
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="questFilterBar">
+      <button class="btn pri" onclick="questFilter='all';renderQuestBoard()">全部</button>
+      <button class="btn" onclick="questFilter='主线';renderQuestBoard()">🔴 主线</button>
+      <button class="btn" onclick="questFilter='支线';renderQuestBoard()">🟡 支线</button>
+      <button class="btn" onclick="questFilter='共创';renderQuestBoard()">🟢 共创</button>
+      <button class="btn" onclick="questFilter='隐藏';renderQuestBoard()">🟣 隐藏</button>
+      <span style="margin:0 4px;color:var(--border)">|</span>
+      <button class="btn" onclick="questFilter='claimable';renderQuestBoard()">⬜ 可领取</button>
+      <button class="btn" onclick="questFilter='claimed';renderQuestBoard()">✅ 已领取</button>
+    </div>
+    <div id="questBoardContent"></div>
+  </div>
+
+  <!-- Tab: Leaderboard (Adventurer) -->
+  <div id="tab-leaderboard" class="hidden"><div class="card"><h3>🏆 冒险者排行榜</h3><div id="leaderboardContent"></div></div></div>
+
+  <!-- 村口占位页（NPC/游客） -->
+  <div id="plazaPlaceholder" class="hidden">
+    <div class="card" style="text-align:center;max-width:500px;margin:40px auto">
+      <div style="font-size:4rem;margin-bottom:8px">🏕️</div><h2>南塘村口</h2>
+      <p style="color:var(--muted);margin:8px 0">即将开放——这里是所有人的公共空间</p>
+      <div style="background:var(--bg);border-radius:8px;padding:14px;margin:16px 0;text-align:left;font-size:.85rem">
+        <div style="margin:4px 0">👤 <b id="ppName">—</b></div><div style="margin:4px 0">🏷️ <span id="ppRole">—</span></div><div style="margin:4px 0">📅 注册于 <span id="ppCreated">—</span></div>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted)">等村口开放后，你可以在这里接日常委托、</p><p style="font-size:.78rem;color:var(--muted)">看实景地图、和在地伙伴交流。</p><p style="font-size:.78rem;color:var(--muted)">你的账号和记录都会保留。</p>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="font-size:.78rem;font-weight:600;margin-bottom:6px">🔓 升级身份</div>
+        <input id="upgradeCode" placeholder="输入邀请码" style="width:200px;padding:8px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;text-align:center;background:var(--card);color:var(--text);margin-bottom:6px"><br>
+        <button class="btn pri" onclick="doUpgrade()" style="font-size:.8rem">确认升级</button>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:4px">NPC邀请码 → 升级为南塘NPC · 世界码 → 加入该期</div>
+      </div>
+      <button class="btn" onclick="logoutUser()" style="margin-top:12px">🚪 退出</button>
+    </div>
+  </div>
 </main>
 
 <!-- Add Task Modal -->
@@ -885,6 +1005,9 @@ select.inline-input { cursor: pointer; }
     <label>角色</label><input type="text" id="memberRole" placeholder="核心成员 / 活跃成员 / 参与者">
     <label>简介</label><textarea id="memberBio" placeholder="一句话介绍..." style="min-height:40px"></textarea>
     <label>NT 实际获得</label><input type="number" id="memberNT" value="0">
+    <label>🔒 修改密码（留空则不修改）</label>
+    <input type="password" id="memberNewPassword" placeholder="新密码" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;background:var(--card);color:var(--text);margin-bottom:4px">
+    <input type="password" id="memberConfirmPassword" placeholder="确认密码" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;background:var(--card);color:var(--text)">
     <div class="actions">
       <button class="btn" onclick="document.getElementById('memberModal').classList.remove('show')">取消</button>
       <button class="btn danger hidden" id="btnDeleteMember" onclick="deleteMember()">删除</button>
