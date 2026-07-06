@@ -276,17 +276,17 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .login-card p { color:#9b9078;font-size:.9rem; }
 .login-card input { display:block;width:100%;margin:8px 0;padding:10px;border:2px solid #e5ddce;border-radius:8px;font-size:.9rem;text-align:center;background:#fffdf9;color:#3d3629; }
 .login-card input:focus { outline:none;border-color:var(--accent); }
-/* Two-card layout: left avatar list + right login panel */
+/* Two-card layout: left avatar grid + right login panel */
 .login-split { display:flex;gap:16px;align-items:flex-start; }
-.login-split .ls-left { flex:1 1 0; min-width:0; max-height:380px; overflow-y:auto; border-radius:12px; background:rgba(255,252,245,.6); padding:12px 10px; }
-.login-split .ls-right { flex:0 0 200px; width:200px; text-align:center; border-radius:12px; background:rgba(255,252,245,.6); padding:18px 14px; }
+.login-split .ls-left { flex:0 0 300px; width:300px; max-height:380px; overflow-y:auto; border-radius:12px; background:rgba(255,252,245,.6); padding:12px 10px; }
+.login-split .ls-right { flex:1 1 0; min-width:180px; text-align:center; border-radius:12px; background:rgba(255,252,245,.6); padding:18px 16px; }
 .ls-left .ls-group { margin-bottom:10px; }
-.ls-left .ls-group-title { font-size:.65rem;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px dotted var(--border); }
-.ls-left .ls-avatars { display:flex;gap:6px;flex-wrap:wrap; }
-.ls-left .ls-chip { text-align:center;cursor:pointer;padding:5px 3px 2px;border-radius:8px;transition:.15s;width:54px; }
+.ls-left .ls-group-title { font-size:.68rem;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px dotted var(--border); }
+.ls-left .ls-avatars { display:flex;gap:8px;flex-wrap:wrap; }
+.ls-left .ls-chip { text-align:center;cursor:pointer;padding:6px 4px 3px;border-radius:8px;transition:.15s;width:62px; }
 .ls-left .ls-chip:hover { background:rgba(0,0,0,.06); }
 .ls-left .ls-chip.sel { background:rgba(200,160,80,.18); }
-.ls-left .ls-chip .ls-name { font-size:.62rem;color:var(--muted);margin-top:1px;line-height:1.2;word-break:break-all; }
+.ls-left .ls-chip .ls-name { font-size:.68rem;color:var(--muted);margin-top:2px;line-height:1.2;word-break:break-all; }
 .ls-right .ls-avatar { margin:0 auto 12px; }
 
 /* ── Avatar chip ── */
@@ -1405,7 +1405,7 @@ function renderUserGrids() {
     html += '<div class="ls-group" data-role="' + g.key + '"><div class="ls-group-title" style="color:' + g.color + '">' + g.label + '</div><div class="ls-avatars">';
     members.forEach(function(u) {
       html += '<div class="ls-chip" data-name="' + escAttr(u.name) + '" onclick="pickLoginUser(\'' + escAttr(u.name) + '\')">' +
-        avatarCircle(u.avatar_seed || 0, 36, 0) +
+        avatarCircle(u.avatar_seed || 0, 44, 0) +
         '<div class="ls-name">' + esc(u.name) + '</div></div>';
     });
     html += '</div></div>';
@@ -1420,11 +1420,14 @@ function renderUserGrids() {
 function filterUserList() {
   var q = (document.getElementById('userSearchInput').value || '').toLowerCase();
   document.querySelectorAll('.ls-chip').forEach(function(chip) {
-    chip.style.display = (chip.getAttribute('data-name')||'').toLowerCase().indexOf(q) !== -1 ? '' : 'none';
+    var match = !q || (chip.getAttribute('data-name')||'').toLowerCase().indexOf(q) !== -1;
+    chip.style.display = match ? '' : 'none';
   });
   document.querySelectorAll('.ls-group').forEach(function(g) {
-    var any = g.querySelectorAll('.ls-chip:not([style*="display: none"])').length > 0;
-    g.style.display = any ? '' : 'none';
+    var chips = g.querySelectorAll('.ls-chip');
+    var anyVisible = false;
+    chips.forEach(function(c) { if (c.style.display !== 'none') anyVisible = true; });
+    g.style.display = anyVisible ? '' : 'none';
   });
 }
 
@@ -1450,9 +1453,9 @@ function updateLoginRight() {
   var users = getUsers(), user = name ? users[name] : null;
   var avatarEl = document.getElementById('loginAvatarPreview');
   if (user) {
-    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 72, 0);
+    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 80, 0);
   } else {
-    avatarEl.innerHTML = '<div style="width:72px;height:72px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--muted)">?</div>';
+    avatarEl.innerHTML = '<div style="width:80px;height:80px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--muted)">?</div>';
   }
   document.getElementById('loginSelectedName').textContent = name ? esc(name) : '';
   document.getElementById('loginNameInput').value = name || '';
