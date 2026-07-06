@@ -2391,13 +2391,16 @@ function renderMembers() {
   // 1. From nt_users: all users with the filtered role
   Object.keys(users).forEach(function(name) {
     var user = users[name];
-    if (user.role !== memberFilter) return;
+    // admin counts as builder for display purposes
+    var displayRole = user.role === 'admin' ? 'builder' : user.role;
+    if (displayRole !== memberFilter) return;
     staffData[name] = { tasks: [], points: 0, done: 0, active: 0, todo: 0 };
   });
 
   // 1b. Supplement: members in data.members but not in nt_users
   Object.keys(members).forEach(function(name) {
     if (staffData[name]) return;
+    // Infer role: staff→builder, otherwise check if name appears in tasks with known assignee
     var inferredRole = isStaff2(name) ? 'builder' : 'adventurer';
     if (inferredRole !== memberFilter) return;
     staffData[name] = { tasks: [], points: 0, done: 0, active: 0, todo: 0 };
