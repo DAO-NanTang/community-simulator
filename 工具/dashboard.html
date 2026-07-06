@@ -276,14 +276,14 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .login-card p { color:#9b9078;font-size:.9rem; }
 .login-card input { display:block;width:100%;margin:8px 0;padding:10px;border:2px solid #e5ddce;border-radius:8px;font-size:.9rem;text-align:center;background:#fffdf9;color:#3d3629; }
 .login-card input:focus { outline:none;border-color:var(--accent); }
-/* Two-card layout: left avatar grid + right login panel */
-.login-split { display:flex;gap:16px;align-items:flex-start; }
-.login-split .ls-left { flex:0 0 300px; width:300px; max-height:380px; overflow-y:auto; border-radius:12px; background:rgba(255,252,245,.6); padding:12px 10px; }
-.login-split .ls-right { flex:1 1 0; min-width:180px; text-align:center; border-radius:12px; background:rgba(255,252,245,.6); padding:18px 16px; }
+/* Two-card layout: narrow avatar list + wider login panel = square overall */
+.login-split { display:flex;gap:14px;align-items:flex-start; }
+.login-split .ls-left { flex:0 0 auto; width:250px; max-height:380px; overflow-y:auto; border-radius:12px; background:rgba(255,252,245,.6); padding:10px 8px; }
+.login-split .ls-right { flex:1 1 0; min-width:200px; text-align:center; border-radius:12px; background:rgba(255,252,245,.6); padding:18px 18px; }
 .ls-left .ls-group { margin-bottom:10px; }
 .ls-left .ls-group-title { font-size:.68rem;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px dotted var(--border); }
-.ls-left .ls-avatars { display:flex;gap:8px;flex-wrap:wrap; }
-.ls-left .ls-chip { text-align:center;cursor:pointer;padding:6px 4px 3px;border-radius:8px;transition:.15s;width:62px; }
+.ls-left .ls-avatars { display:flex;gap:6px;flex-wrap:wrap; }
+.ls-left .ls-chip { text-align:center;cursor:pointer;padding:5px 3px 2px;border-radius:8px;transition:.15s;width:56px; }
 .ls-left .ls-chip:hover { background:rgba(0,0,0,.06); }
 .ls-left .ls-chip.sel { background:rgba(200,160,80,.18); }
 .ls-left .ls-chip .ls-name { font-size:.68rem;color:var(--muted);margin-top:2px;line-height:1.2;word-break:break-all; }
