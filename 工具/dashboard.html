@@ -278,15 +278,14 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .login-card input:focus { outline:none;border-color:var(--accent); }
 /* Two-card layout: compact avatar list + wider login panel = landscape rectangle */
 .login-split { display:flex;gap:14px;align-items:stretch; }
-.login-split .ls-left { flex:0 0 260px; width:260px; overflow-y:auto; border-radius:12px; background:rgba(255,252,245,.5); padding:8px 6px; }
+.login-split .ls-left { flex:0 0 280px; width:280px; border-radius:12px; background:rgba(255,252,245,.5); padding:8px 6px; }
 .login-split .ls-right { flex:1 1 0; min-width:220px; text-align:center; border-radius:12px; background:rgba(255,252,245,.5); padding:20px 20px; display:flex;flex-direction:column;justify-content:center; }
-.ls-left .ls-group { margin-bottom:8px; }
-.ls-left .ls-group-title { font-size:.68rem;font-weight:700;margin-bottom:3px;padding-bottom:2px;border-bottom:1px dotted var(--border); }
-.ls-left .ls-avatars { display:flex;gap:5px;flex-wrap:wrap;justify-content:center; }
-.ls-left .ls-chip { text-align:center;cursor:pointer;padding:4px 2px 1px;border-radius:8px;transition:.15s;width:60px; }
+.ls-left .ls-avatars { display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-content:flex-start; }
+.ls-left .ls-chip { text-align:center;cursor:pointer;padding:5px 2px 3px;border-radius:8px;transition:.15s;width:64px; }
 .ls-left .ls-chip:hover { background:rgba(0,0,0,.06); }
 .ls-left .ls-chip.sel { background:rgba(200,160,80,.18); }
-.ls-left .ls-chip .ls-name { font-size:.7rem;color:var(--muted);margin-top:1px;line-height:1.2;text-align:center; }
+.ls-left .ls-chip .ls-name { font-size:.7rem;color:var(--text);margin-top:2px;line-height:1.2; }
+.ls-left .ls-chip .ls-role { font-size:.6rem;margin-top:0;line-height:1.2; }
 .ls-right .ls-avatar { margin:0 auto 12px; }
 
 /* ── Avatar chip ── */
@@ -380,7 +379,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <div id="regError" style="color:var(--red);font-size:.75rem;margin:4px 0"></div>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="btn" onclick="showLoginEntry()" style="font-size:.8rem">← 返回</button><button class="btn pri" onclick="doRegister()" style="font-size:.8rem">确认注册 →</button></div>
     </div>
-    <div id="userListPanel" class="hidden login-card" style="max-width:620px;padding:20px 16px">
+    <div id="userListPanel" class="hidden login-card" style="max-width:600px;padding:16px 14px">
       <div class="login-split">
         <div class="ls-left" id="userListLeft"></div>
         <div class="ls-right" id="userListRight">
@@ -1390,27 +1389,23 @@ var loginSelectedUser = null;
 
 function renderUserGrids() {
   var users = getUsers();
-  var groups = [
-    { key: 'admin', label: '管理员', color: '#c8a040' },
-    { key: 'builder', label: '共建者', color: '#5a8a3c' },
-    { key: 'adventurer', label: '冒险者', color: '#5b8cb8' },
-    { key: 'npc', label: '南塘NPC', color: '#8b7355' },
-    { key: 'visitor', label: '游客', color: '#9b9078' }
-  ];
+  var roleLabels = { admin:'管理员', builder:'共建者', adventurer:'冒险者', npc:'南塘NPC', visitor:'游客' };
+  var roleColors = { admin:'#c8a040', builder:'#5a8a3c', adventurer:'#5b8cb8', npc:'#8b7355', visitor:'#9b9078' };
+  var allUsers = Object.values(users).sort(function(a,b) {
+    var order = {admin:0,builder:1,adventurer:2,npc:3,visitor:4};
+    return (order[a.role]||5) - (order[b.role]||5);
+  });
   var left = document.getElementById('userListLeft');
   var html = '<input type="text" id="userSearchInput" placeholder="🔍 查找..." oninput="filterUserList()" style="font-size:.72rem;padding:5px 8px;width:100%;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);margin-bottom:8px">';
-  groups.forEach(function(g) {
-    var members = Object.values(users).filter(function(u) { return u.role === g.key; });
-    if (members.length === 0) return;
-    html += '<div class="ls-group" data-role="' + g.key + '"><div class="ls-group-title" style="color:' + g.color + '">' + g.label + '</div><div class="ls-avatars">';
-    members.forEach(function(u) {
-      html += '<div class="ls-chip" data-name="' + escAttr(u.name) + '" onclick="pickLoginUser(\'' + escAttr(u.name) + '\')">' +
-        avatarCircle(u.avatar_seed || 0, 48, 0) +
-        '<div class="ls-name">' + esc(u.name) + '</div></div>';
-    });
-    html += '</div></div>';
+  html += '<div class="ls-avatars" style="max-height:300px;overflow-y:auto">';
+  allUsers.forEach(function(u) {
+    html += '<div class="ls-chip" data-name="' + escAttr(u.name) + '" style="width:64px" onclick="pickLoginUser(\'' + escAttr(u.name) + '\')">' +
+      avatarCircle(u.avatar_seed || 0, 52, 0) +
+      '<div class="ls-name">' + esc(u.name) + '</div>' +
+      '<div class="ls-role" style="color:' + (roleColors[u.role]||'#999') + '">' + (roleLabels[u.role]||'') + '</div></div>';
   });
-  if (html.indexOf('ls-chip') === -1) html += '<div style="color:var(--muted);font-size:.78rem;padding:8px">暂无注册用户</div>';
+  html += '</div>';
+  if (allUsers.length === 0) html += '<div style="color:var(--muted);font-size:.78rem;padding:8px">暂无注册用户</div>';
   left.innerHTML = html;
   // Reset right panel
   loginSelectedUser = null;
@@ -1419,22 +1414,16 @@ function renderUserGrids() {
 
 function filterUserList() {
   var q = (document.getElementById('userSearchInput').value || '').toLowerCase();
-  document.querySelectorAll('.ls-chip').forEach(function(chip) {
+  document.querySelectorAll('#userListLeft .ls-chip').forEach(function(chip) {
     var match = !q || (chip.getAttribute('data-name')||'').toLowerCase().indexOf(q) !== -1;
     chip.style.display = match ? '' : 'none';
-  });
-  document.querySelectorAll('.ls-group').forEach(function(g) {
-    var chips = g.querySelectorAll('.ls-chip');
-    var anyVisible = false;
-    chips.forEach(function(c) { if (c.style.display !== 'none') anyVisible = true; });
-    g.style.display = anyVisible ? '' : 'none';
   });
 }
 
 function pickLoginUser(name) {
   loginSelectedUser = name;
-  document.querySelectorAll('.ls-chip').forEach(function(c) { c.classList.remove('sel'); });
-  var chip = document.querySelector('.ls-chip[data-name="' + escAttr(name) + '"]');
+  document.querySelectorAll('#userListLeft .ls-chip').forEach(function(c) { c.classList.remove('sel'); });
+  var chip = document.querySelector('#userListLeft .ls-chip[data-name="' + escAttr(name) + '"]');
   if (chip) chip.classList.add('sel');
   updateLoginRight();
 }
