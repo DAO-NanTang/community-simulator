@@ -1332,17 +1332,22 @@ function renderUserGrids() {
 }
 
 function promptPassword(name) {
+  console.log('promptPassword called:', name);
   pendingLoginName = name; var users = getUsers(), user = users[name];
+  console.log('user found:', !!user, 'role:', user && user.role);
   document.getElementById('pwdModalAvatar').innerHTML = avatarCircle(user ? user.avatar_seed : 0, 64, 0);
   document.getElementById('pwdModalName').textContent = name; document.getElementById('pwdModalInput').value = '';
   document.getElementById('pwdModalInput').placeholder = (user && user.password === null) ? '首次登录，请设置密码' : '输入密码';
   document.getElementById('pwdModalError').textContent = ''; document.getElementById('passwordModal').classList.add('show');
   document.getElementById('pwdModalInput').focus();
+  console.log('passwordModal visible:', document.getElementById('passwordModal').classList.contains('show'));
 }
 function closePasswordModal() { document.getElementById('passwordModal').classList.remove('show'); pendingLoginName = null; }
 function doLogin() {
+  console.log('doLogin called, pendingLoginName:', pendingLoginName);
   var password = document.getElementById('pwdModalInput').value, rememberMe = document.getElementById('pwdRememberMe').checked;
   var result = loginUser(pendingLoginName, password, rememberMe);
+  console.log('loginUser result:', result);
   if (!result.ok) { document.getElementById('pwdModalError').textContent = result.error; return; }
   document.getElementById('passwordModal').classList.remove('show');
 }
