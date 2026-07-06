@@ -279,14 +279,14 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 /* Two-card layout: compact avatar list + wider login panel = landscape rectangle */
 .login-split { display:flex;gap:14px;align-items:stretch; }
 .login-split .ls-left { flex:0 0 135px; width:135px; border-radius:12px; background:rgba(255,252,245,.5); padding:6px 4px; overflow-y:auto; max-height:370px; }
-.login-split .ls-right { flex:1 1 0; min-width:220px; text-align:center; border-radius:12px; background:rgba(255,252,245,.5); padding:16px 16px; display:flex;flex-direction:column;justify-content:flex-start; height:auto; }
+.login-split .ls-right { flex:1 1 0; min-width:240px; text-align:center; border-radius:12px; background:rgba(255,252,245,.5); padding:16px 18px; display:flex;flex-direction:column;justify-content:flex-start; height:auto; }
 .ls-left .ls-avatars { display:flex;gap:18px 10px;flex-wrap:wrap;justify-content:center;align-content:flex-start; }
 .ls-left .ls-chip { text-align:center;cursor:pointer;padding:8px 2px 6px;border-radius:8px;transition:.15s;width:68px; }
 .ls-left .ls-chip:hover { background:rgba(0,0,0,.06); }
 .ls-left .ls-chip.sel { background:rgba(200,160,80,.18); }
 .ls-left .ls-chip .ls-name { font-size:.72rem;color:var(--text);margin-top:3px;line-height:1.3; }
 .ls-left .ls-chip .ls-role { font-size:.62rem;margin-top:1px;line-height:1.3; }
-.ls-right .ls-avatar { width:180px;height:180px;margin:0 auto 22px;overflow:hidden;border-radius:50%; }
+.ls-right .ls-avatar { width:200px;height:200px;margin:0 auto 24px;overflow:hidden;border-radius:50%; }
 
 /* ── Avatar chip ── */
 .avatar-chip { cursor:pointer;border-radius:12px;transition:.2s;text-align:center; }
@@ -379,7 +379,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <div id="regError" style="color:var(--red);font-size:.75rem;margin:4px 0"></div>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="btn" onclick="showLoginEntry()" style="font-size:.8rem">← 返回</button><button class="btn pri" onclick="doRegister()" style="font-size:.8rem">确认注册 →</button></div>
     </div>
-    <div id="userListPanel" class="hidden login-card" style="max-width:460px;padding:16px 14px">
+    <div id="userListPanel" class="hidden login-card" style="max-width:520px;padding:16px 14px">
       <div class="login-split">
         <div class="ls-left" id="userListLeft"></div>
         <div class="ls-right" id="userListRight">
@@ -1440,9 +1440,9 @@ function updateLoginRight() {
   var users = getUsers(), user = name ? users[name] : null;
   var avatarEl = document.getElementById('loginAvatarPreview');
   if (user) {
-    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 180, 0);
+    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 200, 0);
   } else {
-    avatarEl.innerHTML = '<div style="width:180px;height:180px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:4rem;color:var(--muted)">?</div>';
+    avatarEl.innerHTML = '<div style="width:200px;height:200px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:4.5rem;color:var(--muted)">?</div>';
   }
   document.getElementById('loginNameInput').value = name || '';
   document.getElementById('loginPwdInput').value = '';
