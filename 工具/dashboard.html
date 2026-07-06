@@ -278,7 +278,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .login-card input:focus { outline:none;border-color:var(--accent); }
 /* Two-card layout: compact avatar list + wider login panel = landscape rectangle */
 .login-split { display:flex;gap:14px;align-items:stretch; }
-.login-split .ls-left { flex:0 0 280px; width:280px; border-radius:12px; background:rgba(255,252,245,.5); padding:8px 6px; }
+.login-split .ls-left { flex:0 0 86px; width:86px; border-radius:12px; background:rgba(255,252,245,.5); padding:6px 4px; overflow-y:auto; }
 .login-split .ls-right { flex:1 1 0; min-width:220px; text-align:center; border-radius:12px; background:rgba(255,252,245,.5); padding:20px 20px; display:flex;flex-direction:column;justify-content:center; }
 .ls-left .ls-avatars { display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-content:flex-start; }
 .ls-left .ls-chip { text-align:center;cursor:pointer;padding:5px 2px 3px;border-radius:8px;transition:.15s;width:64px; }
@@ -379,7 +379,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <div id="regError" style="color:var(--red);font-size:.75rem;margin:4px 0"></div>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="btn" onclick="showLoginEntry()" style="font-size:.8rem">← 返回</button><button class="btn pri" onclick="doRegister()" style="font-size:.8rem">确认注册 →</button></div>
     </div>
-    <div id="userListPanel" class="hidden login-card" style="max-width:600px;padding:16px 14px">
+    <div id="userListPanel" class="hidden login-card" style="max-width:460px;padding:16px 14px">
       <div class="login-split">
         <div class="ls-left" id="userListLeft"></div>
         <div class="ls-right" id="userListRight">
