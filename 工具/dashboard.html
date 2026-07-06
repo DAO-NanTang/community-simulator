@@ -387,9 +387,9 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <div style="font-weight:700;font-size:.85rem;margin-bottom:6px;min-height:18px" id="loginSelectedName"></div>
           <input type="text" id="loginNameInput" placeholder="输入名字..." oninput="onLoginNameInput()" style="font-size:.82rem;padding:7px;margin:4px 0">
           <input type="password" id="loginPwdInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')doSplitLogin()" style="font-size:.82rem;padding:7px;margin:3px 0">
-          <label style="font-size:.72rem;display:inline-flex;align-items:center;gap:4px;margin:2px 0;white-space:nowrap"><input type="checkbox" id="loginRemember"> 记住下次登录</label>
+          <label style="font-size:.7rem;display:block;text-align:center;margin:2px 0;white-space:nowrap"><input type="checkbox" id="loginRemember" style="margin-right:3px">记住下次登录</label>
           <div id="loginError" style="color:var(--red);font-size:.7rem;margin:1px 0;min-height:12px"></div>
-          <button class="btn pri" onclick="doSplitLogin()" style="width:100%;padding:7px;font-size:.85rem;margin-top:2px;margin-bottom:2px">登录</button>
+          <button class="btn pri" onclick="doSplitLogin()" style="width:100%;padding:7px;font-size:.85rem;margin:2px 0 6px">登录</button>
           <button class="btn" onclick="showLoginEntry()" style="width:100%;padding:5px;font-size:.75rem">← 返回</button>
         </div>
       </div>
