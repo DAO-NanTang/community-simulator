@@ -276,14 +276,14 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .login-card p { color:#9b9078;font-size:.9rem; }
 .login-card input { display:block;width:100%;margin:8px 0;padding:10px;border:2px solid #e5ddce;border-radius:8px;font-size:.9rem;text-align:center;background:#fffdf9;color:#3d3629; }
 .login-card input:focus { outline:none;border-color:var(--accent); }
-/* Two-card layout: narrow avatar list + wider login panel = square overall */
-.login-split { display:flex;gap:14px;align-items:flex-start; }
-.login-split .ls-left { flex:0 0 auto; width:250px; max-height:380px; overflow-y:auto; border-radius:12px; background:rgba(255,252,245,.6); padding:10px 8px; }
-.login-split .ls-right { flex:1 1 0; min-width:200px; text-align:center; border-radius:12px; background:rgba(255,252,245,.6); padding:18px 18px; }
-.ls-left .ls-group { margin-bottom:10px; }
-.ls-left .ls-group-title { font-size:.68rem;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px dotted var(--border); }
-.ls-left .ls-avatars { display:flex;gap:6px;flex-wrap:wrap; }
-.ls-left .ls-chip { text-align:center;cursor:pointer;padding:5px 3px 2px;border-radius:8px;transition:.15s;width:56px; }
+/* Two-card layout: compact avatar list + wider login panel = landscape rectangle */
+.login-split { display:flex;gap:14px;align-items:stretch; }
+.login-split .ls-left { flex:0 0 260px; width:260px; overflow-y:auto; border-radius:12px; background:rgba(255,252,245,.5); padding:8px 6px; }
+.login-split .ls-right { flex:1 1 0; min-width:220px; text-align:center; border-radius:12px; background:rgba(255,252,245,.5); padding:20px 20px; display:flex;flex-direction:column;justify-content:center; }
+.ls-left .ls-group { margin-bottom:8px; }
+.ls-left .ls-group-title { font-size:.68rem;font-weight:700;margin-bottom:3px;padding-bottom:2px;border-bottom:1px dotted var(--border); }
+.ls-left .ls-avatars { display:flex;gap:5px;flex-wrap:wrap;justify-content:center; }
+.ls-left .ls-chip { text-align:center;cursor:pointer;padding:4px 2px 1px;border-radius:8px;transition:.15s;width:60px; }
 .ls-left .ls-chip:hover { background:rgba(0,0,0,.06); }
 .ls-left .ls-chip.sel { background:rgba(200,160,80,.18); }
 .ls-left .ls-chip .ls-name { font-size:.68rem;color:var(--muted);margin-top:2px;line-height:1.2;word-break:break-all; }
@@ -370,15 +370,15 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
       <button class="btn" onclick="showLoginEntry()" style="margin-top:16px">← 返回</button>
     </div>
-    <div id="registerForm" class="hidden login-card" style="text-align:center;max-width:420px">
-      <h2 id="registerTitle"></h2>
-      <div style="margin:8px 0;cursor:pointer" id="regAvatarPreview"></div>
-      <button class="btn" onclick="cycleRegAvatar()" style="font-size:.68rem;padding:3px 10px">🎨 换头像</button>
-      <input type="text" id="regName" placeholder="你的名字">
-      <input type="password" id="regPassword" placeholder="设置密码（至少2位）">
-      <div id="regInviteRow" class="hidden"><div id="regInviteLabel" style="font-size:.75rem;color:var(--muted);margin-bottom:4px"></div><input type="text" id="regInviteCode" placeholder=""></div>
-      <div id="regError" style="color:var(--red);font-size:.82rem;margin:8px 0"></div>
-      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px"><button class="btn" onclick="showLoginEntry()">← 返回</button><button class="btn pri" onclick="doRegister()">确认注册 →</button></div>
+    <div id="registerForm" class="hidden login-card" style="text-align:center;max-width:380px;padding:18px 20px">
+      <h2 id="registerTitle" style="font-size:1rem;margin-bottom:4px"></h2>
+      <div style="margin:4px 0;cursor:pointer" id="regAvatarPreview"></div>
+      <button class="btn" onclick="cycleRegAvatar()" style="font-size:.65rem;padding:2px 8px">🎨 换头像</button>
+      <input type="text" id="regName" placeholder="你的名字" style="margin:6px 0;padding:8px">
+      <input type="password" id="regPassword" placeholder="设置密码（至少2位）" style="margin:6px 0;padding:8px">
+      <div id="regInviteRow" class="hidden"><div id="regInviteLabel" style="font-size:.72rem;color:var(--muted);margin-bottom:2px"></div><input type="text" id="regInviteCode" placeholder="" style="margin:4px 0;padding:8px"></div>
+      <div id="regError" style="color:var(--red);font-size:.75rem;margin:4px 0"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="btn" onclick="showLoginEntry()" style="font-size:.8rem">← 返回</button><button class="btn pri" onclick="doRegister()" style="font-size:.8rem">确认注册 →</button></div>
     </div>
     <div id="userListPanel" class="hidden login-card" style="max-width:620px;padding:20px 16px">
       <div class="login-split">
@@ -1349,7 +1349,7 @@ function showRegister(role) {
   updateRegAvatarPreview();
 }
 function cycleRegAvatar() { regAvatarSeed = (regAvatarSeed + 1) % 60; updateRegAvatarPreview(); }
-function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 48, 0); }
+function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 40, 0); }
 function doRegister() {
   var name = document.getElementById('regName').value.trim();
   var password = document.getElementById('regPassword').value;
@@ -1405,7 +1405,7 @@ function renderUserGrids() {
     html += '<div class="ls-group" data-role="' + g.key + '"><div class="ls-group-title" style="color:' + g.color + '">' + g.label + '</div><div class="ls-avatars">';
     members.forEach(function(u) {
       html += '<div class="ls-chip" data-name="' + escAttr(u.name) + '" onclick="pickLoginUser(\'' + escAttr(u.name) + '\')">' +
-        avatarCircle(u.avatar_seed || 0, 44, 0) +
+        avatarCircle(u.avatar_seed || 0, 48, 0) +
         '<div class="ls-name">' + esc(u.name) + '</div></div>';
     });
     html += '</div></div>';
@@ -1453,9 +1453,9 @@ function updateLoginRight() {
   var users = getUsers(), user = name ? users[name] : null;
   var avatarEl = document.getElementById('loginAvatarPreview');
   if (user) {
-    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 80, 0);
+    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 88, 0);
   } else {
-    avatarEl.innerHTML = '<div style="width:80px;height:80px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--muted)">?</div>';
+    avatarEl.innerHTML = '<div style="width:88px;height:88px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--muted)">?</div>';
   }
   document.getElementById('loginSelectedName').textContent = name ? esc(name) : '';
   document.getElementById('loginNameInput').value = name || '';
