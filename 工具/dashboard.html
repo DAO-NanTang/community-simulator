@@ -271,7 +271,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 /* ── Login page ── */
 .login-page { position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:url('ai_expand_image1783014990973.png') center/cover; }
 .login-page::after { content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(25,15,8,.62),rgba(20,12,6,.72),rgba(15,8,4,.78));z-index:1; }
-.login-card { position:relative;z-index:2;background:rgba(252,248,240,.92);border:1px solid rgba(180,150,110,.2);border-radius:16px;padding:28px 24px;max-width:520px;width:92%;box-shadow:0 4px 24px rgba(0,0,0,.2); }
+.login-card { position:relative;z-index:2;background:rgba(252,248,240,.92);border:1px solid rgba(180,150,110,.2);border-radius:16px;padding:22px 24px;max-width:520px;width:92%;box-shadow:0 4px 24px rgba(0,0,0,.2); }
 .login-card h1,.login-card h2 { color:#3d3629;margin:0 0 8px; }
 .login-card p { color:#9b9078;font-size:.9rem; }
 .login-card input { display:block;width:100%;margin:8px 0;padding:10px;border:2px solid #e5ddce;border-radius:8px;font-size:.9rem;text-align:center;background:#fffdf9;color:#3d3629; }
@@ -355,7 +355,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <div style="font-size:4rem;margin-bottom:8px">🏰</div>
       <h1 style="font-size:1.6rem">🌍 南塘·第四期</h1>
       <p style="margin:0 0 4px">「寻找」—— 艺术共创生活副本</p>
-      <p id="loginDateRange" style="font-size:.8rem;margin:0 0 32px">—</p>
+      <p id="loginDateRange" style="font-size:.78rem;margin:0 0 20px">—</p>
       <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
         <button class="btn pri" onclick="showIdentityPicker()" style="font-size:.9rem;padding:12px 24px">✨ 我是新来的</button>
         <button class="btn" onclick="showUserList()" style="font-size:.9rem;padding:12px 24px">📋 我有账号</button>
@@ -364,16 +364,16 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <div id="identityPicker" class="hidden login-card" style="text-align:center">
       <h2>你是谁？</h2>
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:20px">
-        <div onclick="showRegister('adventurer')" class="avatar-chip" style="padding:20px 22px;min-width:130px"><div style="font-size:2.5rem">⚔️</div><div style="font-weight:700;margin-top:4px">我是冒险者</div><div style="font-size:.72rem;color:var(--muted)">需要世界码</div></div>
-        <div onclick="showRegister('npc')" class="avatar-chip" style="padding:20px 22px;min-width:130px"><div style="font-size:2.5rem">👥</div><div style="font-weight:700;margin-top:4px">我是南塘NPC</div><div style="font-size:.72rem;color:var(--muted)">在地伙伴</div></div>
-        <div onclick="showRegister('visitor')" class="avatar-chip" style="padding:20px 22px;min-width:130px"><div style="font-size:2.5rem">🏕️</div><div style="font-weight:700;margin-top:4px">我只是来看看</div><div style="font-size:.72rem;color:var(--muted)">游客</div></div>
+        <div onclick="showRegister('adventurer')" class="avatar-chip" style="padding:14px 18px;min-width:120px"><div style="font-size:2.5rem">⚔️</div><div style="font-weight:700;margin-top:4px">我是冒险者</div><div style="font-size:.72rem;color:var(--muted)">需要世界码</div></div>
+        <div onclick="showRegister('npc')" class="avatar-chip" style="padding:14px 18px;min-width:120px"><div style="font-size:2.5rem">👥</div><div style="font-weight:700;margin-top:4px">我是南塘NPC</div><div style="font-size:.72rem;color:var(--muted)">在地伙伴</div></div>
+        <div onclick="showRegister('visitor')" class="avatar-chip" style="padding:14px 18px;min-width:120px"><div style="font-size:2.5rem">🏕️</div><div style="font-weight:700;margin-top:4px">我只是来看看</div><div style="font-size:.72rem;color:var(--muted)">游客</div></div>
       </div>
       <button class="btn" onclick="showLoginEntry()" style="margin-top:16px">← 返回</button>
     </div>
     <div id="registerForm" class="hidden login-card" style="text-align:center;max-width:420px">
       <h2 id="registerTitle"></h2>
-      <div style="margin:16px 0;cursor:pointer" id="regAvatarPreview"></div>
-      <button class="btn" onclick="cycleRegAvatar()" style="font-size:.7rem">🎨 换头像</button>
+      <div style="margin:8px 0;cursor:pointer" id="regAvatarPreview"></div>
+      <button class="btn" onclick="cycleRegAvatar()" style="font-size:.68rem;padding:3px 10px">🎨 换头像</button>
       <input type="text" id="regName" placeholder="你的名字">
       <input type="password" id="regPassword" placeholder="设置密码（至少2位）">
       <div id="regInviteRow" class="hidden"><div id="regInviteLabel" style="font-size:.75rem;color:var(--muted);margin-bottom:4px"></div><input type="text" id="regInviteCode" placeholder=""></div>
@@ -1349,7 +1349,7 @@ function showRegister(role) {
   updateRegAvatarPreview();
 }
 function cycleRegAvatar() { regAvatarSeed = (regAvatarSeed + 1) % 60; updateRegAvatarPreview(); }
-function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 64, 0); }
+function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 48, 0); }
 function doRegister() {
   var name = document.getElementById('regName').value.trim();
   var password = document.getElementById('regPassword').value;
