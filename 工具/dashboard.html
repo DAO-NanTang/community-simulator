@@ -351,10 +351,10 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <!-- ═══ Login Page ═══ -->
   <div id="loginPage" class="login-page">
     <div id="loginEntry" class="login-card" style="text-align:center">
-      <div style="font-size:4rem;margin-bottom:8px">🏰</div>
-      <h1 style="font-size:1.6rem">🏕️ 南塘云村</h1>
-      <p style="margin:0 0 4px">欢迎你，寻找人生副本</p>
-      <p id="loginDateRange" style="font-size:.78rem;margin:0 0 20px">—</p>
+      <h1 style="font-size:1.6rem;margin:0 0 4px">南塘云村</h1>
+      <p style="font-size:.85rem;margin:0 0 2px;color:var(--accent);font-weight:600">实景游戏</p>
+      <p style="margin:0 0 4px;font-size:.9rem">欢迎你，寻找人生副本</p>
+      <p id="loginDateRange" style="font-size:.75rem;color:var(--muted);margin:0 0 20px">1998 — 至今</p>
       <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
         <button class="btn pri" onclick="showIdentityPicker()" style="font-size:.9rem;padding:12px 24px">✨ 我是新来的</button>
         <button class="btn" onclick="showUserList()" style="font-size:.9rem;padding:12px 24px">📋 我有账号</button>
@@ -1377,9 +1377,7 @@ function showLoginEntry() { document.getElementById('loginEntry').classList.remo
 function showIdentityPicker() { document.getElementById('loginEntry').classList.add('hidden'); document.getElementById('identityPicker').classList.remove('hidden'); }
 function updateLoginDateRange() {
   var el = document.getElementById('loginDateRange');
-  var start = (data.camp_dates && data.camp_dates.start) || ''; var duration = (data.camp_dates && data.camp_dates.duration_days) || 15;
-  if (start) { var end = new Date(start); end.setDate(end.getDate() + duration); el.textContent = start + ' — ' + end.toISOString().slice(0, 10); }
-  else el.textContent = '营期未设定';
+  if (el) el.textContent = '1998 — 至今';
 }
 function showUserList() { document.getElementById('loginEntry').classList.add('hidden'); document.getElementById('registerForm').classList.add('hidden'); document.getElementById('userListPanel').classList.remove('hidden'); renderUserGrids(); }
 
