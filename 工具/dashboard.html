@@ -386,7 +386,6 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <div class="ls-avatar" id="loginAvatarPreview"></div>
           <input type="text" id="loginNameInput" placeholder="输入名字..." oninput="onLoginNameInput()" style="font-size:.82rem;padding:7px;margin:4px 0">
           <input type="password" id="loginPwdInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')doSplitLogin()" style="font-size:.82rem;padding:7px;margin:3px 0">
-          <label style="font-size:.7rem;text-align:center;margin:2px 0;white-space:nowrap"><input type="checkbox" id="loginRemember" style="margin-right:2px;vertical-align:middle">记住下次登录</label>
           <div id="loginError" style="color:var(--red);font-size:.7rem;margin:1px 0;min-height:12px"></div>
           <button class="btn pri" onclick="doSplitLogin()" style="width:100%;padding:7px;font-size:.85rem;margin:2px 0 6px">登录</button>
           <button class="btn" onclick="showLoginEntry()" style="width:100%;padding:5px;font-size:.75rem">← 返回</button>
@@ -1456,8 +1455,7 @@ function doSplitLogin() {
   var name = document.getElementById('loginNameInput').value.trim();
   if (!name) { document.getElementById('loginError').textContent = '请输入名字'; return; }
   var password = document.getElementById('loginPwdInput').value;
-  var rememberMe = document.getElementById('loginRemember').checked;
-  var result = loginUser(name, password, rememberMe);
+  var result = loginUser(name, password, false);
   if (!result.ok) { document.getElementById('loginError').textContent = result.error; return; }
 }
 
