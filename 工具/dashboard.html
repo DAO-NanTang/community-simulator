@@ -1595,15 +1595,22 @@ function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t
 function showPostTask() { var name = prompt('任务名称：'); if (!name) return; var type = prompt('任务类型（主线/支线/共创/隐藏）：','支线') || '支线'; var category = prompt('任务分类（课程/宣传/生活/财务/管理）：','其他') || '其他'; var points = parseInt(prompt('NT 奖励：','15')) || 15; var maxSlots = parseInt(prompt('人数限制（0=不限）：','0')) || 0; var deadline = prompt('截止日期（如 6/18）：') || ''; var note = prompt('任务说明（可选）：') || ''; if (!data.tasks) data.tasks = []; data.tasks.push({ name: name, type: type, category: category, points: points, max_slots: maxSlots, deadline: deadline, source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '', posted_at: new Date().toISOString().slice(0,10), claimants: [], status: 'active', note: note }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已发布：' + name); }
 
 // ── Upgrade ──
-function showInviteManager() { var codes = getInviteCodes(); var worldCodes = getWorldCodes(); var msg = "🌍 世界码（多人共用，永久有效）:
-"; worldCodes.forEach(function(c) { msg += "  " + c + "
-"; }); msg += "
-🎫 NPC邀请码（一次性，用完即删）:
-"; if (codes.length === 0) msg += "  （暂无）
-"; else codes.forEach(function(c) { msg += "  " + c + "
-"; }); var newCode = prompt(msg + "
-输入 ++ 生成新NPC邀请码："); if (newCode === "++") { var nc = generateInviteCode(); codes.push(nc); saveInviteCodes(codes); alert("已生成：
-" + nc); } }
+function showInviteManager() {
+  var codes = getInviteCodes();
+  var worldCodes = getWorldCodes();
+  var msg = '🌍 世界码（多人共用，永久有效）:\n';
+  worldCodes.forEach(function(c) { msg += '  ' + c + '\n'; });
+  msg += '\n🎫 NPC邀请码（一次性，用完即删）:\n';
+  if (codes.length === 0) msg += '  （暂无）\n';
+  else codes.forEach(function(c) { msg += '  ' + c + '\n'; });
+  var newCode = prompt(msg + '\n输入 ++ 生成新NPC邀请码：');
+  if (newCode === '++') {
+    var nc = generateInviteCode();
+    codes.push(nc);
+    saveInviteCodes(codes);
+    alert('已生成：\n' + nc);
+  }
+}
 
 function doUpgrade() {
   var code = document.getElementById('upgradeCode').value.trim(); if (!code) return; if (!currentUser) return;
