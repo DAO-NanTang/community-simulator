@@ -1559,8 +1559,98 @@ function updateWorldHUD() {
 function switchBuilderMode(mode) {
   currentBuilderMode = mode; document.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('active'); });
   var btn = document.querySelector('.mode-btn[data-mode="' + mode + '"]'); if (btn) btn.classList.add('active');
-  var panel = document.getElementById('overseePanel'); if (panel) panel.classList.add('hidden');
   if (mode === 'genesis') switchTab('settings'); else if (mode === 'oversee') showOverseePanel();
+}
+
+function showOverseePanel() {
+  hideAllTabs();
+  var panel = document.getElementById('overseePanel');
+  if (!panel) {
+    panel = document.createElement('div'); panel.id = 'overseePanel';
+    panel.style.cssText = 'padding:8px 0';
+    document.querySelector('main').appendChild(panel);
+  }
+  var tasks = data.tasks || [];
+  var staffNames = getStaffNames();
+  // Adventurer progress
+  var advMap = {};
+  tasks.forEach(function(t) {
+    var name = t.assignee || '';
+    if (!name || staffNames.some(function(s) { return name.indexOf(s) !== -1; })) return;
+    if (!advMap[name]) advMap[name] = { total: 0, done: 0, points: 0 };
+    advMap[name].total++;
+    advMap[name].points += (t.points || 0);
+    if (t.status === '已完成' || t.status === '已确认') advMap[name].done++;
+  });
+  // Also from members
+  Object.keys(data.members || {}).forEach(function(n) {
+    if (staffNames.some(function(s) { return n.indexOf(s) !== -1; })) return;
+    if (!advMap[n]) advMap[n] = { total: 0, done: 0, points: 0 };
+  });
+  var sorted = Object.entries(advMap).sort(function(a, b) { return b[1].points - a[1].points; });
+
+  // NT pool stats
+  var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0);
+  var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000;
+
+  // Overdue tasks
+  var today = new Date().toISOString().slice(0,10);
+  var overdue = tasks.filter(function(t) {
+    return t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认';
+  });
+
+  // Pending reviews (from NT tasks)
+  var pendingReviews = [];
+  tasks.forEach(function(t) {
+    (t.claimants || []).forEach(function(c) {
+      if (c.status === 'submitted') pendingReviews.push({ task: t, claimant: c });
+    });
+  });
+
+  var html = '';
+  // Progress bars
+  html += '<div class="card"><h3>📊 冒险者进度总览</h3>';
+  if (sorted.length === 0) {
+    html += '<div style="color:var(--muted);padding:8px">暂无冒险者数据</div>';
+  } else {
+    sorted.forEach(function(e) {
+      var name = e[0], d = e[1];
+      var pct = d.total > 0 ? Math.round(d.done / d.total * 100) : 0;
+      html += '<div style="display:flex;align-items:center;gap:8px;margin:5px 0">' +
+        '<span style="width:70px;font-size:.82rem;font-weight:600">' + esc(name) + '</span>' +
+        '<div style="flex:1;height:10px;background:var(--border);border-radius:5px;overflow:hidden">' +
+        '<div style="height:100%;width:' + pct + '%;background:' + (pct>=80?'var(--green)':pct>=40?'var(--yellow)':'var(--red)') + ';border-radius:5px"></div></div>' +
+        '<span style="font-size:.72rem;color:var(--muted);width:100px;text-align:right">' + d.done + '/' + d.total + ' · 💎' + d.points + '</span></div>';
+    });
+  }
+  html += '</div>';
+
+  // NT pool
+  html += '<div class="card"><h3>💰 NT 池</h3>' +
+    '<div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.85rem">' +
+    '<span>总池：<b>' + poolTotal.toLocaleString() + ' NT</b></span>' +
+    '<span>已发放：<b>' + totalIssued.toLocaleString() + ' NT</b></span>' +
+    '<span style="color:' + (poolTotal-totalIssued<0?'var(--red)':'var(--green)') + '">剩余：<b>' + (poolTotal-totalIssued).toLocaleString() + ' NT</b></span>' +
+    '</div></div>';
+
+  // Overdue
+  html += '<div class="card"><h3>⚠️ 逾期任务（' + overdue.length + '）</h3>';
+  if (overdue.length === 0) html += '<div style="color:var(--green)">✅ 无逾期</div>';
+  else overdue.slice(0,10).forEach(function(t) {
+    html += '<div style="font-size:.78rem;padding:2px 0">🔴 ' + esc(t.name) + ' · ' + esc(t.assignee||'未分配') + ' · ' + esc(t.deadline) + '</div>';
+  });
+  html += '</div>';
+
+  // Pending reviews
+  html += '<div class="card"><h3>⏳ 待审核（' + pendingReviews.length + '）</h3>';
+  if (pendingReviews.length === 0) html += '<div style="color:var(--muted)">暂无</div>';
+  else pendingReviews.forEach(function(item) {
+    html += '<div style="font-size:.78rem;padding:2px 0">' + esc(item.claimant.name) + ' → ' + esc(item.task.name) + ' · NT' + (item.task.points||0) + '</div>';
+  });
+  html += '</div>';
+
+  panel.innerHTML = html;
+  panel.classList.remove('hidden');
 }
 
 function switchToAdventurerPreview() {
