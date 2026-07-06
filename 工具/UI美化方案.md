@@ -1,112 +1,188 @@
 # UI 美化方案
 
-> 目标：游戏感 + 紧凑布局 + 手机适配
-> 2026-07-07
+> 目标：游戏感 + 紧凑布局 + 手机适配 + 统一图标
+> 2026-07-07 · 更新：集成 Phosphor Duotone 图标系统
 
 ---
 
-## 一、需要 AI 生成的图片（5张）
+## 一、图标系统（已确认：Phosphor Duotone）
 
-### 图1：登录页全屏背景（最重要）
-- **用途**：登录页 + 身份选择页的背景
-- **风格**：暗色调水墨水彩混合，中国乡村风景
-- **内容**：南塘村的远景——青瓦白墙的民居群、远处有山、近处有菜地和画架、天空是暖黄色调的黄昏
-- **构图**：横向画面，下半部分暗（放卡片），上半部分亮（天空）
-- **色调**：深墨绿、暖黄、赭石色、留白
-- **英文提示词**：
-  > Watercolor and ink wash painting of a traditional Chinese village (Nantang) at dusk. White-walled houses with grey tile roofs nestled among green fields. Distant misty mountains. An easel and paintbrushes in the foreground hinting at an art commune. Warm golden hour light from the top, dark earthy shadows at the bottom. Cozy mysterious game-like atmosphere. Vertical composition with the lower third intentionally darker to overlay UI cards. 16:9 aspect ratio. Studio Ghibli inspired lighting.
-- **中文提示词**：
-  > 水墨水彩风格的中国南方村庄（南塘村）黄昏全景。青瓦白墙的民居，炊烟袅袅，远处有朦胧的山，近处是菜地和画架画具。暖金色天空光从上方洒落，下方地面自然暗下来。温馨神秘的游戏氛围。竖幅或16:9横幅，画面上半明亮下半暗沉，适合叠加UI卡片。吉卜力风格的温暖光线。
+### 1.1 引入方式
 
-### 图2：管理者界面横幅背景
-- **用途**：管理员/共建者登录后顶部 header 的水彩横幅
-- **风格**：横向长条，浅绿色调水彩
-- **内容**：南塘风景的横向切面——田野、画室、远山，从左到右自然过渡
-- **色调**：浅绿色为主（builder-mode风格），温暖但不厚重
-- **英文提示词**：
-  > Wide horizontal watercolor banner of Nantang countryside. Rolling fields in light sage green, a white-walled art studio, distant blue mountains. Soft morning light. Very wide aspect ratio (approximately 4:1). Light and airy, translucent watercolor washes. Suitable for a website header banner.
-- **中文提示词**：
-  > 横向宽幅水彩画。南塘乡村风光——层层叠叠的浅绿色田野，白墙画室，远处蓝灰色山峦。柔和的晨光。超宽画幅（约4:1），轻透的水彩晕染。适合做网页顶部横幅。
-
-### 图3：冒险者界面横幅背景
-- **用途**：冒险者登录后顶部 header 的水彩横幅
-- **风格**：蓝灰色调，神秘冒险氛围
-- **内容**：同南塘景色但用更冷更神秘的色调
-- **色调**：蓝灰、暗紫、暖棕点缀
-- **英文提示词**：
-  > Wide horizontal watercolor banner with mysterious adventure atmosphere. Same Nantang village but in cooler tones - slate blue, muted purple, warm brown accents. Mist rising from fields. A sense of quest and discovery. Very wide aspect ratio (approximately 4:1). Darker and more saturated than the builder version.
-- **中文提示词**：
-  > 横向宽幅水彩画。神秘冒险氛围的南塘村。蓝灰、暗紫色调，田间升起的薄雾，温暖棕色点缀。有探索和发现的感觉。超宽画幅（约4:1），比管理者版本更暗更浓。
-
-### 图4：南塘村口实景照片
-- **用途**：Phase 3 村口地图的底图（可以先用照片，以后手绘）
-- **风格**：实景照片或写实水彩
-- **内容**：南塘实景——素社、画室、菜地、展览厅、南塘村口的全景
-- **英文提示词**：
-  > Realistic watercolor illustration of Nantang art commune layout. Top-down or slightly isometric view showing: a white hostel building (素社), a large art studio (画室) with easels visible through windows, vegetable fields (菜地) with crops, an exhibition hall (展览厅), and the village entrance (村口). Each location labeled. Warm earthy colors. Map-like but painterly. Suitable for an interactive village map.
-- **中文提示词**：
-  > 写实水彩风格的南塘艺术公社布局图。俯视或微等距视角。显示：白色民宿楼（素社）、大画室（透过窗户可见画架）、菜地（有各种作物）、展览厅、村口。各地点标注名称。温暖的土色调。像地图但有手绘感觉。适合做互动村落地图。
-
-### 图5：卡片纹理背景
-- **用途**：作为 UI 卡片的细微纹理
-- **风格**：宣纸纹理
-- **内容**：纯纹理，无明显画面内容
-- **英文提示词**：
-  > Seamless rice paper texture. Subtle fiber patterns, slightly aged warm white/cream color. Very light and understated, suitable for UI card backgrounds. Tileable. Minimalist.
-- **中文提示词**：
-  > 无缝宣纸纹理。细微的纤维纹理，微微泛黄的暖白/奶油色。非常淡雅低调，适合做UI卡片背景。可平铺。极简。
-
----
-
-## 二、布局优化方案
-
-### 2.1 顶部工具栏 → 紧凑化 + 二级菜单
-
-**现状**：worldHUD、builderModeBar、builderTabs、adminToolbar 各占一行，共4行。
-
-**优化后**：
-
-```
-┌─ 🧙 砚仁（管理员）  💎 12,500  [⚙️ 工具 ▼] [🚪] ─────────────┐  ← worldHUD (1行)
-│  [🌍创世] [📊监察] [👁️预览]                                     │  ← modeBar (可选)
-│  [🌍创世终端] [📋成员档案] [📋猎人公会] [🎯NT管理] [📅时间线] ...│  ← tabs (1行)
-│                                            📂 💾 🔑            │  ← 合并到 ⚙️ 工具 下拉
-└────────────────────────────────────────────────────────────────┘
-```
-
-- worldHUD 右侧的按钮（退出、邀请码）合并到「⚙️」下拉菜单
-- 加载/导出按钮从独立工具栏移入「⚙️」下拉
-- 「⚙️ 工具」菜单内容：📂 加载 / 💾 导出 / 🔑 邀请码 / 🖼️ 切换背景
-
-### 2.2 二级菜单实现
+一行 CDN，放在 `<head>` 最后：
 
 ```html
-<div class="dropdown">
-  <button class="btn" onclick="toggleDropdown('toolsMenu')">⚙️</button>
-  <div id="toolsMenu" class="dropdown-menu hidden">
-    <button onclick="loadData()">📂 加载数据</button>
-    <button onclick="exportData()">💾 导出数据</button>
-    <button onclick="showInviteManager()">🔑 邀请码</button>
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+```
+
+### 1.2 一键切换图标风格
+
+在 localStorage 存一个 `nt_icon_style` 值，页面加载时读取，全局生效。
+
+```js
+// 图标风格配置（存 localStorage key: nt_icon_style）
+// 可选值: 'duotone' | 'fill' | 'regular' | 'bold'
+const ICON_STYLES = {
+  duotone: { prefix: 'ph-duotone', label: '双色调' },
+  fill:     { prefix: 'ph-fill',    label: '实心' },
+  regular:  { prefix: 'ph',         label: '常规' },
+  bold:     { prefix: 'ph-bold',    label: '加粗' },
+};
+
+let iconStyle = localStorage.getItem('nt_icon_style') || 'duotone';
+
+function setIconStyle(style) {
+  iconStyle = style;
+  localStorage.setItem('nt_icon_style', style);
+  // 刷新所有图标
+  document.querySelectorAll('[data-icon]').forEach(el => {
+    el.className = ICON_STYLES[style].prefix + ' ' + el.getAttribute('data-icon');
+  });
+}
+
+// 渲染图标辅助函数
+function icon(name, size) {
+  var s = size ? 'font-size:' + size : '';
+  return '<i class="' + ICON_STYLES[iconStyle].prefix + ' ' + name + '" style="' + s + '"></i>';
+}
+```
+
+**切换入口**：在「⚙️ 工具」下拉菜单里加一个「🎨 图标风格」子菜单，点击即切换。
+
+### 1.3 图标使用规范
+
+所有图标统一用 `data-icon` 属性标记，便于一键切换：
+
+```html
+<!-- 正确写法 -->
+<button><i data-icon="ph ph-planet"></i> 创世终端</button>
+
+<!-- JS 动态生成 -->
+html += icon('ph-sword', '1.2rem') + ' 冒险者';
+```
+
+### 1.4 6类图标完整映射（Duotone 优先）
+
+#### 第1类：身份/角色（5个）
+
+| 用途 | 图标 class | 颜色 |
+|------|----------|------|
+| 管理员 | `ph-duotone ph-crown` | `#c8a040` 金 |
+| 共建者 | `ph-duotone ph-hammer` | `#5a8a3c` 绿 |
+| 冒险者 | `ph-duotone ph-sword` | `#5b8cb8` 蓝 |
+| 南塘NPC | `ph-duotone ph-storefront` | `#8b7355` 棕 |
+| 游客 | `ph-duotone ph-campfire` | `#9b9078` 灰 |
+
+#### 第2类：Tab导航（11个）
+
+| Tab | 图标 class |
+|-----|----------|
+| 创世终端 | `ph-duotone ph-planet` |
+| 成员档案 | `ph-duotone ph-identification-card` |
+| 猎人公会 | `ph-duotone ph-buildings` |
+| NT管理 | `ph-duotone ph-target` |
+| 世界时间线 | `ph-duotone ph-calendar` |
+| 资源金库 | `ph-duotone ph-vault` |
+| 通关结算 | `ph-duotone ph-scroll` |
+| 任务公告栏 | `ph-duotone ph-signpost` |
+| 我的资料 | `ph-duotone ph-user-circle` |
+| 排行榜 | `ph-duotone ph-trophy` |
+| 预览冒险者 | `ph-duotone ph-eye` |
+
+#### 第3类：操作按钮（12个）
+
+| 操作 | 图标 class |
+|------|----------|
+| 新增 | `ph-duotone ph-plus-circle` |
+| 编辑 | `ph-duotone ph-pencil` |
+| 保存 | `ph-duotone ph-floppy-disk` |
+| 删除 | `ph-duotone ph-trash` |
+| 领取委托 | `ph-duotone ph-hand-fist` |
+| 提交完成 | `ph-duotone ph-check-circle` |
+| 放弃 | `ph-duotone ph-flag-banner` |
+| 确认通过 | `ph-duotone ph-check-fat` |
+| 退回修改 | `ph-duotone ph-x-circle` |
+| 触发隐藏 | `ph-duotone ph-key` |
+| 发布任务 | `ph-duotone ph-plus-square` |
+| 退出 | `ph-duotone ph-sign-out` |
+
+#### 第4类：工具栏（6个）
+
+| 工具 | 图标 class |
+|------|----------|
+| 工具菜单 | `ph-duotone ph-gear` |
+| 加载数据 | `ph-duotone ph-folder-open` |
+| 导出数据 | `ph-duotone ph-download` |
+| 邀请码 | `ph-duotone ph-keyhole` |
+| 换头像 | `ph-duotone ph-paint-brush` |
+| 返回 | `ph-duotone ph-arrow-left` |
+
+#### 第5类：任务状态（8个）
+
+| 状态 | 图标 class |
+|------|----------|
+| 可领取 | `ph-duotone ph-circle` |
+| 已领取 | `ph-duotone ph-check-circle` |
+| 进行中 | `ph-duotone ph-circle-dashed` |
+| 审核中 | `ph-duotone ph-hourglass` |
+| 已完成 | `ph-fill ph-check-circle` |
+| 已退回 | `ph-duotone ph-arrow-u-up-left` |
+| 主线标记 | `ph-fill ph-star` |
+| 支线标记 | `ph-duotone ph-compass` |
+
+#### 第6类：装饰（5个）
+
+| 用途 | 图标 class |
+|------|----------|
+| NT货币 | `ph-duotone ph-coin` |
+| 成就勋章 | `ph-duotone ph-medal` |
+| 空状态 | `ph-duotone ph-ghost` |
+| 加载中 | `ph-duotone ph-spinner` |
+| 公告 | `ph-duotone ph-megaphone` |
+
+---
+
+## 二、布局优化
+
+### 2.1 紧凑化原则
+
+```
+现在（4行）:                  优化后（2行+下拉）:
+┌─ worldHUD ──────────────┐   ┌─ 🧙砚仁 💎12,500 [⚙️▼] [🚪] ──┐
+├─ builderModeBar ────────┤   ├─ [🌍创世][📊监察][👁️预览] ──────┤
+├─ builderTabs ───────────┤   ├─ [🌍终端][📋档案][📋公会][🎯NT]..┤  ← 图标+文字
+├─ adminToolbar ──────────┤   └──────────────────────────────────┘
+└─────────────────────────┘   加载/导出/邀请码 → 收到 ⚙️ 下拉里
+```
+
+### 2.2 ⚙️ 工具下拉菜单
+
+```html
+<div class="dropdown" style="position:relative">
+  <button class="btn" onclick="toggleDropdown('toolsMenu')">
+    <i class="ph-duotone ph-gear"></i>
+  </button>
+  <div id="toolsMenu" class="dropdown-menu hidden"
+       style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.15)">
+    <button onclick="loadData()"><i class="ph-duotone ph-folder-open"></i> 加载数据</button>
+    <button onclick="exportData()"><i class="ph-duotone ph-download"></i> 导出数据</button>
+    <button onclick="showInviteManager()"><i class="ph-duotone ph-keyhole"></i> 邀请码</button>
+    <hr style="border-color:var(--border);margin:2px 0">
+    <button onclick="setIconStyle('duotone')"><i class="ph-duotone ph-paint-brush"></i> 图标：双色调</button>
+    <button onclick="setIconStyle('fill')"><i class="ph-fill ph-paint-brush"></i> 图标：实心</button>
+    <button onclick="setIconStyle('regular')"><i class="ph ph-paint-brush"></i> 图标：常规</button>
   </div>
 </div>
 ```
 
-### 2.3 Tab 栏：图标优先 + 文字可选
+### 2.3 手机端 Tab 图标模式
 
-**桌面端**：显示完整文字（当前状态）
-
-**手机端**（<768px）：只显示图标，文字变 tooltip
-
-```
-桌面：[🌍 创世终端] [📋 成员档案] [📋 猎人公会] [🎯 NT管理] ...
-手机：[🌍] [📋] [📋] [🎯] ...    ← hover/long-press 显示全名
-```
-
-### 2.4 冒险者 Tab 同样优化
-
-冒险者只有4个 tab，手机端可以更宽松：
-```
-[📋 公告栏] [⚔️ 资料] [📅 时间线] [🏆 排行]
+```css
+@media (max-width: 768px) {
+  .tab { font-size: 0; }            /* 隐藏文字 */
+  .tab i { font-size: 1.25rem; }     /* 只显示图标 */
+  .tab::after { content: none; }
+}
 ```
 
 ---
@@ -115,38 +191,29 @@
 
 ### 3.1 登录页（暗色主题）
 
-```
-背景：水彩图片 + 深色渐变遮罩
-卡片：半透明深色卡片，金色边框
-文字：暖金色
-按钮：暗金底色
-```
-
 ```css
 .login-page {
-  background: url('bg_login.jpg') center/cover;
+  background: url('ai_expand_image1783014990973.png') center/cover;
 }
 .login-page::after {
   background: linear-gradient(180deg,
-    rgba(20,15,8,.75), rgba(30,20,10,.8), rgba(15,10,5,.85));
+    rgba(20,15,8,.8), rgba(25,18,10,.85), rgba(15,10,5,.9));
 }
 .login-card {
-  background: rgba(30,25,18,.85);
-  border: 1px solid rgba(200,160,80,.3);
-  box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 0 80px rgba(200,150,50,.1);
+  background: rgba(28,22,14,.88);
+  border: 1px solid rgba(200,160,80,.25);
+  box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 0 100px rgba(200,150,50,.06);
   color: #e0d0b0;
 }
+.login-card h1, .login-card h2 { color: #d4c8b0; }
+.login-card p { color: #8a7a5e; }
+.login-card input {
+  background: rgba(0,0,0,.3); border-color: rgba(200,160,80,.2); color: #e0d0b0;
+}
+.login-card input:focus { border-color: var(--accent); }
 ```
 
-### 3.2 管理者界面（绿色调，已有 builder-mode）
-
-当前绿色调不错，微调：
-- 背景色稍微再浅一点
-- 卡片加细微阴影
-
-### 3.3 冒险者界面（暖棕色调）
-
-冒险者应该有不同的视觉感受——暖棕色/羊皮纸调：
+### 3.2 冒险者界面（暖棕/羊皮纸调）
 
 ```css
 body.adventurer-mode {
@@ -162,138 +229,73 @@ body.adventurer-mode {
 }
 ```
 
+### 3.3 管理者界面（浅绿调，已有 builder-mode）
+
+当前 builder-mode 配色保持，微调卡片加细微阴影。
+
 ---
 
-## 四、手机适配
-
-### 4.1 响应式断点
+## 四、手机响应式
 
 ```css
-/* 平板及以下 (≤768px) */
 @media (max-width: 768px) {
-  /* Tab 文字隐藏，只显示图标 */
-  .tab { font-size: 0; }
-  .tab::before { font-size: 1rem; }
-  /* 卡片全宽 */
-  .card { padding: 12px; }
-  /* 弹出窗口全屏 */
+  main { padding: 12px 8px; }
+  .tabs { gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { padding: 8px 10px; font-size: 0; }
+  .tab i { font-size: 1.25rem; }
+  .card { padding: 12px 10px; }
   .modal { max-width: 100%; width: 100%; max-height: 100vh; border-radius: 0; }
-  /* 头像缩小 */
   .ms-av-circle { width: 40px; height: 40px; }
-  /* 二级导航按钮缩小 */
-  #memberSubNav .btn { font-size: .7rem; padding: 4px 8px; }
+  .quest-grid { grid-template-columns: 1fr; }
+  header { min-height: 80px; max-height: 120px; }
+  .login-card { padding: 24px 16px; }
+  #memberSubNav .btn { font-size: .7rem; padding: 4px 6px; }
+  .dropdown-menu { right: auto; left: 0; min-width: 140px; }
 }
 
-/* 手机 (≤480px) */
 @media (max-width: 480px) {
-  main { padding: 8px; }
-  .tabs { gap: 0; overflow-x: auto; }
-  /* 登录卡片 */
-  .login-card { padding: 20px 16px; }
-  /* 任务卡片单列 */
-  .quest-grid { grid-template-columns: 1fr; }
+  main { padding: 8px 4px; }
+  .tab { padding: 6px 8px; }
+  .btn { padding: 6px 10px; font-size: .78rem; }
 }
 ```
-
-### 4.2 移动端特有优化
-
-- Tab 栏可横向滑动（`overflow-x: auto`）
-- 成员档案头像行可横向滑动
-- 弹窗在手机上全屏显示
-- 按钮最小触摸区域 44×44px
-- 输入框字体不小于 16px（防止 iOS 缩放）
 
 ---
 
 ## 五、Header 横幅优化
 
-### 5.1 当前问题
-
-- 图片 `object-fit:cover` 但 header 高度固定 `min-height:180px`
-- 图片可能被裁切得不理想
-- 登录后 header 显得太空
-
-### 5.2 优化方案
-
 ```css
 header {
   position: relative;
-  height: 15vh;           /* 相对视口高度 */
-  min-height: 120px;
-  max-height: 200px;
+  height: 15vh;
+  min-height: 100px;
+  max-height: 180px;
   overflow: hidden;
 }
 header img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 60%;
+  width: 100%; height: 100%; object-fit: cover; object-position: center 60%;
+}
+/* 手机端降低高度 */
+@media (max-width: 768px) {
+  header { height: 12vh; min-height: 70px; max-height: 120px; }
 }
 ```
 
-- 手机端减小高度：`height: 12vh; min-height: 80px; max-height: 140px;`
-- 登录后 header 叠加用户信息（当前已通过 worldHUD 实现）
-- 不登录时 header 可以显示大幅欢迎图
+---
+
+## 六、实施步骤
+
+| 步 | 内容 | 影响 |
+|----|------|------|
+| 1 | `<head>` 加 Phosphor CDN script | 一行 |
+| 2 | 加 `icon()` 辅助函数 + `setIconStyle()` + ICON_STYLES 配置 | ~20行 JS |
+| 3 | 加 `#iconStyleMenu` 下拉切换 + CSS | ~15行 HTML/CSS |
+| 4 | 替换所有 emoji → Duotone 图标 | 批量替换 |
+| 5 | 登录页暗色主题 CSS | ~30行 |
+| 6 | 手机响应式 @media | ~40行 |
+| 7 | 工具栏二级菜单（⚙️ 下拉） | ~20行 HTML/CSS |
+| 8 | 冒险者暖棕配色 | ~10行 |
 
 ---
 
-## 六、登录页整体改造
-
-### 6.1 当前问题
-- 登录页没有背景图，只有纯色渐变
-- 没有「南塘世界」的氛围感
-
-### 6.2 改造方案
-
-```
-┌─────────────────────────────────────────────────┐
-│                                                 │
-│         [全屏水彩背景图+暗色渐变遮罩]              │
-│                                                 │
-│         ┌──────────────────────┐                │
-│         │    🏰                │                │
-│         │  🌍 南塘·第四期      │                │
-│         │  「寻找」             │                │
-│         │                      │                │
-│         │  [✨ 我是新来的]      │                │
-│         │  [📋 我有账号]        │                │
-│         └──────────────────────┘                │
-│                                                 │
-└─────────────────────────────────────────────────┘
-```
-
-- 背景图用图1（水彩南塘黄昏）
-- 卡片半透明暗色，金色边框
-- 按钮圆角更大，有微光效果
-- 整体暗色调，金色点缀
-
----
-
-## 七、实施优先级
-
-| 优先级 | 改动 | 效果 |
-|--------|------|------|
-| 🔴 P0 | 登录页暗色主题 + 背景图支撑 | 第一印象质变 |
-| 🔴 P0 | 手机响应式 (@media) | 手机可用 |
-| 🟡 P1 | 顶部工具栏二级菜单 | 界面更干净 |
-| 🟡 P1 | 冒险者暖棕配色 | 身份视觉区分 |
-| 🟢 P2 | Header 横幅图片更新 | 更美观 |
-| 🟢 P2 | 卡片纹理背景 | 质感提升 |
-
----
-
-## 八、给 AI 的第一批图片提示词（立即可跑）
-
-如果你想先跑几张图看看效果：
-
-**最急（现在就需要）**：
-> **图1中文版**：水墨水彩，中国南方古村黄昏，青瓦白墙，炊烟，远山，画架，暖金色光，下方暗上方亮，吉卜力光线风格，16:9横幅
-
-**次急（Phase 2用）**：
-> **图2中文版**：横向宽幅水彩，南塘田野，浅绿色调，白墙画室，晨光，轻透水彩，超宽画幅4:1
-
-> **图3中文版**：横向宽幅水彩，南塘村庄，蓝灰紫调，薄雾，神秘冒险感，比浅绿色更暗更浓，超宽画幅4:1
-
----
-
-*执行顺序：先把图1跑出来 → 登录页改造 → 响应式 → 二级菜单 → 其他细节*
+*确认后按步骤施工。*
