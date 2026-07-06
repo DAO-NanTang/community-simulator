@@ -354,7 +354,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <div style="font-size:3.5rem;margin-bottom:4px;line-height:1">⚔️</div>
       <h1 style="font-size:1.6rem;margin:0 0 4px">实景游戏 · 南塘云村</h1>
       <p style="margin:0 0 4px;font-size:.9rem">欢迎你，寻找人生副本</p>
-      <p id="loginDateRange" style="font-size:.75rem;color:var(--muted);margin:0 0 20px">1998 — 至今</p>
+      <p id="loginDateRange" style="font-size:.75rem;color:var(--muted);margin:0 0 20px">1998 — 2026</p>
       <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
         <button class="btn pri" onclick="showIdentityPicker()" style="font-size:.9rem;padding:12px 24px">✨ 我是新来的</button>
         <button class="btn" onclick="showUserList()" style="font-size:.9rem;padding:12px 24px">📋 我有账号</button>
@@ -1388,7 +1388,7 @@ function showLoginEntry() { document.getElementById('loginEntry').classList.remo
 function showIdentityPicker() { document.getElementById('loginEntry').classList.add('hidden'); document.getElementById('identityPicker').classList.remove('hidden'); }
 function updateLoginDateRange() {
   var el = document.getElementById('loginDateRange');
-  if (el) el.textContent = '1998 — 至今';
+  if (el) el.textContent = '1998 — ' + new Date().getFullYear();
 }
 function showUserList() { document.getElementById('loginEntry').classList.add('hidden'); document.getElementById('registerForm').classList.add('hidden'); document.getElementById('userListPanel').classList.remove('hidden'); renderUserGrids(); }
 
