@@ -342,7 +342,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <img src="ai_expand_image1783014990973.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 70%;z-index:0">
   <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.25),rgba(0,0,0,.05) 40%,rgba(0,0,0,.15) 100%);z-index:1"></div>
   <div style="position:relative;z-index:2;padding:18px 32px">
-    <span style="font-size:2rem;filter:drop-shadow(2px 2px 3px rgba(0,0,0,.35))">🏰</span>
+    <i class="ph-duotone ph-compass" style="font-size:2.2rem;filter:drop-shadow(2px 2px 3px rgba(0,0,0,.35));color:#d4c8b0"></i>
   </div>
 </header>
 
@@ -351,8 +351,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <!-- ═══ Login Page ═══ -->
   <div id="loginPage" class="login-page">
     <div id="loginEntry" class="login-card" style="text-align:center">
-      <h1 style="font-size:1.6rem;margin:0 0 4px">南塘云村</h1>
-      <p style="font-size:.85rem;margin:0 0 2px;color:var(--accent);font-weight:600">实景游戏</p>
+      <h1 style="font-size:1.6rem;margin:0 0 4px"><i class="ph-duotone ph-compass" style="font-size:1.8rem;vertical-align:middle;margin-right:6px;color:var(--accent)"></i>实景游戏 · 南塘云村</h1>
       <p style="margin:0 0 4px;font-size:.9rem">欢迎你，寻找人生副本</p>
       <p id="loginDateRange" style="font-size:.75rem;color:var(--muted);margin:0 0 20px">1998 — 至今</p>
       <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
@@ -1159,8 +1158,19 @@ let questFilter = 'all';
 const ICON_STYLES = { duotone:{prefix:'ph-duotone',label:'双色调'}, fill:{prefix:'ph-fill',label:'实心'}, regular:{prefix:'ph',label:'常规'}, bold:{prefix:'ph-bold',label:'加粗'} };
 let iconStyle = localStorage.getItem('nt_icon_style') || 'duotone';
 function icon(name, size) { var s = size ? 'font-size:' + size : ''; return '<i class="' + ICON_STYLES[iconStyle].prefix + ' ' + name + '" style="' + s + '"></i>'; }
-function setIconStyle(style) { iconStyle = style; localStorage.setItem('nt_icon_style', style); refreshAllIcons(); }
-function refreshAllIcons() { document.querySelectorAll('[data-icon]').forEach(function(el) { el.className = ICON_STYLES[iconStyle].prefix + ' ' + el.getAttribute('data-icon'); }); }
+function setIconStyle(style) {
+  iconStyle = style;
+  localStorage.setItem('nt_icon_style', style);
+  var prefix = ICON_STYLES[style].prefix;
+  document.querySelectorAll('i[class*="ph"]').forEach(function(el) {
+    var cls = el.className;
+    // Remove old prefix (ph-duotone, ph-fill, ph-bold, or bare ph)
+    cls = cls.replace(/ph-duotone\s/g,'').replace(/ph-fill\s/g,'').replace(/ph-bold\s/g,'').replace(/^ph\s/g,'').replace(/\sph\s/g,' ');
+    // If the class is just 'ph' at start with no prefix, handle it
+    if (cls === 'ph' || cls.indexOf('ph ') === 0) cls = cls.replace(/^ph /,'').replace(/^ph$/,'');
+    el.className = prefix + ' ' + cls;
+  });
+}
 function toggleDropdown(id) { var el = document.getElementById(id); el.classList.toggle('hidden'); }
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) { if (!e.target.closest('.dropdown')) { document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); }); } });
