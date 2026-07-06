@@ -278,8 +278,8 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .login-card input:focus { outline:none;border-color:var(--accent); }
 /* Two-card layout: compact avatar list + wider login panel = landscape rectangle */
 .login-split { display:flex;gap:14px;align-items:stretch; }
-.login-split .ls-left { flex:0 0 150px; width:150px; border-radius:12px; background:rgba(255,252,245,.5); padding:6px 4px; overflow-y:auto; }
-.login-split .ls-right { flex:1 1 0; min-width:180px; text-align:center; border-radius:12px; background:rgba(255,252,245,.5); padding:18px 16px; display:flex;flex-direction:column;justify-content:center; }
+.login-split .ls-left { flex:0 0 150px; width:150px; border-radius:12px; background:rgba(255,252,245,.5); padding:6px 4px; overflow-y:auto; max-height:360px; }
+.login-split .ls-right { flex:1 1 0; min-width:180px; text-align:center; border-radius:12px; background:rgba(255,252,245,.5); padding:14px 14px; display:flex;flex-direction:column;justify-content:flex-start; }
 .ls-left .ls-avatars { display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-content:flex-start; }
 .ls-left .ls-chip { text-align:center;cursor:pointer;padding:5px 2px 3px;border-radius:8px;transition:.15s;width:64px; }
 .ls-left .ls-chip:hover { background:rgba(0,0,0,.06); }
@@ -384,13 +384,13 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <div class="ls-left" id="userListLeft"></div>
         <div class="ls-right" id="userListRight">
           <div class="ls-avatar" id="loginAvatarPreview"></div>
-          <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;min-height:20px" id="loginSelectedName"></div>
-          <input type="text" id="loginNameInput" placeholder="输入名字..." oninput="onLoginNameInput()" style="font-size:.82rem;padding:8px">
-          <input type="password" id="loginPwdInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')doSplitLogin()" style="font-size:.82rem;padding:8px">
-          <div id="loginError" style="color:var(--red);font-size:.72rem;margin:2px 0;min-height:16px"></div>
-          <button class="btn pri" onclick="doSplitLogin()" style="width:100%;padding:8px;font-size:.85rem;margin-bottom:4px">登录</button>
-          <button class="btn" onclick="showLoginEntry()" style="width:100%;padding:6px;font-size:.75rem;margin-bottom:4px">← 返回</button>
-          <label style="font-size:.72rem;display:block;margin:2px 0"><input type="checkbox" id="loginRemember"> 记住我</label>
+          <div style="font-weight:700;font-size:.85rem;margin-bottom:6px;min-height:18px" id="loginSelectedName"></div>
+          <input type="text" id="loginNameInput" placeholder="输入名字..." oninput="onLoginNameInput()" style="font-size:.82rem;padding:7px;margin:4px 0">
+          <input type="password" id="loginPwdInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')doSplitLogin()" style="font-size:.82rem;padding:7px;margin:4px 0">
+          <label style="font-size:.72rem;display:block;margin:2px 0;text-align:center"><input type="checkbox" id="loginRemember"> 记住我</label>
+          <div id="loginError" style="color:var(--red);font-size:.72rem;margin:1px 0;min-height:14px"></div>
+          <button class="btn pri" onclick="doSplitLogin()" style="width:100%;padding:7px;font-size:.85rem;margin-bottom:3px">登录</button>
+          <button class="btn" onclick="showLoginEntry()" style="width:100%;padding:5px;font-size:.75rem">← 返回</button>
         </div>
       </div>
     </div>
@@ -1397,7 +1397,7 @@ function renderUserGrids() {
   });
   var left = document.getElementById('userListLeft');
   var html = '<input type="text" id="userSearchInput" placeholder="🔍 查找..." oninput="filterUserList()" style="font-size:.72rem;padding:5px 8px;width:100%;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);margin-bottom:8px">';
-  html += '<div class="ls-avatars" style="max-height:300px;overflow-y:auto">';
+  html += '<div class="ls-avatars">';
   allUsers.forEach(function(u) {
     html += '<div class="ls-chip" data-name="' + escAttr(u.name) + '" style="width:64px" onclick="pickLoginUser(\'' + escAttr(u.name) + '\')">' +
       avatarCircle(u.avatar_seed || 0, 52, 0) +
