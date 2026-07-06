@@ -32,15 +32,19 @@
 
 <div class="row">
   <select id="styleSelect" onchange="renderAll()">
-    <option value="avataaars">avataaars（卡通人物）</option>
-    <option value="bottts">bottts（机器人）</option>
-    <option value="pixel-art">pixel-art（像素风）</option>
-    <option value="lorelei">lorelei（圆润简约）</option>
-    <option value="notionists">notionists（涂鸦手绘）</option>
-    <option value="thumbs">thumbs（拇指小人）</option>
-    <option value="identicon">identicon（几何图案）</option>
-    <option value="rings">rings（圆环几何）</option>
-    <option value="shapes">shapes（色块）</option>
+    <option value="avataaars">🎮 avataaars（卡通RPG风）</option>
+    <option value="pixel-art">👾 pixel-art（像素游戏风）</option>
+    <option value="adventurer">⚔️ adventurer（冒险者）</option>
+    <option value="adventurer-neutral">⚔️ adventurer-neutral（冒险者中性）</option>
+    <option value="big-smile">😊 big-smile（大头笑脸）</option>
+    <option value="bottts">🤖 bottts（机器人）</option>
+    <option value="lorelei">🔵 lorelei（圆润简约）</option>
+    <option value="notionists">✏️ notionists（涂鸦手绘）</option>
+    <option value="thumbs">👍 thumbs（拇指小人）</option>
+    <option value="fun-emoji">😀 fun-emoji（表情）</option>
+    <option value="identicon">🔷 identicon（几何）</option>
+    <option value="rings">⭕ rings（圆环）</option>
+    <option value="shapes">🟦 shapes（色块）</option>
   </select>
   <input type="text" id="customName" placeholder="自定义名字..." value="">
   <button onclick="renderAll()">刷新</button>
@@ -81,15 +85,15 @@ function renderAll() {
   });
   document.getElementById('grid-single').innerHTML = singleHtml;
 
-  // Duo avatars (two overlapping circles with the SVG rendered twice)
+  // Duo avatars (two people leaning in together, partially overlapping)
   var duoHtml = '';
   duoPairs.forEach(function(pair) {
-    duoHtml += '<div class="card"><div class="card-duo">' +
-      '<div style="position:relative;width:100px;height:100px">' +
-        '<img src="' + avatarUrl(style, pair[0]) + '" width="72" height="72" style="position:absolute;left:0;top:14px;z-index:1">' +
-        '<img src="' + avatarUrl(style, pair[1]) + '" width="72" height="72" style="position:absolute;right:0;top:14px;z-index:0">' +
+    duoHtml += '<div class="card" style="min-width:160px"><div class="card-duo">' +
+      '<div style="position:relative;width:180px;height:120px">' +
+        '<img src="' + avatarUrl(style, pair[0]) + '" width="100" height="100" style="position:absolute;left:8px;top:10px;z-index:1;border:3px solid var(--card);border-radius:50%">' +
+        '<img src="' + avatarUrl(style, pair[1]) + '" width="100" height="100" style="position:absolute;right:8px;top:10px;z-index:0;border:3px solid var(--card);border-radius:50%">' +
       '</div>' +
-    '</div><div class="name">' + pair[0] + ' & ' + pair[1] + '</div></div>';
+    '</div><div class="name" style="font-size:.85rem">' + pair[0] + ' & ' + pair[1] + '</div></div>';
   });
   document.getElementById('grid-duo').innerHTML = duoHtml;
 
