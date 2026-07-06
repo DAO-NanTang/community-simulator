@@ -270,12 +270,24 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 
 /* ── Login page ── */
 .login-page { position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:url('ai_expand_image1783014990973.png') center/cover; }
-.login-page::after { content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(30,20,12,.55),rgba(25,18,10,.6),rgba(20,14,8,.7));z-index:1; }
-.login-card { position:relative;z-index:2;background:rgba(255,250,242,.9);border:1px solid rgba(200,160,80,.3);border-radius:16px;padding:28px 24px;max-width:560px;width:92%;box-shadow:0 4px 24px rgba(0,0,0,.25); }
+.login-page::after { content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(25,15,8,.62),rgba(20,12,6,.72),rgba(15,8,4,.78));z-index:1; }
+.login-card { position:relative;z-index:2;background:rgba(252,248,240,.92);border:1px solid rgba(180,150,110,.2);border-radius:16px;padding:28px 24px;max-width:520px;width:92%;box-shadow:0 4px 24px rgba(0,0,0,.2); }
 .login-card h1,.login-card h2 { color:#3d3629;margin:0 0 8px; }
 .login-card p { color:#9b9078;font-size:.9rem; }
 .login-card input { display:block;width:100%;margin:8px 0;padding:10px;border:2px solid #e5ddce;border-radius:8px;font-size:.9rem;text-align:center;background:#fffdf9;color:#3d3629; }
 .login-card input:focus { outline:none;border-color:var(--accent); }
+/* Two-card layout: left avatar list + right login panel */
+.login-split { display:flex;gap:16px;align-items:flex-start; }
+.login-split .ls-left { flex:1 1 0; min-width:0; max-height:380px; overflow-y:auto; border-radius:12px; background:rgba(255,252,245,.6); padding:12px 10px; }
+.login-split .ls-right { flex:0 0 200px; width:200px; text-align:center; border-radius:12px; background:rgba(255,252,245,.6); padding:18px 14px; }
+.ls-left .ls-group { margin-bottom:10px; }
+.ls-left .ls-group-title { font-size:.65rem;font-weight:700;margin-bottom:4px;padding-bottom:3px;border-bottom:1px dotted var(--border); }
+.ls-left .ls-avatars { display:flex;gap:6px;flex-wrap:wrap; }
+.ls-left .ls-chip { text-align:center;cursor:pointer;padding:5px 3px 2px;border-radius:8px;transition:.15s;width:54px; }
+.ls-left .ls-chip:hover { background:rgba(0,0,0,.06); }
+.ls-left .ls-chip.sel { background:rgba(200,160,80,.18); }
+.ls-left .ls-chip .ls-name { font-size:.62rem;color:var(--muted);margin-top:1px;line-height:1.2;word-break:break-all; }
+.ls-right .ls-avatar { margin:0 auto 12px; }
 
 /* ── Avatar chip ── */
 .avatar-chip { cursor:pointer;border-radius:12px;transition:.2s;text-align:center; }
@@ -372,14 +384,20 @@ body.builder-mode #adminToolbar { display:flex; }
       <div id="regError" style="color:var(--red);font-size:.82rem;margin:8px 0"></div>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:16px"><button class="btn" onclick="showLoginEntry()">← 返回</button><button class="btn pri" onclick="doRegister()">确认注册 →</button></div>
     </div>
-    <div id="userListPanel" class="hidden login-card" style="max-width:600px;padding:20px">
-      <div style="display:flex;gap:16px;min-height:240px;max-height:380px">
-        <div style="flex:1;overflow-y:auto;border-right:1px solid var(--border);padding-right:12px" id="userListLeft"></div>
-        <div style="width:180px;text-align:center;flex-shrink:0" id="userListRight">
-          <div style="font-size:.8rem;color:var(--muted);margin-bottom:12px">← 选择账号</div>
+    <div id="userListPanel" class="hidden login-card" style="max-width:620px;padding:20px 16px">
+      <div class="login-split">
+        <div class="ls-left" id="userListLeft"></div>
+        <div class="ls-right" id="userListRight">
+          <div class="ls-avatar" id="loginAvatarPreview"></div>
+          <div style="font-weight:700;font-size:.85rem;margin-bottom:10px;min-height:20px" id="loginSelectedName"></div>
+          <input type="text" id="loginNameInput" placeholder="输入名字..." oninput="onLoginNameInput()" style="font-size:.82rem;padding:8px">
+          <input type="password" id="loginPwdInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')doSplitLogin()" style="font-size:.82rem;padding:8px">
+          <label style="font-size:.7rem;display:block;margin:4px 0"><input type="checkbox" id="loginRemember"> 记住我</label>
+          <div id="loginError" style="color:var(--red);font-size:.72rem;margin:2px 0;min-height:16px"></div>
+          <button class="btn pri" onclick="doSplitLogin()" style="width:100%;padding:8px;font-size:.85rem">登录</button>
         </div>
       </div>
-      <button class="btn" onclick="showLoginEntry()" style="margin-top:12px;font-size:.8rem">← 返回入口</button>
+      <button class="btn" onclick="showLoginEntry()" style="margin-top:10px;font-size:.78rem">← 返回入口</button>
     </div>
   </div>
 
@@ -1372,74 +1390,92 @@ function updateLoginDateRange() {
 }
 function showUserList() { document.getElementById('loginEntry').classList.add('hidden'); document.getElementById('registerForm').classList.add('hidden'); document.getElementById('userListPanel').classList.remove('hidden'); renderUserGrids(); }
 
+var loginSelectedUser = null;
+
 function renderUserGrids() {
   var users = getUsers();
   var groups = [
-    { key: 'admin', label: '管理员', color: '#c8a040', icon: 'ph-fill ph-crown' },
-    { key: 'builder', label: '共建者', color: '#5a8a3c', icon: 'ph-fill ph-hammer' },
-    { key: 'adventurer', label: '冒险者', color: '#5b8cb8', icon: 'ph-fill ph-sword' },
-    { key: 'npc', label: '南塘NPC', color: '#8b7355', icon: 'ph-fill ph-storefront' },
-    { key: 'visitor', label: '游客', color: '#9b9078', icon: 'ph-fill ph-campfire' }
+    { key: 'admin', label: '管理员', color: '#c8a040' },
+    { key: 'builder', label: '共建者', color: '#5a8a3c' },
+    { key: 'adventurer', label: '冒险者', color: '#5b8cb8' },
+    { key: 'npc', label: '南塘NPC', color: '#8b7355' },
+    { key: 'visitor', label: '游客', color: '#9b9078' }
   ];
   var left = document.getElementById('userListLeft');
-  var html = '<input type="text" id="userSearchInput" placeholder="输入名字查找..." oninput="filterUserList()" style="margin-bottom:10px;font-size:.8rem;padding:6px 10px;width:100%;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text)">';
+  var html = '<input type="text" id="userSearchInput" placeholder="🔍 查找..." oninput="filterUserList()" style="font-size:.72rem;padding:5px 8px;width:100%;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);margin-bottom:8px">';
   groups.forEach(function(g) {
     var members = Object.values(users).filter(function(u) { return u.role === g.key; });
     if (members.length === 0) return;
-    html += '<div class="user-group" data-role="' + g.key + '" style="margin-bottom:8px"><div style="font-size:.7rem;font-weight:600;color:' + g.color + ';margin-bottom:3px"><i class="' + g.icon + '" style="font-size:.7rem"></i> ' + g.label + '</div>';
+    html += '<div class="ls-group" data-role="' + g.key + '"><div class="ls-group-title" style="color:' + g.color + '">' + g.label + '</div><div class="ls-avatars">';
     members.forEach(function(u) {
-      html += '<div class="user-row" data-name="' + escAttr(u.name) + '" data-role="' + g.key + '" onclick="selectUserForLogin(\'' + escAttr(u.name) + '\')" style="display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;border-radius:6px;font-size:.82rem;transition:.1s" onmouseenter="this.style.background=\'var(--btn-bg)\'" onmouseleave="this.style.background=\'transparent\'">' + avatarCircle(u.avatar_seed||0,28,0) + '<span>' + esc(u.name) + '</span></div>';
+      html += '<div class="ls-chip" data-name="' + escAttr(u.name) + '" onclick="pickLoginUser(\'' + escAttr(u.name) + '\')">' +
+        avatarCircle(u.avatar_seed || 0, 36, 0) +
+        '<div class="ls-name">' + esc(u.name) + '</div></div>';
     });
-    html += '</div>';
+    html += '</div></div>';
   });
-  if (html.indexOf('user-row') === -1) html += '<div style="color:var(--muted);font-size:.8rem;padding:12px">暂无注册用户</div>';
+  if (html.indexOf('ls-chip') === -1) html += '<div style="color:var(--muted);font-size:.78rem;padding:8px">暂无注册用户</div>';
   left.innerHTML = html;
   // Reset right panel
-  document.getElementById('userListRight').innerHTML = '<div style="font-size:.8rem;color:var(--muted);margin-top:20px">← 选择账号<br>或输入名字查找</div>';
+  loginSelectedUser = null;
+  updateLoginRight();
 }
 
 function filterUserList() {
   var q = (document.getElementById('userSearchInput').value || '').toLowerCase();
-  document.querySelectorAll('.user-row').forEach(function(r) {
-    r.style.display = r.getAttribute('data-name').toLowerCase().indexOf(q) !== -1 ? 'flex' : 'none';
+  document.querySelectorAll('.ls-chip').forEach(function(chip) {
+    chip.style.display = (chip.getAttribute('data-name')||'').toLowerCase().indexOf(q) !== -1 ? '' : 'none';
   });
-  document.querySelectorAll('.user-group').forEach(function(g) {
-    var vis = g.querySelectorAll('.user-row[style*="display: flex"],.user-row:not([style*="display: none"])').length > 0;
-    g.style.display = vis ? '' : 'none';
+  document.querySelectorAll('.ls-group').forEach(function(g) {
+    var any = g.querySelectorAll('.ls-chip:not([style*="display: none"])').length > 0;
+    g.style.display = any ? '' : 'none';
   });
 }
 
-function selectUserForLogin(name) {
-  var users = getUsers(), user = users[name];
-  var right = document.getElementById('userListRight');
-  right.innerHTML = '<div style="text-align:center">' +
-    avatarCircle(user ? user.avatar_seed : 0, 72, 0) +
-    '<div style="font-weight:700;margin:8px 0 2px;font-size:.9rem">' + esc(name) + '</div>' +
-    '<div style="font-size:.7rem;color:var(--muted);margin-bottom:10px">' + ({admin:'管理员',builder:'共建者',adventurer:'冒险者',npc:'南塘NPC',visitor:'游客'}[user?user.role:'visitor']||'') + '</div>' +
-    '<input type="password" id="pwdDirectInput" placeholder="输入密码" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;text-align:center;background:var(--card);color:var(--text);margin-bottom:6px" onkeydown="if(event.key===\'Enter\')doDirectLogin()">' +
-    (user && user.password === null ? '<div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">首次登录，请设置密码</div>' : '') +
-    '<label style="font-size:.72rem;display:block;margin:4px 0"><input type="checkbox" id="pwdDirectRemember"> 记住我</label>' +
-    '<div id="pwdDirectError" style="color:var(--red);font-size:.75rem;margin:4px 0"></div>' +
-    '<button class="btn pri" onclick="doDirectLogin()" style="width:100%;padding:8px;font-size:.85rem">登录</button>' +
-  '</div>';
-  document.getElementById('pwdDirectInput').focus();
-  // Highlight selected row
-  document.querySelectorAll('.user-row').forEach(function(r) { r.style.background = ''; });
-  var row = document.querySelector('.user-row[data-name="' + escAttr(name) + '"]');
-  if (row) row.style.background = 'var(--btn-bg)';
+function pickLoginUser(name) {
+  loginSelectedUser = name;
+  document.querySelectorAll('.ls-chip').forEach(function(c) { c.classList.remove('sel'); });
+  var chip = document.querySelector('.ls-chip[data-name="' + escAttr(name) + '"]');
+  if (chip) chip.classList.add('sel');
+  updateLoginRight();
 }
-function doDirectLogin() {
-  var password = document.getElementById('pwdDirectInput').value;
-  var rememberMe = document.getElementById('pwdDirectRememberMe').checked;
-  // Find selected user from the right panel name
-  var nameEl = document.getElementById('userListRight').querySelector('div[style]');
-  var name = ''; var divs = document.getElementById('userListRight').querySelectorAll('div'); divs.forEach(function(d) { if (d.style.fontWeight === '700') name = d.textContent; });
-  if (!name) return;
+
+function onLoginNameInput() {
+  var val = (document.getElementById('loginNameInput').value || '').trim();
+  if (!val) { loginSelectedUser = null; updateLoginRight(); return; }
+  // Auto-match to existing user
+  var users = getUsers();
+  if (users[val]) { loginSelectedUser = val; updateLoginRight(); }
+  else { loginSelectedUser = null; updateLoginRight(); }
+}
+
+function updateLoginRight() {
+  var name = loginSelectedUser;
+  var users = getUsers(), user = name ? users[name] : null;
+  var avatarEl = document.getElementById('loginAvatarPreview');
+  if (user) {
+    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 72, 0);
+  } else {
+    avatarEl.innerHTML = '<div style="width:72px;height:72px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--muted)">?</div>';
+  }
+  document.getElementById('loginSelectedName').textContent = name ? esc(name) : '';
+  document.getElementById('loginNameInput').value = name || '';
+  document.getElementById('loginPwdInput').value = '';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('loginPwdInput').placeholder = (user && user.password === null) ? '首次登录，设置密码' : '输入密码';
+  if (name) document.getElementById('loginPwdInput').focus();
+}
+
+function doSplitLogin() {
+  var name = document.getElementById('loginNameInput').value.trim();
+  if (!name) { document.getElementById('loginError').textContent = '请输入名字'; return; }
+  var password = document.getElementById('loginPwdInput').value;
+  var rememberMe = document.getElementById('loginRemember').checked;
   var result = loginUser(name, password, rememberMe);
-  if (!result.ok) { document.getElementById('pwdDirectError').textContent = result.error; return; }
+  if (!result.ok) { document.getElementById('loginError').textContent = result.error; return; }
 }
 
-function promptPassword(name) { selectUserForLogin(name); showUserList(); }
+function promptPassword(name) { loginSelectedUser = name; updateLoginRight(); showUserList(); }
 
 function promptPassword(name) {
   console.log('promptPassword called:', name);
