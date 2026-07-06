@@ -294,10 +294,6 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .avatar-chip:hover { background:rgba(0,0,0,.04);transform:translateY(-2px); }
 .avatar-grid { display:flex;gap:8px;flex-wrap:wrap;justify-content:center; }
 
-/* ── Admin toolbar visibility ── */
-#adminToolbar { display:none; }
-body.builder-mode #adminToolbar { display:flex; }
-
 /* ── Quest cards ── */
 .quest-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px; }
 .quest-card { border:2px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--card); }
@@ -410,19 +406,12 @@ body.builder-mode #adminToolbar { display:flex; }
     <div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn" onclick="closePasswordModal()">取消</button><button class="btn pri" onclick="doLogin()">登录</button></div>
   </div></div>
 
-  <!-- ═══ World HUD (compact 1-row: user info + modeBar + gear menu) ═══ -->
+  <!-- ═══ World HUD (1-row: user info + modeBar) ═══ -->
   <div id="worldHUD" class="hidden"><div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;flex-wrap:wrap;gap:6px">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span style="font-weight:600" id="hudCurrentUser"></span>
       <span style="font-size:.78rem;color:var(--muted)">💎 <b id="hudNT">—</b></span>
-      <span id="builderModeBar" class="hidden" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn mode-btn" data-mode="genesis" onclick="switchBuilderMode('genesis')" style="font-size:.72rem;padding:3px 8px">🌍创世</button><button class="btn mode-btn" data-mode="oversee" onclick="switchBuilderMode('oversee')" style="font-size:.72rem;padding:3px 8px">📊监察</button><button class="btn" onclick="switchToAdventurerPreview()" style="font-size:.7rem;padding:3px 8px">👁️预览</button></span>
-    </div>
-    <div class="dropdown" style="position:relative">
-      <button class="btn" onclick="toggleDropdown('hudMenu')" title="菜单" style="font-size:.8rem;padding:4px 8px"><i class="ph-duotone ph-gear"></i></button>
-      <div id="hudMenu" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:150px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
-        <button class="btn" onclick="showInviteManager();toggleDropdown('hudMenu')" style="text-align:left;font-size:.78rem"><i class="ph-duotone ph-keyhole"></i> 邀请码</button>
-        <button class="btn" onclick="logoutUser();toggleDropdown('hudMenu')" style="text-align:left;font-size:.78rem"><i class="ph-duotone ph-sign-out"></i> 退出</button>
-      </div>
+      <span id="builderModeBar" class="hidden" style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn mode-btn" data-mode="genesis" onclick="switchBuilderMode('genesis')" style="font-size:.8rem;padding:5px 12px">🌍 创世</button><button class="btn mode-btn" data-mode="oversee" onclick="switchBuilderMode('oversee')" style="font-size:.8rem;padding:5px 12px">📊 监察</button><button class="btn" onclick="switchToAdventurerPreview()" style="font-size:.8rem;padding:5px 12px">👁️ 冒险者视角</button></span>
     </div>
   </div></div>
 
@@ -435,6 +424,22 @@ body.builder-mode #adminToolbar { display:flex; }
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 世界时间线</button>
     <button class="tab" data-tab="budget" onclick="switchTab('budget')">💰 资源金库</button>
     <button class="tab" data-tab="settlement" onclick="switchTab('settlement')">🧾 通关结算</button>
+    <span style="flex:1"></span>
+    <span class="dropdown" style="position:relative;align-self:center;margin-left:8px">
+      <button class="btn" onclick="toggleDropdown('gearMenu')" title="工具" style="font-size:.8rem;padding:4px 8px"><i class="ph-duotone ph-gear"></i></button>
+      <div id="gearMenu" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:170px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
+        <button class="btn" onclick="loadData();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-folder-open"></i> 加载数据</button>
+        <button class="btn" onclick="exportData();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-download"></i> 导出数据</button>
+        <button class="btn" onclick="showInviteManager();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-keyhole"></i> 邀请码</button>
+        <hr style="border-color:var(--border);margin:2px 0">
+        <button class="btn" onclick="setIconStyle('duotone');toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-paint-brush"></i> 图标：双色调</button>
+        <button class="btn" onclick="setIconStyle('fill');toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-fill ph-paint-brush"></i> 图标：实心</button>
+        <button class="btn" onclick="setIconStyle('regular');toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph ph-paint-brush"></i> 图标：常规</button>
+        <hr style="border-color:var(--border);margin:2px 0">
+        <button class="btn" onclick="logoutUser();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-sign-out"></i> 退出</button>
+      </div>
+    </span>
+    <span style="font-size:.68rem;color:var(--muted);align-self:center" id="statusDot"></span>
   </div>
 
   <!-- ═══ Adventurer Tabs ═══ -->
@@ -443,23 +448,14 @@ body.builder-mode #adminToolbar { display:flex; }
     <button class="tab" data-tab="profile" onclick="switchTab('profile')">⚔️ 我的资料</button>
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 世界时间线</button>
     <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
-  </div>
-
-  <!-- ═══ Admin Toolbar ═══ -->
-  <div id="adminToolbar" style="justify-content:flex-end;align-items:center;gap:8px;margin-bottom:6px">
-    <div class="dropdown" style="position:relative">
-      <button class="btn" onclick="toggleDropdown('toolsMenu')" title="工具"><i class="ph-duotone ph-gear"></i></button>
-      <div id="toolsMenu" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:170px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
-        <button class="btn" onclick="loadData();toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-duotone ph-folder-open"></i> 加载数据</button>
-        <button class="btn" onclick="exportData();toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-duotone ph-download"></i> 导出数据</button>
-        <button class="btn" onclick="showInviteManager();toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-duotone ph-keyhole"></i> 邀请码</button>
-        <hr style="border-color:var(--border);margin:2px 0">
-        <button class="btn" onclick="setIconStyle('duotone');toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-duotone ph-paint-brush"></i> 图标：双色调</button>
-        <button class="btn" onclick="setIconStyle('fill');toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-fill ph-paint-brush"></i> 图标：实心</button>
-        <button class="btn" onclick="setIconStyle('regular');toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph ph-paint-brush"></i> 图标：常规</button>
+    <span style="flex:1"></span>
+    <span class="dropdown" style="position:relative;align-self:center;margin-left:8px">
+      <button class="btn" onclick="toggleDropdown('gearMenu')" title="工具" style="font-size:.8rem;padding:4px 8px"><i class="ph-duotone ph-gear"></i></button>
+      <div id="gearMenuAdventure" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:150px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
+        <button class="btn" onclick="setIconStyle('duotone');toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-paint-brush"></i> 图标风格</button>
+        <button class="btn" onclick="logoutUser();toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-sign-out"></i> 退出</button>
       </div>
-    </div>
-    <span style="font-size:.68rem;color:var(--muted)" id="statusDot"></span>
+    </span>
   </div>
 
   <!-- Tab: Task Hall (Staff Daily View) -->
@@ -1712,7 +1708,7 @@ function renderLeaderboard() {
   var rankings = []; Object.values(users).forEach(function(u) { if (u.role !== 'adventurer') return; var ntBalance = 0; (data.finance || []).forEach(function(tx) { if (tx.to === u.name) ntBalance += (tx.amount || 0); if (tx.from === u.name) ntBalance -= (tx.amount || 0); }); var completed = tasks.filter(function(t) { var cl = (t.claimants || []).find(function(c) { return c.name === u.name; }); return cl && cl.status === 'completed'; }).length; rankings.push({ name: u.name, nt: ntBalance, done: completed, avatar: u.avatar_seed || 0, achievements: getAchievements(u.name) }); });
   rankings.sort(function(a, b) { return b.nt - a.nt; }); rankings = rankings.slice(0, 20);
   if (rankings.length === 0) { container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">暂无冒险者数据</div>'; return; }
-  var html = '<div style="display:flex;flex-direction:column;gap:6px">'; rankings.forEach(function(r, i) { var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1); html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><span style="font-size:1.2rem;width:30px;text-align:center">' + medal + '</span>' + avatarCircle(r.avatar, 40, 0) + '<span style="flex:1;font-weight:600">' + esc(r.name) + '</span><span style="font-size:.75rem;color:var(--muted)">' + r.done + '项完成</span><span style="font-weight:700;color:var(--accent)">💎 ' + r.nt.toLocaleString() + ' NT</span></div>'; }); html += '</div>'; container.innerHTML = html;
+  var html = '<div style="display:flex;flex-direction:column;gap:6px">'; rankings.forEach(function(r, i) { var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1); html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><span style="font-size:1rem;width:24px;text-align:center">' + medal + '</span><span style="width:36px;height:36px;flex-shrink:0;overflow:hidden;border-radius:50%">' + avatarCircle(r.avatar, 36, 0) + '</span><span style="flex:1;font-weight:600;font-size:.85rem">' + esc(r.name) + '</span><span style="font-size:.72rem;color:var(--muted)">' + r.done + '项</span><span style="font-weight:700;color:var(--accent);font-size:.82rem">💎 ' + r.nt.toLocaleString() + '</span></div>'; }); html += '</div>'; container.innerHTML = html;
 }
 
 // ── NT Admin ──
