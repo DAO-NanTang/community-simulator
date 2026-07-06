@@ -1074,19 +1074,19 @@ let taskSortDir = 1;
 let selectedPhase = '筹备期';
 let currentScheduleView = 'calendar';
 let editingCalSlot = -1, editingCalDay = -1;
-	// ── Auth state ──
-	const NT_USERS_KEY = 'nt_users';
-	const NT_INVITE_KEY = 'nt_invite_codes';
-	const NT_SESSION_KEY = 'nt_session';
-	let currentUser = null;
-	let previewMode = false;
-	let currentBuilderMode = 'genesis';
-	let pendingLoginName = null;
-	let regRole = 'adventurer', regAvatarSeed = Math.floor(Math.random() * 60);
+// ── Auth state ──
+const NT_USERS_KEY = 'nt_users';
+const NT_INVITE_KEY = 'nt_invite_codes';
+const NT_SESSION_KEY = 'nt_session';
+let currentUser = null;
+let previewMode = false;
+let currentBuilderMode = 'genesis';
+let pendingLoginName = null;
+let regRole = 'adventurer', regAvatarSeed = Math.floor(Math.random() * 60);
 
-	// ── Member filter ──
-	let memberFilter = 'builder';
-	let questFilter = 'all';
+// ── Member filter ──
+let memberFilter = 'builder';
+let questFilter = 'all';
 
 function renderTimeline() {}
 function renderSettlementAll() {}
