@@ -286,7 +286,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .ls-left .ls-chip { text-align:center;cursor:pointer;padding:4px 2px 1px;border-radius:8px;transition:.15s;width:60px; }
 .ls-left .ls-chip:hover { background:rgba(0,0,0,.06); }
 .ls-left .ls-chip.sel { background:rgba(200,160,80,.18); }
-.ls-left .ls-chip .ls-name { font-size:.68rem;color:var(--muted);margin-top:2px;line-height:1.2;word-break:break-all; }
+.ls-left .ls-chip .ls-name { font-size:.7rem;color:var(--muted);margin-top:1px;line-height:1.2;text-align:center; }
 .ls-right .ls-avatar { margin:0 auto 12px; }
 
 /* ── Avatar chip ── */
@@ -390,10 +390,10 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <input type="password" id="loginPwdInput" placeholder="输入密码" onkeydown="if(event.key==='Enter')doSplitLogin()" style="font-size:.82rem;padding:8px">
           <label style="font-size:.7rem;display:block;margin:4px 0"><input type="checkbox" id="loginRemember"> 记住我</label>
           <div id="loginError" style="color:var(--red);font-size:.72rem;margin:2px 0;min-height:16px"></div>
-          <button class="btn pri" onclick="doSplitLogin()" style="width:100%;padding:8px;font-size:.85rem">登录</button>
+          <button class="btn pri" onclick="doSplitLogin()" style="width:100%;padding:8px;font-size:.85rem;margin-bottom:6px">登录</button>
+          <button class="btn" onclick="showLoginEntry()" style="width:100%;padding:6px;font-size:.75rem">← 返回</button>
         </div>
       </div>
-      <button class="btn" onclick="showLoginEntry()" style="margin-top:10px;font-size:.78rem">← 返回入口</button>
     </div>
   </div>
 
@@ -1453,9 +1453,9 @@ function updateLoginRight() {
   var users = getUsers(), user = name ? users[name] : null;
   var avatarEl = document.getElementById('loginAvatarPreview');
   if (user) {
-    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 88, 0);
+    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 100, 0);
   } else {
-    avatarEl.innerHTML = '<div style="width:88px;height:88px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--muted)">?</div>';
+    avatarEl.innerHTML = '<div style="width:100px;height:100px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--muted)">?</div>';
   }
   document.getElementById('loginSelectedName').textContent = name ? esc(name) : '';
   document.getElementById('loginNameInput').value = name || '';
