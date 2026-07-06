@@ -286,7 +286,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .ls-left .ls-chip.sel { background:rgba(200,160,80,.18); }
 .ls-left .ls-chip .ls-name { font-size:.72rem;color:var(--text);margin-top:3px;line-height:1.3; }
 .ls-left .ls-chip .ls-role { font-size:.62rem;margin-top:1px;line-height:1.3; }
-.ls-right .ls-avatar { width:120px;height:120px;margin:0 auto 18px;overflow:hidden;border-radius:50%; }
+.ls-right .ls-avatar { width:140px;height:140px;margin:0 auto 20px;overflow:hidden;border-radius:50%; }
 
 /* ── Avatar chip ── */
 .avatar-chip { cursor:pointer;border-radius:12px;transition:.2s;text-align:center; }
@@ -1440,9 +1440,9 @@ function updateLoginRight() {
   var users = getUsers(), user = name ? users[name] : null;
   var avatarEl = document.getElementById('loginAvatarPreview');
   if (user) {
-    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 120, 0);
+    avatarEl.innerHTML = avatarCircle(user.avatar_seed || 0, 140, 0);
   } else {
-    avatarEl.innerHTML = '<div style="width:120px;height:120px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:3rem;color:var(--muted)">?</div>';
+    avatarEl.innerHTML = '<div style="width:140px;height:140px;border-radius:50%;background:var(--border);margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:3.5rem;color:var(--muted)">?</div>';
   }
   document.getElementById('loginNameInput').value = name || '';
   document.getElementById('loginPwdInput').value = '';
