@@ -269,18 +269,13 @@ select.inline-input { cursor: pointer; }
 body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6b7d60; --accent: #5a8a3c; --green: #4a7c32; --red: #c05540; --yellow: #b8862e; --border: #c8d8b8; --tab-bg: #d8e8cc; --tab-hover: #c8dcb8; --tab-active-bg: #f8fbf5; --btn-bg: #dce8d0; --btn-hover: #cde0bc; --btn-border: #8aa878; --header-start: #d8e8cc; --header-end: #eef5e8; }
 
 /* ── Login page ── */
-.login-page { position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center; }
-.login-page::after { content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(40,30,15,.6),rgba(20,15,8,.75),rgba(40,30,15,.6));z-index:1; }
-body.builder-mode .login-page::after { background:linear-gradient(180deg,rgba(30,50,20,.5),rgba(20,40,15,.7),rgba(30,50,20,.5)); }
-.login-card { position:relative;z-index:2;background:rgba(255,253,249,.92);border-radius:16px;padding:32px 28px;max-width:520px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.3); }
-body.builder-mode .login-card { background:rgba(248,251,245,.92); }
-.login-card h1,.login-card h2 { color:#3d3629;margin:0 0 8px; }
-body.builder-mode .login-card h1,body.builder-mode .login-card h2 { color:#2d3a28; }
-.login-card p { color:#9b9078;font-size:.9rem; }
-body.builder-mode .login-card p { color:#6b7d60; }
-.login-card input { display:block;width:100%;margin:12px 0;padding:10px;border:2px solid #e5ddce;border-radius:8px;font-size:.9rem;text-align:center;background:#fffdf9;color:#3d3629; }
-body.builder-mode .login-card input { border-color:#c8d8b8;background:#f8fbf5;color:#2d3a28; }
-.login-card input:focus { outline:none;border-color:var(--accent); }
+.login-page { position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:url('ai_expand_image1783014990973.png') center/cover; }
+.login-page::after { content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,10,5,.8),rgba(20,12,8,.85),rgba(10,5,3,.9));z-index:1; }
+.login-card { position:relative;z-index:2;background:rgba(28,22,14,.88);border:1px solid rgba(200,160,80,.25);border-radius:16px;padding:32px 28px;max-width:520px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.5),0 0 100px rgba(200,150,50,.06); }
+.login-card h1,.login-card h2 { color:#d4c8b0;margin:0 0 8px; }
+.login-card p { color:#8a7a5e;font-size:.9rem; }
+.login-card input { display:block;width:100%;margin:12px 0;padding:10px;border:2px solid rgba(200,160,80,.2);border-radius:8px;font-size:.9rem;text-align:center;background:rgba(0,0,0,.3);color:#e0d0b0; }
+.login-card input:focus { outline:none;border-color:#c8a040; }
 
 /* ── Avatar chip ── */
 .avatar-chip { cursor:pointer;border-radius:12px;transition:.2s;text-align:center; }
@@ -303,7 +298,36 @@ body.builder-mode #adminToolbar { display:flex; }
 
 /* ── Preview banner ── */
 #previewBanner { background:#c8a860;color:#1a1410;text-align:center;padding:8px;font-weight:600;font-size:.85rem; }
+
+/* ── Dropdown menu ── */
+.dropdown { position:relative; display:inline-block; }
+.dropdown-menu { display:flex; flex-direction:column; gap:2px; }
+.dropdown-menu .btn { text-align:left; border:none; border-radius:4px; padding:6px 10px; font-size:.8rem; width:100%; }
+.dropdown-menu .btn:hover { background:var(--btn-hover, #f0e0c0); }
+.dropdown-menu .btn i { margin-right:6px; }
+
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+  main { padding: 12px 8px; }
+  .tabs { gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { padding: 8px 10px; font-size: 0; }
+  .tab i { font-size: 1.25rem; }
+  .card { padding: 12px 10px; }
+  .modal { max-width: 100%; width: 100%; max-height: 100vh; border-radius: 0; }
+  .ms-av-circle { width: 40px; height: 40px; }
+  .quest-grid { grid-template-columns: 1fr; }
+  header { min-height: 80px; max-height: 120px; }
+  .login-card { padding: 24px 16px; }
+  #memberSubNav .btn { font-size: .7rem; padding: 4px 6px; }
+}
+@media (max-width: 480px) {
+  main { padding: 8px 4px; }
+  .tab { padding: 6px 8px; }
+  .btn { padding: 6px 10px; font-size: .78rem; }
+  .login-card { padding: 20px 14px; }
+}
 </style>
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
 </head>
 <body>
 
@@ -386,7 +410,21 @@ body.builder-mode #adminToolbar { display:flex; }
   </div>
 
   <!-- ═══ Admin Toolbar ═══ -->
-  <div id="adminToolbar" style="justify-content:flex-end;align-items:center;gap:8px;margin-bottom:6px"><button class="btn" onclick="loadData()">📂 加载</button><button class="btn" onclick="exportData()">💾 导出</button><span style="font-size:.68rem;color:var(--muted)" id="statusDot"></span></div>
+  <div id="adminToolbar" style="justify-content:flex-end;align-items:center;gap:8px;margin-bottom:6px">
+    <div class="dropdown" style="position:relative">
+      <button class="btn" onclick="toggleDropdown('toolsMenu')" title="工具"><i class="ph-duotone ph-gear"></i></button>
+      <div id="toolsMenu" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:170px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
+        <button class="btn" onclick="loadData();toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-duotone ph-folder-open"></i> 加载数据</button>
+        <button class="btn" onclick="exportData();toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-duotone ph-download"></i> 导出数据</button>
+        <button class="btn" onclick="showInviteManager();toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-duotone ph-keyhole"></i> 邀请码</button>
+        <hr style="border-color:var(--border);margin:2px 0">
+        <button class="btn" onclick="setIconStyle('duotone');toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-duotone ph-paint-brush"></i> 图标：双色调</button>
+        <button class="btn" onclick="setIconStyle('fill');toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph-fill ph-paint-brush"></i> 图标：实心</button>
+        <button class="btn" onclick="setIconStyle('regular');toggleDropdown('toolsMenu')" style="text-align:left"><i class="ph ph-paint-brush"></i> 图标：常规</button>
+      </div>
+    </div>
+    <span style="font-size:.68rem;color:var(--muted)" id="statusDot"></span>
+  </div>
 
   <!-- Tab: Task Hall (Staff Daily View) -->
   <div id="tab-taskhall" class="hidden">
@@ -1087,6 +1125,16 @@ let regRole = 'adventurer', regAvatarSeed = Math.floor(Math.random() * 60);
 // ── Member filter ──
 let memberFilter = 'builder';
 let questFilter = 'all';
+
+// ── Icon system ──
+const ICON_STYLES = { duotone:{prefix:'ph-duotone',label:'双色调'}, fill:{prefix:'ph-fill',label:'实心'}, regular:{prefix:'ph',label:'常规'}, bold:{prefix:'ph-bold',label:'加粗'} };
+let iconStyle = localStorage.getItem('nt_icon_style') || 'duotone';
+function icon(name, size) { var s = size ? 'font-size:' + size : ''; return '<i class="' + ICON_STYLES[iconStyle].prefix + ' ' + name + '" style="' + s + '"></i>'; }
+function setIconStyle(style) { iconStyle = style; localStorage.setItem('nt_icon_style', style); refreshAllIcons(); }
+function refreshAllIcons() { document.querySelectorAll('[data-icon]').forEach(function(el) { el.className = ICON_STYLES[iconStyle].prefix + ' ' + el.getAttribute('data-icon'); }); }
+function toggleDropdown(id) { var el = document.getElementById(id); el.classList.toggle('hidden'); }
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) { if (!e.target.closest('.dropdown')) { document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); }); } });
 
 function renderTimeline() {}
 function renderSettlementAll() {}
