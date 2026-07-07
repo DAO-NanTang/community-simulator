@@ -88,6 +88,8 @@ NT 的支出：
 - 发布委托（预付）
 - 打赏他人
 
+> ⚠️ **NT 经济平衡**：当前参数需要实际运营数据验证。粗略估算（4个在地成员）：月发行约 1,000 NT（不含注册一次性），月回收（住宿费）需验证是否合理。住宿费建议使用**浮动比例制**（每月收入的 X%），而非固定日费率，以避免通缩。参见 [南塘NT经济系统_完整设计.md](../南塘NT经济系统_完整设计.md)。
+
 ### 2.3 事件流模型
 
 **核心存储是一个事件流。** 每个物品、每个空间的当前状态，是所有历史事件的最终结果。
@@ -110,6 +112,10 @@ D6 15:00 | journal | 厨房 | 阿楠 | +3 | 📷 | "今天包饺子"
 - **所有历史可追溯**——"上周那批白菜谁吃掉的？"一查就知道
 - **数据可以回放**——云村民看到"这几天冰箱的变化史"
 - **NT可核验**——每一分NT都有对应的真实事件
+
+> ⚠️ **设计决策**：`ntChange` 字段在事件流中为可选字段，仅用于快速查看。**NT 余额的权威计算方式是通过事件流实时汇总**（`sum(nt_events.filter(actorId===user).ntChange)`），而不是单独存储在 `nt_users[name].ntBalance` 中。如果两处数字不一致，以事件流汇总结果为准。`nt_users[name].ntBalance` 仅作为缓存值，每次写入时从事件流重新计算。
+>
+> ⚠️ **定时逻辑标注**：纯前端 localStorage 应用无法在后台运行定时任务。以下定时行为均在**页面打开时一次性追赶**：物品过期检查、脏污度每日增长、打扫到期、委托到期。如果用户连续 N 天不打开页面，所有时间相关逻辑会在下次打开时集中执行。此行为是技术限制，非设计缺陷。
 
 ---
 
@@ -163,10 +169,10 @@ D6 15:00 | journal | 厨房 | 阿楠 | +3 | 📷 | "今天包饺子"
       id: "evt-001",
       type: "item_add" | "item_consume" | "item_spoil" | "item_move" |
             "check_in" | "check_out" |
-            "chore_start" | "chore_submit" | "chore_approved" |
-            "task_post" | "task_claim" | "task_done" | "task_confirm" |
+            "chore_start" | "chore_submit" | "chore_approved" | "chore_rejected" |
+            "task_post" | "task_claim" | "task_done" | "task_confirm" | "task_cancel" | "task_unclaim" | "task_expire" |
             "journal" |
-            "comment" | "danmaku" | "tip" |
+            "comment" | "danmaku" | "tip" | "like" | "move_location" |
             "nt_transfer" | "nt_pool_alloc" |
             "user_register" | "user_upgrade",
       targetType: "item" | "space" | "user" | "task" | "system",
