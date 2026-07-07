@@ -1148,6 +1148,72 @@ let regRole = 'adventurer', regAvatarSeed = Math.floor(Math.random() * 60);
 let memberFilter = 'builder';
 let questFilter = 'all';
 
+// ═══ 共用：wizard → data.tasks 字段保护 ═══
+// 创世向导保存时不会覆盖的 NT 系统字段列表
+var NT_MERGE_FIELDS = ['scope','visibility','reviewer','min_season',
+  'claimants','max_slots','poster','posted_at','materials','subtasks','outputs','steps'];
+
+// 将 wizardTasks 安全合并到 data.tasks，保留 NT 系统字段
+function mergeWizardToData(wizardTasks) {
+  var existingByName = {};
+  (data.tasks || []).forEach(function(t) {
+    if (t.name) existingByName[t.name] = t;
+  });
+  data.tasks = wizardTasks.map(function(t) {
+    var existing = existingByName[t.name];
+    if (existing) {
+      NT_MERGE_FIELDS.forEach(function(f) {
+        if (existing[f] !== undefined) t[f] = existing[f];
+      });
+    } else {
+      // 新任务：给 NT 系统字段设默认值
+      if (t.scope === undefined) t.scope = 'camp';
+      if (t.visibility === undefined) t.visibility = 'all';
+      if (t.reviewer === undefined) t.reviewer = '';
+      if (t.min_season === undefined) t.min_season = 0;
+      if (!t.claimants) t.claimants = [];
+      if (t.max_slots === undefined) t.max_slots = 0;
+      if (!t.poster) t.poster = '';
+      if (!t.posted_at) t.posted_at = '';
+    }
+    return Object.assign({}, t);
+  });
+  localStorage.setItem('camp_data', JSON.stringify(data));
+}
+
+// ═══ 共用：按 scope 计算 NT 余额 ═══
+// 返回 {camp: number, personal: number}
+function calcNtByScope(name) {
+  var camp = 0, personal = 0;
+  (data.finance || []).forEach(function(tx) {
+    var scope = tx.scope || 'camp';
+    var amt = tx.amount || 0;
+    if (tx.to === name) {
+      if (scope === 'personal') personal += amt; else camp += amt;
+    }
+    if (tx.from === name) {
+      if (scope === 'personal') personal -= amt; else camp -= amt;
+    }
+  });
+  return { camp: camp, personal: personal };
+}
+
+// 计算某人总 NT（不区分 scope）
+function calcNtTotal(name) {
+  var r = calcNtByScope(name);
+  return r.camp + r.personal;
+}
+
+// ═══ 共用：从 data.finance 中移除关联记录 ═══
+// filterType: 'task_name' | 'person'（按 to 或 from 匹配）
+function removeFromFinance(filterType, value) {
+  data.finance = (data.finance || []).filter(function(tx) {
+    if (filterType === 'task_name') return tx.task_name !== value;
+    if (filterType === 'person') return tx.to !== value && tx.from !== value;
+    return true;
+  });
+}
+
 function toggleDropdown(id) { var el = document.getElementById(id); el.classList.toggle('hidden'); }
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) { if (!e.target.closest('.dropdown')) { document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); }); } });
@@ -1167,7 +1233,52 @@ function showAddMember() {
 document.addEventListener('DOMContentLoaded', function() {
   // 0. Load camp data
   var saved = localStorage.getItem('camp_data');
-  if (saved) { try { data = JSON.parse(saved); } catch(e) {} }
+  if (saved) {
+    try {
+      data = JSON.parse(saved);
+    } catch(e) {
+      alert('⚠️ 数据损坏，已重置为空白数据。\n错误：' + e.message);
+      data = { tasks:[], decisions:[], members:{}, budget:{}, budget_items:[],
+               finance_cny:{}, finance:[], schedule:{},
+               camp_progress:{step:1,steps:{'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'}},
+               camp_dates:{start:'',end:'',duration_days:15,milestones:[]}, staff_cards:[] };
+    }
+    // 补缺失的默认字段（兼容旧版本数据）
+    if (!data.budget_items) data.budget_items = [];
+    if (!data.staff_cards) data.staff_cards = [];
+    if (!data.camp_progress) data.camp_progress = {step:1,steps:{'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'}};
+    if (!data.camp_dates) data.camp_dates = {start:'',end:'',duration_days:15,milestones:[]};
+    if (!data.finance) data.finance = [];
+    if (!data.finance_cny) data.finance_cny = {};
+  }
+  // 清理旧版 budget 废弃字段
+  var DEAD_BUDGET_KEYS = ['salary_base_rmb','salary','buyback_nt','buyback_nt_total',
+    'nt_per_day','rmb_pool','nt_pool','nt_raised','staff_nt_total','creator_task_nt_used'];
+  if (data.budget) {
+    DEAD_BUDGET_KEYS.forEach(function(k) { delete data.budget[k]; });
+  }
+  // 恢复 wizardTasks
+  var savedWiz = localStorage.getItem('camp_wizard_tasks');
+  if (savedWiz) { try { wizardTasks = JSON.parse(savedWiz); } catch(e) { wizardTasks = []; } }
+  // 恢复预算项 ID 计数器
+  var savedCounter = localStorage.getItem('budget_item_counter');
+  BUDGET_ITEM_ID = savedCounter ? parseInt(savedCounter) : 0;
+  // 初始化默认里程碑（纯 getter 不再写入数据）
+  if (!data.mapMilestones || data.mapMilestones.length === 0) {
+    data.mapMilestones = [
+      { date: '04/15', name: '第一次筹备会', icon: '📝' },
+      { date: '05/01', name: '第二次筹备会', icon: '📝' },
+      { date: '05/20', name: '第三次筹备会', icon: '📝' },
+      { date: '05/28', name: '网络见面会', icon: '💻' },
+      { date: '06/01', name: '动员日', icon: '📢' },
+      { date: '06/04', name: '接待动员日', icon: '🤝' },
+      { date: '06/06', name: '开营接待日', icon: '🎉' },
+      { date: '06/07', name: '开营第一天', icon: '🏕️' },
+      { date: '06/08', name: '营期中', icon: '🎨' },
+      { date: '06/25', name: '营后', icon: '📊' },
+      { date: '06/29', name: '结项', icon: '🏁' },
+    ];
+  }
   updateAll(); loadTemplates(); refreshTemplateSelects();
 
   // 1. Migrate existing members (idempotent)
@@ -1226,6 +1337,10 @@ function loadData() {
           claimants: t.claimants || [], active: t.active || 'yes',
           poster: t.poster || '', posted_at: t.posted_at || '',
           max_slots: t.max_slots || 0,
+          materials: t.materials || [],
+          subtasks: t.subtasks || [],
+          outputs: t.outputs || [],
+          steps: t.steps || '',
         }));
         if (loaded.decisions) data.decisions = loaded.decisions;
         if (loaded.members) data.members = loaded.members;
@@ -1309,7 +1424,12 @@ function migrateExistingMembers() {
 
 function seedAdminAccount() {
   var users = getUsers();
-  users['砚仁'] = { name: '砚仁', role: 'admin', password: encodePassword('1500', '砚仁'), avatar_seed: (users['砚仁'] && users['砚仁'].avatar_seed) || 0, season: (users['砚仁'] && users['砚仁'].season) || '', created: (users['砚仁'] && users['砚仁'].created) || new Date().toISOString().slice(0, 10) };
+  if (users['砚仁']) return;  // 已存在则跳过，不覆盖密码
+  users['砚仁'] = {
+    name: '砚仁', role: 'admin',
+    password: encodePassword('1500', '砚仁'),
+    avatar_seed: 0, season: '', created: new Date().toISOString().slice(0, 10)
+  };
   saveUsers(users);
 }
 
@@ -1444,8 +1564,6 @@ function doSplitLogin() {
   if (!result.ok) { document.getElementById('loginError').textContent = result.error; return; }
 }
 
-function promptPassword(name) { loginSelectedUser = name; updateLoginRight(); showUserList(); }
-
 function promptPassword(name) {
   console.log('promptPassword called:', name);
   pendingLoginName = name; var users = getUsers(), user = users[name];
@@ -1533,9 +1651,12 @@ function showPlazaPlaceholder(user) {
 
 function updateWorldHUD() {
   if (!currentUser) return;
-  var totalNT = 0;
-  (data.finance || []).forEach(function(tx) { if (tx.to === currentUser.name) totalNT += (tx.amount || 0); if (tx.from === currentUser.name) totalNT -= (tx.amount || 0); });
-  document.getElementById('hudNT').textContent = totalNT ? totalNT.toLocaleString() : '—';
+  var b = calcNtByScope(currentUser.name);
+  var total = b.camp + b.personal;
+  var el = document.getElementById('hudNT');
+  if (!el) return;
+  el.textContent = total ? total.toLocaleString() : '—';
+  el.title = '营队 NT: ' + b.camp.toLocaleString() + ' | 个人 NT: ' + b.personal.toLocaleString();
 }
 
 // ═══════════════════════════════════════════
@@ -1547,10 +1668,30 @@ function getInboxLastOpened() {
 }
 function updateInboxLastOpened() { localStorage.setItem('inbox_lastOpened', new Date().toISOString()); }
 
+// ═══ 信箱已读追踪（逐条核销）═══
+function getInboxSeenIds() {
+  try { return JSON.parse(localStorage.getItem('inbox_seen_ids')) || []; }
+  catch(e) { return []; }
+}
+function isInboxMsgNew(msgId) {
+  return getInboxSeenIds().indexOf(msgId) === -1;
+}
+function markInboxMsgSeen(msgId) {
+  var ids = getInboxSeenIds();
+  if (ids.indexOf(msgId) === -1) { ids.push(msgId); localStorage.setItem('inbox_seen_ids', JSON.stringify(ids)); }
+}
+
+// ═══ 邮箱格式迁移 ═══
+(function migrateInboxState() {
+  var old = localStorage.getItem('inbox_lastOpened');
+  if (!old) return;
+  localStorage.setItem('inbox_seen_before', old);
+  localStorage.removeItem('inbox_lastOpened');
+})();
+
 function updateInboxBadge() {
   var msgs = computeInboxMessages();
-  var lastOpened = getInboxLastOpened();
-  var unread = msgs.filter(function(m) { return m.createdAt > lastOpened; }).length;
+  var unread = msgs.filter(function(m) { return isInboxMsgNew(m.id); }).length;
   var btn = document.getElementById('btnInbox');
   if (!btn) return;
   var existing = btn.querySelector('.inbox-badge');
@@ -1709,6 +1850,11 @@ function computeInboxMessages() {
     });
   }
 
+  // Assign unique IDs for per-message read tracking
+  msgs.forEach(function(m, i) {
+    m.id = m.type + '_' + (m.person || '') + '_' + (m.task || '') + '_' + i;
+  });
+
   // Sort by createdAt descending (newest first)
   msgs.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
   return msgs;
@@ -1731,9 +1877,8 @@ function renderInbox() {
   }
 
   var msgs = computeInboxMessages();
-  var lastOpened = getInboxLastOpened();
-  var newMsgs = msgs.filter(function(m) { return m.createdAt > lastOpened; });
-  var oldMsgs = msgs.filter(function(m) { return m.createdAt <= lastOpened; });
+  var newMsgs = msgs.filter(function(m) { return isInboxMsgNew(m.id); });
+  var oldMsgs = msgs.filter(function(m) { return !isInboxMsgNew(m.id); });
 
   var TYPE_ICON = {
     submitted: '🆕', overdue: '⚠️', progress_low: '📉', pool_low: '🔴',
@@ -1775,7 +1920,7 @@ function renderInbox() {
         break;
       default: body = '';
     }
-    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px" onclick="jumpFromInbox(\'' + escAttr(m.jump.tab) + '\', ' + (m.jump.highlight ? JSON.stringify(m.jump.highlight).replace(/"/g, '&quot;') : 'null') + ')" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">' +
+    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px" onclick="jumpFromInbox(\'' + escAttr(m.jump.tab) + '\', ' + (m.jump.highlight ? JSON.stringify(m.jump.highlight).replace(/"/g, '&quot;') : 'null') + ', \'' + escAttr(m.id) + '\')" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">' +
       '<span style="font-size:1rem">' + icon + '</span>' +
       '<div style="flex:1;min-width:0"><div style="font-size:.82rem">' + body + '</div></div>' +
       '<span style="font-size:.7rem;color:var(--accent);white-space:nowrap;font-weight:600">' + (m.jump.highlight ? '去看看 →' : '查看 →') + '</span>' +
@@ -1817,9 +1962,9 @@ function toggleInbox() {
   renderInbox();
 }
 
-function jumpFromInbox(tab, highlight) {
+function jumpFromInbox(tab, highlight, msgId) {
   closeInbox();
-  updateInboxLastOpened();
+  if (msgId) markInboxMsgSeen(msgId);
   if (highlight) {
     switchTab(tab, { highlight: highlight });
   } else {
@@ -1908,7 +2053,16 @@ function saveMember() {
   if (oldName && oldName !== newName && data.finance_cny && data.finance_cny.transactions) {
     data.finance_cny.transactions.forEach(function(tx) { if (tx.person === oldName) tx.person = newName; });
   }
-  data.members[newName] = { name: newName, gender: document.getElementById('memberGender').value, role: document.getElementById('memberRole').value.trim(), bio: document.getElementById('memberBio').value.trim(), avatar_style: editingAvatarStyle, avatar_seed: editingAvatarSeed, nt_actual: parseInt(document.getElementById('memberNT').value) || 0 };
+  var old = data.members[newName] || {};
+  data.members[newName] = {
+    name: newName, gender: document.getElementById('memberGender').value,
+    role: document.getElementById('memberRole').value.trim(),
+    bio: document.getElementById('memberBio').value.trim(),
+    avatar_style: editingAvatarStyle, avatar_seed: editingAvatarSeed,
+    nt_actual: parseInt(document.getElementById('memberNT').value) || 0,
+    wallet: old.wallet || '',                       // 保留钱包地址
+    actual_materials: old.actual_materials || {},    // 保留实际材料
+  };
   var users = getUsers();
   if (users[oldName]) { users[newName] = users[oldName]; users[newName].name = newName; users[newName].avatar_seed = editingAvatarSeed; if (oldName !== newName) delete users[oldName]; }
   else if (!users[newName]) { users[newName] = { name: newName, role: 'adventurer', password: null, avatar_seed: editingAvatarSeed, season: '', created: new Date().toISOString().slice(0, 10) }; }
@@ -1927,6 +2081,9 @@ function deleteMember() {
   delete data.members[name];
   if (data.finance_cny && data.finance_cny.by_person && data.finance_cny.by_person[name]) { delete data.finance_cny.by_person[name]; }
   if (data.finance_cny && data.finance_cny.transactions) { data.finance_cny.transactions.forEach(function(tx) { if (tx.person === name) tx.person = ''; }); recalcFinanceByPerson(); }
+  removeFromFinance('person', name);                // 清理 NT 流水
+  data.staff_cards = (data.staff_cards || []).filter(function(c) { return c.name !== name; });
+  wizardTasks = wizardTasks.filter(function(wt) { return wt.assignee !== name; });
   var users = getUsers(); if (users[name]) { delete users[name]; saveUsers(users); }
   document.getElementById('memberModal').classList.remove('show');
   localStorage.setItem('camp_data', JSON.stringify(data)); renderMembers(); setStatus('已删除：' + name);
@@ -1950,24 +2107,25 @@ function getAchievements(userName) {
 function renderWorkspace() {
   if (!currentUser) return;
   var container = document.getElementById('workspaceContent');
+  if (!container) return;
   var name = currentUser.name;
   var tasks = data.tasks || [];
   var finance = data.finance || [];
   var memInfo = (data.members || {})[name] || {};
 
   // ── Calculate NT balances by scope ──
-  var campNT = 0, personalNT = 0;
-  finance.forEach(function(tx) {
-    var scope = tx.scope || 'camp';
-    if (tx.to === name) { if (scope === 'personal') personalNT += (tx.amount||0); else campNT += (tx.amount||0); }
-    if (tx.from === name) { if (scope === 'personal') personalNT -= (tx.amount||0); else campNT -= (tx.amount||0); }
-  });
+  var balance = calcNtByScope(name);
+  var campNT = balance.camp, personalNT = balance.personal;
 
   // ── My tasks by scope ──
   var myCampTasks = [], myPersonalTasks = [];
   tasks.forEach(function(t, i) {
     var scope = t.scope || 'camp';
     var myClaim = (t.claimants || []).find(function(c) { return c.name === name && c.status !== 'dropped'; });
+    // 创世分配的任务：我是 assignee 但没有 claimants 记录
+    if (!myClaim && t.assignee === name && t.status !== '已完成' && t.status !== '已确认') {
+      myClaim = { name: name, status: 'in_progress', claimed_at: '', submitted_at: '' };
+    }
     if (!myClaim) return;
     var entry = { task: t, idx: i, claim: myClaim };
     if (scope === 'personal') myPersonalTasks.push(entry); else myCampTasks.push(entry);
@@ -2079,9 +2237,9 @@ function renderWorkspace() {
   else if (panel === 'settings') {
     html += '<h3>⚙️ 设置</h3>';
     html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" id="wsSettingsName" style="width:100%" disabled><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))">'+esc(memInfo.bio||'')+'</textarea></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));if(!document.getElementById(\'tab-workspace\').classList.contains(\'hidden\'))renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">头像</label><br><span style="font-size:.78rem;color:var(--muted)">点击头像编辑</span></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))" placeholder="0x..."></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));if(!document.getElementById(\'tab-workspace\').classList.contains(\'hidden\'))renderWorkspace()" placeholder="0x..."></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
   }
 
@@ -2092,11 +2250,11 @@ var flowFilter = 'all';
 
 function renderMyProfile() {
   if (!currentUser) return;
-  var container = document.getElementById('profileContent'); var name = currentUser.name;
+  var container = document.getElementById('profileContent'); if (!container) return; var name = currentUser.name;
   var users = getUsers(); var user = users[name] || {}; var mi = data.members && data.members[name] ? data.members[name] : {};
   var tasks = data.tasks || []; var myClaims = [];
   tasks.forEach(function(t, i) { (t.claimants || []).forEach(function(c) { if (c.name === name) myClaims.push({ task: t, idx: i, claim: c }); }); });
-  var totalNT = 0; (data.finance || []).forEach(function(tx) { if (tx.to === name) totalNT += (tx.amount || 0); if (tx.from === name) totalNT -= (tx.amount || 0); });
+  var totalNT = calcNtTotal(name);
   var daysSince = user.created ? Math.ceil((new Date() - new Date(user.created)) / (1000*60*60*24)) : 0;
   var achievements = getAchievements(name);
   var typeStats = {}; ['主线','支线','共创','隐藏'].forEach(function(tp) { typeStats[tp] = { total: 0, done: 0, points: 0 }; });
@@ -2121,7 +2279,7 @@ function renderMyProfile() {
 
 // ── Adventurer: Quest Board ──
 function renderQuestBoard() {
-  var container = document.getElementById('questBoardContent'); var tasks = data.tasks || []; var name = currentUser ? currentUser.name : '';
+  var container = document.getElementById('questBoardContent'); if (!container) return; var tasks = data.tasks || []; var name = currentUser ? currentUser.name : '';
   var filterTypes = ['all','主线','支线','共创','隐藏','claimable','claimed'];
   document.querySelectorAll('#questFilterBar .btn').forEach(function(b, i) { b.className = (questFilter === filterTypes[i]) ? 'btn pri' : 'btn'; });
   var filtered = tasks.filter(function(t) { if (t.status !== 'active') return false; if (!t.claimants) return false; var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var isFull = t.max_slots > 0 && activeClaimants.length >= t.max_slots; var isClaimed = myClaim && myClaim.status !== 'dropped'; var isClaimable = !isClaimed && !isFull; if (t.type === '隐藏' && !myClaim) return false; if (questFilter === 'claimable') return isClaimable; if (questFilter === 'claimed') return isClaimed; if (questFilter !== 'all') return t.type === questFilter; return true; });
@@ -2138,7 +2296,7 @@ function renderQuestBoard() {
 
 // ── Adventurer: Leaderboard ──
 function renderLeaderboard() {
-  var container = document.getElementById('leaderboardContent'); var users = getUsers(); var tasks = data.tasks || [];
+  var container = document.getElementById('leaderboardContent'); if (!container) return; var users = getUsers(); var tasks = data.tasks || [];
   var rankings = []; Object.values(users).forEach(function(u) { if (u.role !== 'adventurer') return; var ntBalance = 0; (data.finance || []).forEach(function(tx) { if (tx.to === u.name) ntBalance += (tx.amount || 0); if (tx.from === u.name) ntBalance -= (tx.amount || 0); }); var completed = tasks.filter(function(t) { var cl = (t.claimants || []).find(function(c) { return c.name === u.name; }); return cl && cl.status === 'completed'; }).length; rankings.push({ name: u.name, nt: ntBalance, done: completed, avatar: u.avatar_seed || 0, achievements: getAchievements(u.name) }); });
   rankings.sort(function(a, b) { return b.nt - a.nt; }); rankings = rankings.slice(0, 20);
   if (rankings.length === 0) { container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">暂无冒险者数据</div>'; return; }
@@ -2154,17 +2312,17 @@ function renderNTAdmin() {
   var html = '<h3>📋 已发布任务</h3>';
   if (ntTasks.length === 0) { html += '<div style="color:var(--muted);padding:8px">暂无已发布任务</div>'; }
   else { html += '<table style="width:100%;font-size:.78rem"><thead><tr><th style="text-align:left;padding:4px 8px">任务名</th><th style="padding:4px 8px">类型</th><th style="text-align:right;padding:4px 8px">NT</th><th style="text-align:right;padding:4px 8px">已领/限额</th><th style="padding:4px 8px">状态</th><th style="padding:4px 8px"></th></tr></thead><tbody>'; ntTasks.forEach(function(t) { var idx = tasks.indexOf(t); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var slots = t.max_slots > 0 ? activeClaimants.length + '/' + t.max_slots : '不限'; html += '<tr><td style="padding:3px 8px"><b>' + esc(t.name) + '</b></td><td style="padding:3px 8px">' + esc(t.type||'') + '</td><td style="text-align:right;padding:3px 8px">' + (t.points||0) + '</td><td style="text-align:right;padding:3px 8px">' + slots + '</td><td style="padding:3px 8px">' + (t.status||'active') + '</td><td style="padding:3px 8px">' + (t.type === '隐藏' ? '<button class="btn" onclick="triggerHiddenTask(' + idx + ')" style="font-size:.65rem;padding:2px 6px">🔓 触发</button>' : '') + '</td></tr>'; }); html += '</tbody></table>'; }
-  document.getElementById('ntadminTaskList').innerHTML = html;
+  var el = document.getElementById('ntadminTaskList'); if (el) el.innerHTML = html;
   var reviewItems = []; ntTasks.forEach(function(t) { var idx = tasks.indexOf(t); (t.claimants || []).forEach(function(c) { if (c.status === 'submitted') reviewItems.push({ task: t, idx: idx, claimant: c }); }); });
   html = '<h3 style="margin-top:16px">⏳ 待审核（' + reviewItems.length + '项）</h3>';
   if (reviewItems.length === 0) { html += '<div style="color:var(--muted);padding:8px">暂无待审核项</div>'; }
   else { reviewItems.forEach(function(item) { html += '<div id="ntReview_' + escAttr(item.claimant.name) + '" style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:.82rem"><div><b>' + esc(item.claimant.name) + '</b> · ' + esc(item.task.name) + ' · NT ' + (item.task.points||0) + '</div><div style="font-size:.72rem;color:var(--muted);margin:4px 0">提交于 ' + esc(item.claimant.submitted_at||'') + (item.claimant.submit_note ? ' · "' + esc(item.claimant.submit_note) + '"' : '') + '</div><div style="display:flex;gap:6px"><button class="btn green" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'approve\')" style="font-size:.7rem;padding:3px 10px">✅ 确认通过</button><button class="btn danger" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'reject\')" style="font-size:.7rem;padding:3px 10px">❌ 退回修改</button></div></div>'; }); }
-  document.getElementById('ntadminReviewList').innerHTML = html;
+  var el2 = document.getElementById('ntadminReviewList'); if (el2) el2.innerHTML = html;
   var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0);
   var pendingAmount = reviewItems.reduce(function(s, item) { return s + (item.task.points||0); }, 0);
   var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000;
   var remaining = poolTotal - totalIssued - pendingAmount;
-  document.getElementById('ntadminPoolStats').innerHTML = '<h3>📊 NT 池统计</h3><div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.82rem"><span>本期总池：<b>' + poolTotal.toLocaleString() + ' NT</b></span><span>已发放：<b>' + totalIssued.toLocaleString() + ' NT</b></span><span>待审核：<b>' + pendingAmount.toLocaleString() + ' NT</b></span><span style="color:' + (remaining < 0 ? 'var(--red)' : 'var(--green)') + '">剩余：<b>' + remaining.toLocaleString() + ' NT</b></span></div>';
+  var el3 = document.getElementById('ntadminPoolStats'); if (el3) el3.innerHTML = '<h3>📊 NT 池统计</h3><div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.82rem"><span>本期总池：<b>' + poolTotal.toLocaleString() + ' NT</b></span><span>已发放：<b>' + totalIssued.toLocaleString() + ' NT</b></span><span>待审核：<b>' + pendingAmount.toLocaleString() + ' NT</b></span><span style="color:' + (remaining < 0 ? 'var(--red)' : 'var(--green)') + '">剩余：<b>' + remaining.toLocaleString() + ' NT</b></span></div>';
 
   // ── Inbox highlight ──
   if (tabHighlight && tabHighlight.type === 'review' && tabHighlight.person) {
@@ -2186,7 +2344,7 @@ function claimTask(idx) { if (!currentUser) { alert('请先登录'); return; } v
 function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; var note = prompt('描述你完成的内容（可选）：'); myClaim.status = 'submitted'; myClaim.submitted_at = new Date().toISOString().slice(0,10); myClaim.submit_note = note || ''; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace(); setStatus('已提交：' + t.name); }
 function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace(); setStatus('已放弃：' + t.name); }
 function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var targetName = prompt('输入要触发的冒险者姓名：'); if (!targetName) return; if (!t.claimants) t.claimants = []; var alreadyThere = t.claimants.find(function(c) { return c.name === targetName; }); if (alreadyThere) { alert('该冒险者已被触发'); return; } t.claimants.push({ name: targetName, claimed_at: new Date().toISOString().slice(0,10), status: 'triggered' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已触发隐藏任务给：' + targetName); }
-function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; if (action === 'approve') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); if (!data.finance) data.finance = []; data.finance.push({ type: 'task_reward', from: '系统', to: claimantName, amount: t.points || 0, task_name: t.name, date: new Date().toISOString().slice(0,10), confirmed_by: currentUser.name, scope: t.scope || 'camp' }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
+function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; if (action === 'approve') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); if (!data.finance) data.finance = []; data.finance.push({ type: 'task_reward', from: '系统', to: claimantName, amount: t.points || 0, task_name: t.name, date: new Date().toISOString().slice(0,10), confirmed_by: currentUser.name, scope: t.scope || 'camp' }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
 function showPostTask() { var name = prompt('任务名称：'); if (!name) return; var scope = prompt('范围（camp=营队 / personal=私人）：','camp') || 'camp'; var type = prompt('任务类型（主线/支线/共创/隐藏）：','支线') || '支线'; var category = prompt('任务分类（课程/宣传/生活/财务/管理）：','其他') || '其他'; var points = parseInt(prompt('NT 奖励：','15')) || 15; var maxSlots = parseInt(prompt('人数限制（0=不限）：','0')) || 0; var deadline = prompt('截止日期（如 6/18）：') || ''; var visibility = prompt('谁能领（all/adventurer/npc/visitor/builder）：','all') || 'all'; var reviewer = prompt('审核人（空=发布者自己审）：') || ''; var note = prompt('任务说明（可选）：') || ''; if (!data.tasks) data.tasks = []; data.tasks.push({ name: name, type: type, category: category, points: points, max_slots: maxSlots, deadline: deadline, source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '', posted_at: new Date().toISOString().slice(0,10), claimants: [], status: 'active', note: note, scope: scope, visibility: visibility, reviewer: reviewer, min_season: 0 }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已发布：' + name); }
 
 // ── Upgrade ──
@@ -2283,6 +2441,10 @@ function updateAll() {
   renderCalendar();
   renderBudget();
   renderSettlementAll();
+  renderWorkspace();
+  renderNTAdmin();
+  renderLeaderboard();
+  renderQuestBoard();
   localStorage.setItem('camp_data', JSON.stringify(data));
 }
 
@@ -2374,22 +2536,7 @@ let mapSelectedPerson = null;
 let taskHallSelectedPerson = null;
 
 function getMilestones() {
-  if (!data.mapMilestones || data.mapMilestones.length === 0) {
-    // Template milestones with approximate dates for camp phases
-    data.mapMilestones = [
-      { date: '04/15', name: '第一次筹备会', icon: '📝' },
-      { date: '05/01', name: '第二次筹备会', icon: '📝' },
-      { date: '05/20', name: '第三次筹备会', icon: '📝' },
-      { date: '05/28', name: '网络见面会', icon: '💻' },
-      { date: '06/01', name: '动员日', icon: '📢' },
-      { date: '06/04', name: '接待动员日', icon: '🤝' },
-      { date: '06/06', name: '开营接待日', icon: '🎉' },
-      { date: '06/07', name: '开营第一天', icon: '🏕️' },
-      { date: '06/08', name: '营期中', icon: '🎨' },
-      { date: '06/25', name: '营后', icon: '📊' },
-      { date: '06/29', name: '结项', icon: '🏁' },
-    ];
-  }
+  if (!data.mapMilestones) data.mapMilestones = [];
   return data.mapMilestones;
 }
 
@@ -2465,6 +2612,7 @@ function renderDailyView(role) {
 
   // ── Date ──
   const dateInput = document.getElementById(prefix + 'Date');
+  if (!dateInput) return;  // tab not visible
   if (!dateInput.value) dateInput.valueAsDate = new Date();
   const selDate = dateInput.value; // YYYY-MM-DD
   const selMD = selDate.slice(5); // MM-DD
@@ -2485,7 +2633,8 @@ function renderDailyView(role) {
 
   // ── Milestone timeline ──
   var milestones = getMilestones();
-  document.getElementById(prefix + 'Milestones').innerHTML = milestones.map(function(m, i) {
+  var milestonesEl = document.getElementById(prefix + 'Milestones');
+  if (milestonesEl) milestonesEl.innerHTML = milestones.map(function(m, i) {
     var mDates = m.date ? normalizeMD(m.date) : '';
     var isToday = mDates === (selDate.slice(5,7)+'/'+selDate.slice(8));
     var isPast = mDates && parseDateStr(mDates) < parseDateStr(selMD.replace('-','/'));
@@ -3132,6 +3281,7 @@ function saveTask() {
     task.visibility = existing.visibility || 'all';
     task.reviewer = existing.reviewer || '';
     task.min_season = existing.min_season || 0;
+    task.max_slots = existing.max_slots || 0;
     task.claimants = existing.claimants || [];
     task.active = existing.active || 'yes';
     task.poster = existing.poster || '';
@@ -3142,6 +3292,7 @@ function saveTask() {
     task.visibility = task.visibility || 'all';
     task.reviewer = task.reviewer || '';
     task.min_season = 0;
+    task.max_slots = 0;
     task.claimants = [];
     task.active = 'yes';
     task.poster = currentUser ? currentUser.name : '';
@@ -3157,6 +3308,9 @@ function saveTask() {
 function deleteTask() {
   const idx = parseInt(document.getElementById('editTaskIdx').value);
   if (idx >= 0 && confirm('确定删除这个任务？')) {
+    var t = data.tasks[idx];
+    removeFromFinance('task_name', t.name);   // 清理 NT 流水
+    wizardTasks = wizardTasks.filter(function(wt) { return wt.name !== t.name; });
     data.tasks.splice(idx, 1);
     closeModal();
     updateAll();
@@ -3268,11 +3422,6 @@ function aggregateMaterialBudgets() {
 function getMilestoneTasks(milestone) {
   var tasks = data.tasks || []; var mName = milestone.name||''; var mDate = milestone.date||'';
   return tasks.filter(function(t) { if (mName && t.name && t.name.indexOf(mName) >= 0) return true; return false; });
-}
-
-function isStaff2(name) {
-  var staffNames = getStaffNames();
-  return staffNames.some(function(s) { return name.indexOf(s) !== -1; });
 }
 
 // ── renderMemberDetail wrapper ──
@@ -3521,6 +3670,7 @@ function switchScheduleView(view) {
 
 // ── Render Budget tab ──
 function renderBudget() {
+  if (!document.getElementById('bmRMBTotal')) return;  // tab not visible
   var budget = data.budget || {};
   var finObj = data.finance_cny || {};
   var finSummary = finObj.summary || {};
@@ -3784,7 +3934,7 @@ function renderSettlementAll() {
     var isStaff = staffNames.some(function(s) { return name.indexOf(s) !== -1; });
     var bucket = isStaff ? staffMap : playerMap;
     if (!bucket[name]) bucket[name] = { nt: 0, rmb: 0, tasks: [], points: 0, done: 0 };
-    bucket[name].nt = members[name].nt_actual || members[name].nt_earned || 0;
+    bucket[name].nt = calcNtTotal(name);
   });
 
   // From finance
@@ -3844,7 +3994,7 @@ function renderSettlementAll() {
   var doneTasks = personTasks.filter(function(t) { return t.status === '已完成' || t.status === '已确认'; });
   var personPoints = doneTasks.reduce(function(s, t) { return s + (t.points || 1); }, 0);
   var mi = members[settleSelected] || {};
-  var ntVal = bucket.nt || mi.nt_actual || mi.nt_earned || 0;
+  var ntVal = bucket.nt || calcNtTotal(settleSelected);
   var rmbVal = bucket.rmb || 0;
   var si = mi.avatar_seed !== undefined ? mi.avatar_seed : 0;
   var uid = 's_' + settleSelected.replace(/[^a-zA-Z0-9一-鿿]/g, '_');
@@ -4051,7 +4201,7 @@ function renderStep1() {
   document.getElementById('wizTeamBody').innerHTML = staff.map(function(n) {
     var m = members[n] || {};
     return '<tr><td><input class="inline-input" value="' + escAttr(n) + '" onchange="renameWizMember(\'' + escAttr(n) + '\',this.value)"></td>' +
-      '<td><select class="inline-input" onchange="data.members[\'' + escAttr(n) + '\'].role=this.value"><option value="">--</option>' +
+      '<td><select class="inline-input" onchange="data.members[\'' + escAttr(n) + '\'].role=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))"><option value="">--</option>' +
       WIZARD_ROLES.map(function(r) { return '<option value="' + r + '"' + ((m.role||'')===r?' selected':'') + '>' + r + '</option>'; }).join('') +
       '</select></td>' +
       '<td><span onclick="deleteWizMember(\'' + escAttr(n) + '\')" style="cursor:pointer;opacity:.3">×</span></td></tr>';
@@ -4532,8 +4682,6 @@ function colDrop(e, toDi) {
   var anchorSet = getAnchorSet(data.schedule.dates || []);
   if (anchorSet[colDragSrc] || anchorSet[toDi]) { alert('锚点日不可交换'); return; }
   var slots = data.schedule.slots;
-  if (colDragSrc < 0 || colDragSrc === toDi) return;
-  var slots = data.schedule.slots;
   slots.forEach(function(s) { if (!s.activities) s.activities = []; var tmp = s.activities[colDragSrc]||''; s.activities[colDragSrc] = s.activities[toDi]||''; s.activities[toDi] = tmp; });
   colDragSrc = -1;
   localStorage.setItem('camp_data', JSON.stringify(data));
@@ -4563,7 +4711,7 @@ function cellDrop(e, toSi, toDi) {
 
 // ── Budget Framework ──
 var BUDGET_ITEM_ID = 0;
-function nextBudgetId() { return ++BUDGET_ITEM_ID; }
+function nextBudgetId() { var id = ++BUDGET_ITEM_ID; localStorage.setItem('budget_item_counter', BUDGET_ITEM_ID); return id; }
 
 function initDefaultBudgetItems() {
   // 迁移：检测旧格式（含 amt 对象或 category 字段）
@@ -4997,7 +5145,7 @@ function refreshWizTemplateSelect() {
 
 function saveStep2() {
   // Persist wizardTasks into data.tasks (replacing all)
-  data.tasks = wizardTasks.map(function(t) { return Object.assign({}, t); });
+  mergeWizardToData(wizardTasks);
   wizardDirty = false;
   if (!data.camp_progress) data.camp_progress = { step: 2, steps: {'1':'done','2':'active','3':'locked','4':'locked','5':'locked'} };
   data.camp_progress.steps['2'] = 'done';
@@ -5808,7 +5956,7 @@ function executeSync() {
       newTasks.push(Object.assign({}, t));
     }
   });
-  data.tasks = newTasks;
+  mergeWizardToData(newTasks);
   // Sync milestones to mapMilestones
   if (data.camp_dates && data.camp_dates.milestones) {
     data.mapMilestones = data.camp_dates.milestones.map(function(m) {
@@ -5860,7 +6008,7 @@ function resetWizard() {
 function saveWizDraft() {
   // Persist current wizard state to data + localStorage without triggering updateAll
   if (wizardStep === 2) {
-    data.tasks = wizardTasks.map(function(t) { return Object.assign({}, t); });
+    mergeWizardToData(wizardTasks);
   }
   localStorage.setItem('camp_data', JSON.stringify(data));
   setStatus('已暂存步骤' + wizardStep);
