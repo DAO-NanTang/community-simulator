@@ -1218,6 +1218,10 @@ function toggleDropdown(id) { var el = document.getElementById(id); el.classList
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) { if (!e.target.closest('.dropdown')) { document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); }); } });
 
+// ═══════════════════════════════════════════
+// 共用函数（修复方案前置）
+// ═══════════════════════════════════════════
+
 function showAddMember() {
   var name = prompt('新成员姓名：');
   if (!name) return;
@@ -2393,7 +2397,7 @@ function switchTab(name, opts) {
   // ── 身份权限白名单 ──
   var roleTabs = {
     admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map'],
-    builder: ['workspace','questboard','members','taskhall','ntadmin','timeline','budget','settlement'],
+    builder: ['workspace','questboard','taskhall','ntadmin','timeline','budget','settlement'],
     adventurer: ['workspace','questboard','timeline','leaderboard'],
     npc: ['workspace'], visitor: ['workspace']
   };
