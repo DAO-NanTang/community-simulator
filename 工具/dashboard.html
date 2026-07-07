@@ -413,13 +413,16 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span style="font-weight:600" id="hudCurrentUser"></span>
       <span style="font-size:.78rem;color:var(--muted)">💎 <b id="hudNT">—</b></span>
-      <span id="builderModeBar" class="hidden" style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn mode-btn" data-mode="genesis" onclick="switchBuilderMode('genesis')" style="font-size:.8rem;padding:5px 12px">🌍 创世</button><button class="btn mode-btn" data-mode="oversee" onclick="switchBuilderMode('oversee')" style="font-size:.8rem;padding:5px 12px">📊 监察</button><button class="btn" onclick="switchToAdventurerPreview()" style="font-size:.8rem;padding:5px 12px">👁️ 冒险者视角</button></span>
+      <button class="btn hidden" id="hudGenesisBtn" onclick="switchBuilderMode('genesis')" style="font-size:.8rem;padding:5px 12px">🌍 创世终端</button>
+      <span id="builderModeBar" class="hidden" style="display:flex;gap:6px;flex-wrap:wrap"><span class="dropdown" style="position:relative"><button class="btn" onclick="toggleDropdown('previewMenu')" style="font-size:.8rem;padding:5px 10px">👁️ 预览 ▾</button><div id="previewMenu" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:120px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px"><button class="btn" onclick="switchToPreview('builder');toggleDropdown('previewMenu')" style="text-align:left;font-size:.8rem">🧱 共建者</button><button class="btn" onclick="switchToPreview('adventurer');toggleDropdown('previewMenu')" style="text-align:left;font-size:.8rem">⚔️ 冒险者</button><button class="btn" onclick="switchToPreview('npc');toggleDropdown('previewMenu')" style="text-align:left;font-size:.8rem">👥 NPC</button><button class="btn" onclick="switchToPreview('visitor');toggleDropdown('previewMenu')" style="text-align:left;font-size:.8rem">🏕️ 游客</button></div></span></span>
     </div>
+    <button id="btnInbox" onclick="toggleInbox()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;position:relative;padding:4px 8px" title="信箱">📬</button>
   </div></div>
 
   <!-- ═══ Builder Tabs ═══ -->
   <div id="builderTabs" class="tabs hidden">
-    <button class="tab" data-tab="settings" onclick="switchTab('settings')">🌍 创世终端</button>
+    <button class="tab" data-tab="workspace" onclick="switchTab('workspace')" id="builderWorkspaceTab">👤 砚仁</button>
+    <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 公告栏</button>
     <button class="tab" data-tab="members" onclick="switchTab('members')">📋 成员档案</button>
     <button class="tab" data-tab="taskhall" onclick="switchTab('taskhall')">📋 猎人公会</button>
     <button class="tab" data-tab="ntadmin" onclick="switchTab('ntadmin')">🎯 NT管理</button>
@@ -434,9 +437,6 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <button class="btn" onclick="exportData();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-download"></i> 导出数据</button>
         <button class="btn" onclick="showInviteManager();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-keyhole"></i> 邀请码</button>
         <hr style="border-color:var(--border);margin:2px 0">
-        <button class="btn" onclick="setIconStyle('duotone');toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-paint-brush"></i> 图标：双色调</button>
-        <button class="btn" onclick="setIconStyle('fill');toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-fill ph-paint-brush"></i> 图标：实心</button>
-        <button class="btn" onclick="setIconStyle('regular');toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph ph-paint-brush"></i> 图标：常规</button>
         <hr style="border-color:var(--border);margin:2px 0">
         <button class="btn" onclick="logoutUser();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-sign-out"></i> 退出</button>
       </div>
@@ -446,16 +446,15 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 
   <!-- ═══ Adventurer Tabs ═══ -->
   <div id="adventurerTabs" class="tabs hidden">
+    <button class="tab" data-tab="workspace" onclick="switchTab('workspace')" id="adventurerWorkspaceTab">👤 砚仁</button>
     <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务公告栏</button>
-    <button class="tab" data-tab="profile" onclick="switchTab('profile')">⚔️ 我的资料</button>
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 世界时间线</button>
     <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
     <span style="flex:1"></span>
-    <span class="dropdown" style="position:relative;align-self:center;margin-left:8px">
-      <button class="btn" onclick="toggleDropdown('gearMenu')" title="工具" style="font-size:.8rem;padding:4px 8px"><i class="ph-duotone ph-gear"></i></button>
-      <div id="gearMenuAdventure" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:150px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
-        <button class="btn" onclick="setIconStyle('duotone');toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-paint-brush"></i> 图标风格</button>
-        <button class="btn" onclick="logoutUser();toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-sign-out"></i> 退出</button>
+    <span class="dropdown" style="position:relative;align-self:center;margin-left:4px">
+      <button class="btn" onclick="toggleDropdown('gearMenuAdventure')" title="工具" style="font-size:.8rem;padding:4px 8px"><i class="ph-duotone ph-gear"></i></button>
+      <div id="gearMenuAdventure" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:120px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
+        <button class="btn" onclick="logoutUser();toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-sign-out"></i> 退出登录</button>
       </div>
     </span>
   </div>
@@ -555,12 +554,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <button class="btn" onclick="filterMembers('npc')">👥 南塘NPC</button>
       <button class="btn" onclick="filterMembers('visitor')">🏕️ 游客</button>
     </div>
-    <div class="ms-avatar-row" id="memberAvatars">
-      <button class="ms-avatar-btn ms-add-btn" onclick="showAddMember()" style="opacity:.6">
-        <div class="ms-av-circle" style="background:#e0dcd4;border:2px dashed var(--border)"><span style="font-size:1.2rem;color:var(--muted)">＋</span></div>
-        <div class="ms-av-name">新增</div>
-      </button>
-    </div>
+    <div class="ms-avatar-row" id="memberAvatars"></div>
     <div id="memberDetail"></div>
     <div class="empty-state hidden" id="memberEmpty">👤 还没有成员数据</div>
   </div>
@@ -968,6 +962,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 
   <!-- Tab: Profile (Adventurer) -->
   <div id="tab-profile" class="hidden"><div id="profileContent"></div></div>
+  <div id="tab-workspace" class="hidden"><div id="workspaceContent"></div></div>
 
   <!-- Tab: Quest Board (Adventurer) -->
   <div id="tab-questboard" class="hidden">
@@ -1146,29 +1141,13 @@ let currentUser = null;
 let previewMode = false;
 let currentBuilderMode = 'genesis';
 let pendingLoginName = null;
+let tabHighlight = null;  // { type, person?, task?, name? } — set by inbox, consumed by target tab
 let regRole = 'adventurer', regAvatarSeed = Math.floor(Math.random() * 60);
 
 // ── Member filter ──
 let memberFilter = 'builder';
 let questFilter = 'all';
 
-// ── Icon system ──
-const ICON_STYLES = { duotone:{prefix:'ph-duotone',label:'双色调'}, fill:{prefix:'ph-fill',label:'实心'}, regular:{prefix:'ph',label:'常规'}, bold:{prefix:'ph-bold',label:'加粗'} };
-let iconStyle = localStorage.getItem('nt_icon_style') || 'duotone';
-function icon(name, size) { var s = size ? 'font-size:' + size : ''; return '<i class="' + ICON_STYLES[iconStyle].prefix + ' ' + name + '" style="' + s + '"></i>'; }
-function setIconStyle(style) {
-  iconStyle = style;
-  localStorage.setItem('nt_icon_style', style);
-  var prefix = ICON_STYLES[style].prefix;
-  document.querySelectorAll('i[class*="ph"]').forEach(function(el) {
-    var cls = el.className;
-    // Remove old prefix (ph-duotone, ph-fill, ph-bold, or bare ph)
-    cls = cls.replace(/ph-duotone\s/g,'').replace(/ph-fill\s/g,'').replace(/ph-bold\s/g,'').replace(/^ph\s/g,'').replace(/\sph\s/g,' ');
-    // If the class is just 'ph' at start with no prefix, handle it
-    if (cls === 'ph' || cls.indexOf('ph ') === 0) cls = cls.replace(/^ph /,'').replace(/^ph$/,'');
-    el.className = prefix + ' ' + cls;
-  });
-}
 function toggleDropdown(id) { var el = document.getElementById(id); el.classList.toggle('hidden'); }
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) { if (!e.target.closest('.dropdown')) { document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); }); } });
@@ -1242,6 +1221,11 @@ function loadData() {
           assignee: t.assignee || '', start: t.start || '', deadline: t.deadline || '',
           confirmer: t.confirmer || '', points: t.points || 1,
           status: t.status || '待确认', source: t.source || '', note: t.note || '',
+          scope: t.scope || 'camp', visibility: t.visibility || 'all',
+          reviewer: t.reviewer || '', min_season: t.min_season || 0,
+          claimants: t.claimants || [], active: t.active || 'yes',
+          poster: t.poster || '', posted_at: t.posted_at || '',
+          max_slots: t.max_slots || 0,
         }));
         if (loaded.decisions) data.decisions = loaded.decisions;
         if (loaded.members) data.members = loaded.members;
@@ -1313,19 +1297,19 @@ function migrateExistingMembers() {
   var users = getUsers();
   var staffNames = getStaffNames();
   (data.staff_cards || []).forEach(function(c) {
-    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, created: new Date().toISOString().slice(0, 10) };
+    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10) };
   });
   Object.values(data.members || {}).forEach(function(m) {
     if (users[m.name]) return;
     var isStaff = staffNames.some(function(s) { return m.name === s; });
-    users[m.name] = { name: m.name, role: isStaff ? 'builder' : 'adventurer', password: null, avatar_seed: m.avatar_seed || 0, created: new Date().toISOString().slice(0, 10) };
+    users[m.name] = { name: m.name, role: isStaff ? 'builder' : 'adventurer', password: null, avatar_seed: m.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10) };
   });
   saveUsers(users);
 }
 
 function seedAdminAccount() {
   var users = getUsers();
-  users['砚仁'] = { name: '砚仁', role: 'admin', password: encodePassword('1500', '砚仁'), avatar_seed: (users['砚仁'] && users['砚仁'].avatar_seed) || 0, created: (users['砚仁'] && users['砚仁'].created) || new Date().toISOString().slice(0, 10) };
+  users['砚仁'] = { name: '砚仁', role: 'admin', password: encodePassword('1500', '砚仁'), avatar_seed: (users['砚仁'] && users['砚仁'].avatar_seed) || 0, season: (users['砚仁'] && users['砚仁'].season) || '', created: (users['砚仁'] && users['砚仁'].created) || new Date().toISOString().slice(0, 10) };
   saveUsers(users);
 }
 
@@ -1369,7 +1353,7 @@ function registerUser(name, password, role, avatarSeed, inviteCode) {
     if (!inviteCode) return { ok: false, error: '需要世界码' };
     if (!codes.includes(inviteCode)) return { ok: false, error: '世界码无效' };
   }
-  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, created: new Date().toISOString().slice(0, 10), world_id: (role === 'adventurer') ? inviteCode : null };
+  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, season: '', created: new Date().toISOString().slice(0, 10), world_id: (role === 'adventurer') ? inviteCode : null };
   saveUsers(users);
   if (!data.members) data.members = {};
   if (!data.members[name]) { data.members[name] = { name: name, role: '', avatar_seed: avatarSeed, gender: '' }; localStorage.setItem('camp_data', JSON.stringify(data)); }
@@ -1509,6 +1493,9 @@ function enterWorld(user) {
   document.getElementById('loginPage').style.display = 'none'; document.getElementById('worldHUD').classList.remove('hidden');
   var roleNames = { admin: '🧙管理员', builder: '🧙共建者', adventurer: '⚔️冒险者', npc: '👥在地伙伴', visitor: '🏕️游客' };
   document.getElementById('hudCurrentUser').textContent = user.name + ' (' + (roleNames[user.role] || '') + ')'; updateWorldHUD();
+  // Update workspace tab buttons to show user's name
+  var bwt = document.getElementById('builderWorkspaceTab'); if (bwt) bwt.textContent = '👤 ' + user.name;
+  var awt = document.getElementById('adventurerWorkspaceTab'); if (awt) awt.textContent = '👤 ' + user.name;
   hideAllTabs();
   ['builderTabs','adventurerTabs','builderModeBar'].forEach(function(id) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); });
   var pp = document.getElementById('plazaPlaceholder'); if (pp) pp.classList.add('hidden');
@@ -1518,18 +1505,20 @@ function enterWorld(user) {
     document.body.classList.add('builder-mode');
     document.getElementById('builderTabs').classList.remove('hidden');
     if (user.role === 'admin') {
+      document.getElementById('hudGenesisBtn').classList.remove('hidden');
       document.getElementById('builderModeBar').classList.remove('hidden');
-      switchBuilderMode('genesis');
-      updateOverseeBadge();
-    } else { switchTab('taskhall'); }
+      updateInboxBadge();
+    }
+    switchTab('workspace');
   } else if (user.role === 'adventurer') {
     document.body.classList.add('adventurer-mode');
     document.getElementById('adventurerTabs').classList.remove('hidden');
-    switchTab('questboard');
+    switchTab('workspace');
   } else { document.body.classList.add('adventurer-mode'); showPlazaPlaceholder(user); }
 }
 
-function hideAllTabs() { ['members','players','timeline','budget','settlement','map','taskhall','settings','profile','questboard','leaderboard','ntadmin'].forEach(function(n) { var el = document.getElementById('tab-' + n); if (el) el.classList.add('hidden'); }); }
+function hideAllTabs() { ['members','players','timeline','budget','settlement','map','taskhall','settings','profile','questboard','leaderboard','ntadmin','workspace'].forEach(function(n) { var el = document.getElementById('tab-' + n); if (el) el.classList.add('hidden'); }); }
+var workspacePanel = 'overview'; // 'overview' | 'camp' | 'personal' | 'flow' | 'settings'
 
 function showPlazaPlaceholder(user) {
   hideAllTabs();
@@ -1549,299 +1538,337 @@ function updateWorldHUD() {
   document.getElementById('hudNT').textContent = totalNT ? totalNT.toLocaleString() : '—';
 }
 
-// ── Oversee State (read/unread tracking) ──
-function getOverseeState() {
-  try {
-    var s = JSON.parse(localStorage.getItem('oversee_state')) || {};
-    if (!s.seenSubmitted) s.seenSubmitted = [];
-    if (!s.seenOverdue) s.seenOverdue = [];
-    if (!s.collapsed) s.collapsed = { submitted: false, overdue: false, progress: true };
-    return s;
-  } catch(e) { return { seenSubmitted: [], seenOverdue: [], collapsed: { submitted: false, overdue: false, progress: true } }; }
-}
-function saveOverseeState(state) { localStorage.setItem('oversee_state', JSON.stringify(state)); }
+// ═══════════════════════════════════════════
+// 📬 信箱系统
+// ═══════════════════════════════════════════
 
-function updateOverseeBadge() {
-  var tasks = data.tasks || [];
-  var state = getOverseeState();
-  var today = new Date().toISOString().slice(0, 10);
-  var unread = 0;
-  tasks.forEach(function(t) {
-    (t.claimants || []).forEach(function(c) {
-      if (c.status === 'submitted' && state.seenSubmitted.indexOf(c.name + '|' + t.name) === -1) unread++;
-    });
-    if (t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认') {
-      if (state.seenOverdue.indexOf((t.assignee || '') + '|' + t.name) === -1) unread++;
-    }
-  });
-  var btn = document.querySelector('.mode-btn[data-mode="oversee"]');
-  if (btn) {
-    var existing = btn.querySelector('.oversee-badge');
-    if (existing) existing.remove();
-    if (unread > 0) {
-      var badge = document.createElement('span');
-      badge.className = 'oversee-badge';
-      badge.textContent = unread;
-      badge.style.cssText = 'background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:.65rem;margin-left:3px;font-weight:700;vertical-align:super;line-height:1';
-      btn.appendChild(badge);
-    }
+function getInboxLastOpened() {
+  try { return localStorage.getItem('inbox_lastOpened') || ''; } catch(e) { return ''; }
+}
+function updateInboxLastOpened() { localStorage.setItem('inbox_lastOpened', new Date().toISOString()); }
+
+function updateInboxBadge() {
+  var msgs = computeInboxMessages();
+  var lastOpened = getInboxLastOpened();
+  var unread = msgs.filter(function(m) { return m.createdAt > lastOpened; }).length;
+  var btn = document.getElementById('btnInbox');
+  if (!btn) return;
+  var existing = btn.querySelector('.inbox-badge');
+  if (existing) existing.remove();
+  if (unread > 0) {
+    var badge = document.createElement('span');
+    badge.className = 'inbox-badge';
+    badge.textContent = unread;
+    badge.style.cssText = 'position:absolute;top:-2px;right:-4px;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:.6rem;font-weight:700;line-height:1;min-width:16px;text-align:center';
+    btn.appendChild(badge);
   }
 }
 
-function toggleOverseeSection(section) {
-  var state = getOverseeState();
-  if (state.collapsed[section] === undefined) state.collapsed[section] = true;
-  state.collapsed[section] = !state.collapsed[section];
+function computeInboxMessages() {
+  var msgs = [];
+  if (!currentUser) return msgs;
+  var tasks = data.tasks || [];
+  var today = new Date().toISOString().slice(0, 10);
+  var role = currentUser.role;
 
-  // Mark ALL current items in this section as seen when expanding
-  if (!state.collapsed[section]) {
-    var tasks = data.tasks || [];
-    var today = new Date().toISOString().slice(0, 10);
-    if (section === 'submitted') {
-      tasks.forEach(function(t) {
-        (t.claimants || []).forEach(function(c) {
-          if (c.status === 'submitted') {
-            var key = c.name + '|' + t.name;
-            if (state.seenSubmitted.indexOf(key) === -1) state.seenSubmitted.push(key);
+  if (role === 'admin' || role === 'builder') {
+    // ── 待审核（按人聚合）──
+    var submittedByPerson = {}; // person → { tasks, earliestDate, totalPoints }
+    tasks.forEach(function(t) {
+      (t.claimants || []).forEach(function(c) {
+        if (c.status === 'submitted') {
+          if (!submittedByPerson[c.name]) submittedByPerson[c.name] = { tasks: [], earliestDate: c.submitted_at || '', totalPoints: 0 };
+          submittedByPerson[c.name].tasks.push(t.name);
+          submittedByPerson[c.name].totalPoints += (t.points || 0);
+          if (c.submitted_at && (!submittedByPerson[c.name].earliestDate || c.submitted_at < submittedByPerson[c.name].earliestDate)) {
+            submittedByPerson[c.name].earliestDate = c.submitted_at;
           }
-        });
-      });
-    } else if (section === 'overdue') {
-      tasks.forEach(function(t) {
-        if (t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认') {
-          var key = (t.assignee || '') + '|' + t.name;
-          if (state.seenOverdue.indexOf(key) === -1) state.seenOverdue.push(key);
         }
       });
-    }
-    // 'progress' has no read tracking — just toggles visibility
-  }
-  saveOverseeState(state);
-  showOverseePanel();
-}
+    });
+    Object.keys(submittedByPerson).forEach(function(person) {
+      var s = submittedByPerson[person];
+      var waitDays = s.earliestDate ? Math.floor((new Date(today + 'T00:00:00') - new Date(s.earliestDate + 'T00:00:00')) / 86400000) : 0;
+      msgs.push({
+        type: 'submitted', person: person, taskCount: s.tasks.length, taskNames: s.tasks,
+        waitDays: waitDays, totalPoints: s.totalPoints,
+        createdAt: s.earliestDate,
+        jump: { tab: 'ntadmin', highlight: { type: 'review', person: person } }
+      });
+    });
 
-// ── Builder Mode Switch ──
-function switchBuilderMode(mode) {
-  currentBuilderMode = mode; document.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('active'); });
-  var btn = document.querySelector('.mode-btn[data-mode="' + mode + '"]'); if (btn) btn.classList.add('active');
-  var op = document.getElementById('overseePanel'); if (op) op.classList.add('hidden');
-  if (mode === 'genesis') switchTab('settings'); else if (mode === 'oversee') showOverseePanel();
-}
+    // ── 逾期（按人聚合）──
+    var overdueByPerson = {};
+    tasks.forEach(function(t) {
+      if (t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认') {
+        var name = t.assignee || '未分配';
+        if (!overdueByPerson[name]) overdueByPerson[name] = { tasks: [], worstDays: 0 };
+        var days = Math.floor((new Date(today + 'T00:00:00') - new Date(t.deadline + 'T00:00:00')) / 86400000);
+        overdueByPerson[name].tasks.push({ name: t.name, days: days });
+        if (days > overdueByPerson[name].worstDays) overdueByPerson[name].worstDays = days;
+      }
+    });
+    Object.keys(overdueByPerson).forEach(function(person) {
+      var o = overdueByPerson[person];
+      var firstTask = o.tasks[0];
+      msgs.push({
+        type: 'overdue', person: person, taskCount: o.tasks.length,
+        taskDescs: o.tasks.map(function(t) { return t.name + '(' + t.days + '天)'; }),
+        worstDays: o.worstDays,
+        createdAt: today, // overdue detected today
+        jump: { tab: 'taskhall', highlight: { type: 'task', name: firstTask.name } }
+      });
+    });
 
-// ── Oversee Panel ──
-function showOverseePanel() {
-  hideAllTabs();
-  var panel = document.getElementById('overseePanel');
-  if (!panel) {
-    panel = document.createElement('div'); panel.id = 'overseePanel';
-    panel.style.cssText = 'padding:8px 0';
-    document.querySelector('main').appendChild(panel);
-  }
-
-  var tasks = data.tasks || [];
-  var staffNames = getStaffNames();
-  var today = new Date().toISOString().slice(0, 10);
-  var state = getOverseeState();
-
-  // ═══ Gather data ═══
-
-  // Pending reviews — each claimant with status 'submitted'
-  var pendingReviews = [];
-  tasks.forEach(function(t) {
-    (t.claimants || []).forEach(function(c) {
-      if (c.status === 'submitted') {
-        var key = c.name + '|' + t.name;
-        var waitDays = 0;
-        if (c.submitted_at) {
-          waitDays = Math.floor((new Date(today + 'T00:00:00') - new Date(c.submitted_at + 'T00:00:00')) / 86400000);
-        }
-        pendingReviews.push({
-          claimant: c.name, task: t.name, waitDays: waitDays,
-          isNew: state.seenSubmitted.indexOf(key) === -1, key: key
+    // ── 进度异常 ──
+    var staffNames = getStaffNames();
+    var advMap = {};
+    tasks.forEach(function(t) {
+      var name = t.assignee || '';
+      if (!name || staffNames.some(function(s) { return name.indexOf(s) !== -1; })) return;
+      if (!advMap[name]) advMap[name] = { total: 0, done: 0 };
+      advMap[name].total++;
+      if (t.status === '已完成' || t.status === '已确认') advMap[name].done++;
+    });
+    Object.keys(advMap).forEach(function(name) {
+      var d = advMap[name];
+      if (d.total > 0 && d.done / d.total < 0.4) {
+        var pct = Math.round(d.done / d.total * 100);
+        msgs.push({
+          type: 'progress_low', person: name, done: d.done, total: d.total, pct: pct,
+          createdAt: today,
+          jump: { tab: 'members', highlight: { type: 'member', name: name } }
         });
       }
     });
-  });
 
-  // Overdue tasks — grouped by person
-  var overdueTasks = tasks.filter(function(t) {
-    return t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认';
-  });
-  var overdueByPerson = {}; // name → [{task, deadline, overdueDays, isNew, key}]
-  overdueTasks.forEach(function(t) {
-    var name = t.assignee || '未分配';
-    var key = name + '|' + t.name;
-    if (!overdueByPerson[name]) overdueByPerson[name] = [];
-    overdueByPerson[name].push({
-      task: t.name, deadline: t.deadline,
-      overdueDays: Math.floor((new Date(today + 'T00:00:00') - new Date(t.deadline + 'T00:00:00')) / 86400000),
-      isNew: state.seenOverdue.indexOf(key) === -1, key: key
+    // ── NT池预警 ──
+    var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000;
+    var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount || 0); }, 0);
+    var pendingAmount = 0;
+    tasks.forEach(function(t) {
+      (t.claimants || []).forEach(function(c) {
+        if (c.status === 'submitted') pendingAmount += (t.points || 0);
+      });
     });
-  });
-
-  // Unread counts for badges
-  var unreadSubmitted = pendingReviews.filter(function(p) { return p.isNew; }).length;
-  var unreadOverdue = 0;
-  Object.values(overdueByPerson).forEach(function(items) {
-    items.forEach(function(item) { if (item.isNew) unreadOverdue++; });
-  });
-
-  // ═══ Adventurer progress map ═══
-  var advMap = {};
-  tasks.forEach(function(t) {
-    var name = t.assignee || '';
-    if (!name || staffNames.some(function(s) { return name.indexOf(s) !== -1; })) return;
-    if (!advMap[name]) advMap[name] = { total: 0, done: 0, hasSubmitted: false, hasOverdue: false };
-    advMap[name].total++;
-    if (t.status === '已完成' || t.status === '已确认') advMap[name].done++;
-    if (t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认') advMap[name].hasOverdue = true;
-  });
-  pendingReviews.forEach(function(p) {
-    if (staffNames.some(function(s) { return p.claimant.indexOf(s) !== -1; })) return;
-    if (!advMap[p.claimant]) advMap[p.claimant] = { total: 0, done: 0, hasSubmitted: false, hasOverdue: false };
-    advMap[p.claimant].hasSubmitted = true;
-  });
-  Object.keys(data.members || {}).forEach(function(n) {
-    if (staffNames.some(function(s) { return n.indexOf(s) !== -1; })) return;
-    if (!advMap[n]) advMap[n] = { total: 0, done: 0, hasSubmitted: false, hasOverdue: false };
-  });
-
-  var PRIORITY = { submitted: 1, overdue: 2, active: 3, completed: 4, idle: 5 };
-  Object.keys(advMap).forEach(function(name) {
-    var d = advMap[name];
-    if (d.hasSubmitted)      { d.status = 'submitted'; d.priority = PRIORITY.submitted; }
-    else if (d.hasOverdue)   { d.status = 'overdue';   d.priority = PRIORITY.overdue; }
-    else if (d.total === 0)  { d.status = 'idle';      d.priority = PRIORITY.idle; }
-    else if (d.done >= d.total) { d.status = 'completed'; d.priority = PRIORITY.completed; }
-    else                     { d.status = 'active';    d.priority = PRIORITY.active; }
-  });
-  var sorted = Object.entries(advMap).sort(function(a, b) {
-    if (a[1].priority !== b[1].priority) return a[1].priority - b[1].priority;
-    return a[0].localeCompare(b[0]);
-  });
-
-  // Progress summary counts
-  var summaryCounts = { submitted: 0, overdue: 0, active: 0, completed: 0, idle: 0 };
-  Object.values(advMap).forEach(function(d) { summaryCounts[d.status]++; });
-
-  // ═══ NT Pool ═══
-  var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000;
-  var financeRewards = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; });
-  var totalIssued = financeRewards.reduce(function(s, tx) { return s + (tx.amount || 0); }, 0);
-  var issuedNames = {};
-  financeRewards.forEach(function(tx) { if (tx.to) issuedNames[tx.to] = true; });
-  var issuedCount = Object.keys(issuedNames).length;
-  var ntaNames = (data.staff_cards || []).filter(function(c) { return c.role === 'NT'; }).map(function(c) { return c.name; });
-  var ntaText = ntaNames.length === 1 ? ntaNames[0] : (ntaNames.length > 1 ? ntaNames[0] + ' 等 ' + ntaNames.length + ' 人' : '—');
-
-  // ═══ Render ═══
-  var STATUS_LABEL = { submitted: '待审核', overdue: '有逾期', active: '进行中', completed: '已完成', idle: '空闲' };
-  var STATUS_COLOR = { submitted: 'var(--accent)', overdue: 'var(--red)', active: 'var(--yellow)', completed: 'var(--green)', idle: 'var(--muted)' };
-
-  function sectionHeader(icon, label, total, unread, section, defaultCollapsed) {
-    var collapsed = state.collapsed[section] !== undefined ? state.collapsed[section] : defaultCollapsed;
-    var h = '<div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0;user-select:none" onclick="toggleOverseeSection(\'' + section + '\')">';
-    h += '<span style="font-size:.85rem;font-weight:600">' + icon + ' ' + label + ' ' + total + ' 项</span>';
-    if (unread > 0) h += '<span style="background:var(--red);color:#fff;border-radius:8px;padding:1px 7px;font-size:.65rem;font-weight:700">+' + unread + '新</span>';
-    h += '<span id="osToggle_' + section + '" style="font-size:.7rem;color:var(--muted);margin-left:auto">' + (collapsed ? '展开 ▾' : '折叠 ▴') + '</span>';
-    h += '</div>';
-    h += '<div id="osBody_' + section + '" style="' + (collapsed ? 'display:none' : '') + '">';
-    return h;
+    var remaining = poolTotal - totalIssued - pendingAmount;
+    if (remaining < pendingAmount * 0.5 && pendingAmount > 0) {
+      msgs.push({
+        type: 'pool_low', remaining: remaining, pending: pendingAmount, pool: poolTotal,
+        createdAt: today,
+        jump: { tab: 'budget', highlight: null }
+      });
+    }
   }
-  function sectionFooter() { return '</div>'; }
+
+  if (role === 'adventurer') {
+    var name = currentUser.name;
+    // ── 审核结果 ──
+    tasks.forEach(function(t) {
+      (t.claimants || []).forEach(function(c) {
+        if (c.name !== name) return;
+        if (c.status === 'completed') {
+          msgs.push({
+            type: 'review_approved', task: t.name, points: t.points || 0,
+            createdAt: c.reviewed_at || today,
+            jump: { tab: 'profile', highlight: null }
+          });
+        } else if (c.status === 'rejected') {
+          msgs.push({
+            type: 'review_rejected', task: t.name, reason: c.review_note || '',
+            createdAt: c.reviewed_at || today,
+            jump: { tab: 'profile', highlight: { type: 'task', name: t.name } }
+          });
+        }
+      });
+    });
+
+    // ── 截止临近（2天内，自己领取的）──
+    tasks.forEach(function(t) {
+      if (!t.deadline) return;
+      var daysLeft = Math.floor((new Date(t.deadline + 'T00:00:00') - new Date(today + 'T00:00:00')) / 86400000);
+      if (daysLeft < 0 || daysLeft > 2) return;
+      var myClaim = (t.claimants || []).find(function(c) { return c.name === name && c.status !== 'dropped'; });
+      if (!myClaim) return;
+      msgs.push({
+        type: 'deadline_close', task: t.name, daysLeft: daysLeft, points: t.points || 0,
+        createdAt: today,
+        jump: { tab: 'questboard', highlight: { type: 'task', name: t.name } }
+      });
+    });
+
+    // ── NT 到账 ──
+    (data.finance || []).forEach(function(tx) {
+      if (tx.type === 'task_reward' && tx.to === name) {
+        msgs.push({
+          type: 'nt_received', amount: tx.amount || 0, task: tx.task_name || '',
+          createdAt: tx.date || today,
+          jump: { tab: 'profile', highlight: null }
+        });
+      }
+    });
+  }
+
+  // Sort by createdAt descending (newest first)
+  msgs.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
+  return msgs;
+}
+
+function renderInbox() {
+  var panel = document.getElementById('inboxPanel');
+  if (!panel) {
+    panel = document.createElement('div'); panel.id = 'inboxPanel';
+    panel.style.cssText = 'position:fixed;top:56px;right:16px;width:400px;max-height:75vh;overflow-y:auto;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,.2);border-radius:12px;background:var(--card);border:1px solid var(--border)';
+    panel.innerHTML = '<div style="padding:18px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h3 style="margin:0">📬 信箱</h3><button onclick="closeInbox()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)">✕</button></div><div id="inboxContent"></div><div id="inboxFooter" style="border-top:1px solid var(--border);padding-top:8px;margin-top:12px;text-align:center;font-size:.75rem"></div></div>';
+    document.body.appendChild(panel);
+    // Close on outside click
+    panel.addEventListener('click', function(e) { e.stopPropagation(); });
+    document.addEventListener('click', function(e) {
+      if (panel && !panel.classList.contains('hidden') && !panel.contains(e.target) && e.target.id !== 'btnInbox' && !(e.target.parentElement && e.target.parentElement.id === 'btnInbox')) {
+        closeInbox();
+      }
+    });
+  }
+
+  var msgs = computeInboxMessages();
+  var lastOpened = getInboxLastOpened();
+  var newMsgs = msgs.filter(function(m) { return m.createdAt > lastOpened; });
+  var oldMsgs = msgs.filter(function(m) { return m.createdAt <= lastOpened; });
+
+  var TYPE_ICON = {
+    submitted: '🆕', overdue: '⚠️', progress_low: '📉', pool_low: '🔴',
+    review_approved: '✅', review_rejected: '❌', deadline_close: '⏰', nt_received: '💰'
+  };
+  var TYPE_LABEL = {
+    submitted: '待审核', overdue: '逾期', progress_low: '进度掉队', pool_low: 'NT池预警',
+    review_approved: '审核通过', review_rejected: '审核退回', deadline_close: '截止临近', nt_received: 'NT到账'
+  };
+
+  function renderMsg(m) {
+    var icon = TYPE_ICON[m.type] || '📌';
+    var body = '';
+    switch (m.type) {
+      case 'submitted':
+        body = esc(m.person) + ' 提交了 ' + m.taskCount + ' 项任务' + (m.waitDays > 0 ? ' · ' + m.waitDays + '天前' : '');
+        if (m.totalPoints > 0) body += ' · NT' + m.totalPoints;
+        break;
+      case 'overdue':
+        body = esc(m.person) + ' ' + m.taskCount + ' 项任务逾期（' + m.taskDescs.slice(0, 3).join('、') + (m.taskDescs.length > 3 ? '…' : '') + '）';
+        break;
+      case 'progress_low':
+        body = esc(m.person) + ' 仅完成 ' + m.done + '/' + m.total + '（' + m.pct + '%）';
+        break;
+      case 'pool_low':
+        body = 'NT 池仅剩 ' + m.remaining.toLocaleString() + '，不足以覆盖 ' + m.pending.toLocaleString() + ' 待审核';
+        break;
+      case 'review_approved':
+        body = '「' + esc(m.task) + '」已通过审核 · +' + m.points + ' NT';
+        break;
+      case 'review_rejected':
+        body = '「' + esc(m.task) + '」被退回' + (m.reason ? ' · ' + esc(m.reason) : '');
+        break;
+      case 'deadline_close':
+        body = '「' + esc(m.task) + '」' + (m.daysLeft === 0 ? '今天截止' : m.daysLeft + '天后截止') + ' · NT' + m.points;
+        break;
+      case 'nt_received':
+        body = '收到 NT ' + m.amount.toLocaleString() + (m.task ? '（来自「' + esc(m.task) + '」）' : '');
+        break;
+      default: body = '';
+    }
+    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px" onclick="jumpFromInbox(\'' + escAttr(m.jump.tab) + '\', ' + (m.jump.highlight ? JSON.stringify(m.jump.highlight).replace(/"/g, '&quot;') : 'null') + ')" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">' +
+      '<span style="font-size:1rem">' + icon + '</span>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:.82rem">' + body + '</div></div>' +
+      '<span style="font-size:.7rem;color:var(--accent);white-space:nowrap;font-weight:600">' + (m.jump.highlight ? '去看看 →' : '查看 →') + '</span>' +
+      '</div>';
+  }
 
   var html = '';
-
-  // ── Layer 1: 🔴 Urgent ──
-  html += '<div class="card"><h3>🔴 待处理</h3>';
-
-  // Submitted section
-  html += sectionHeader('⏳', '待审核', pendingReviews.length, unreadSubmitted, 'submitted', false);
-  if (pendingReviews.length === 0) {
-    html += '<div style="color:var(--muted);font-size:.78rem;padding:2px 0">暂无</div>';
+  if (newMsgs.length > 0) {
+    html += '<div style="font-size:.75rem;color:var(--red);font-weight:700;margin-bottom:6px">🔴 新消息（' + newMsgs.length + '）</div>';
+    newMsgs.slice(0, 10).forEach(function(m) { html += renderMsg(m); });
+    if (newMsgs.length > 10) html += '<div style="font-size:.75rem;color:var(--muted);text-align:center;padding:4px">还有 ' + (newMsgs.length - 10) + ' 条…</div>';
   } else {
-    pendingReviews.forEach(function(p) {
-      html += '<div style="font-size:.78rem;padding:2px 0;' + (p.isNew ? 'font-weight:700' : '') + '">' +
-        (p.isNew ? '🆕 ' : '&nbsp;&nbsp;&nbsp;') + esc(p.claimant) + ' → ' + esc(p.task) + ' · ' + p.waitDays + '天前</div>';
-    });
+    html += '<div style="font-size:.75rem;color:var(--green);margin-bottom:6px">✅ 没有新消息</div>';
   }
-  html += sectionFooter();
 
-  // Overdue section
-  html += sectionHeader('⚠️', '逾期', overdueTasks.length, unreadOverdue, 'overdue', false);
-  if (overdueTasks.length === 0) {
-    html += '<div style="color:var(--green);font-size:.78rem">✅ 无逾期</div>';
-  } else {
-    Object.keys(overdueByPerson).forEach(function(name) {
-      var items = overdueByPerson[name];
-      var hasNew = items.some(function(i) { return i.isNew; });
-      var taskDescs = items.map(function(i) {
-        return esc(i.task) + '(' + i.overdueDays + '天)';
-      }).join('、');
-      html += '<div style="font-size:.78rem;padding:2px 0;' + (hasNew ? 'font-weight:700' : '') + '">' +
-        (hasNew ? '🆕 ' : '&nbsp;&nbsp;&nbsp;') + esc(name) + '：' + taskDescs + '</div>';
-    });
+  if (oldMsgs.length > 0) {
+    html += '<div style="font-size:.75rem;color:var(--muted);font-weight:600;margin:10px 0 6px;cursor:pointer" id="inboxOldToggle" onclick="var el=document.getElementById(\"inboxOldBody\");var tgl=document.getElementById(\"inboxOldToggle\");if(el.style.display===\"none\"){el.style.display=\"\";tgl.textContent=\"📋 更早（'+oldMsgs.length+'）▴\"}else{el.style.display=\"none\";tgl.textContent=\"📋 更早（'+oldMsgs.length+'）▾\"}">📋 更早（' + oldMsgs.length + '）▾</div>';
+    html += '<div id="inboxOldBody" style="display:none">';
+    oldMsgs.slice(0, 20).forEach(function(m) { html += renderMsg(m); });
+    if (oldMsgs.length > 20) html += '<div style="font-size:.75rem;color:var(--muted);text-align:center;padding:4px">还有 ' + (oldMsgs.length - 20) + ' 条…</div>';
+    html += '</div>';
   }
-  html += sectionFooter();
-  html += '</div>'; // end card
 
-  // ── Layer 2: 🟡 Progress ──
-  var progressCollapsed = state.collapsed.progress !== undefined ? state.collapsed.progress : true;
-  html += '<div class="card"><h3>🟡 全员进度</h3>';
-  html += '<div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0;user-select:none" onclick="toggleOverseeSection(\'progress\')">';
-  var summaryParts = [];
-  if (summaryCounts.submitted > 0) summaryParts.push('⚠️ ' + summaryCounts.submitted + '人待审核');
-  if (summaryCounts.overdue > 0) summaryParts.push(summaryCounts.overdue + '人逾期');
-  if (summaryCounts.active > 0) summaryParts.push(summaryCounts.active + '人进行中');
-  if (summaryCounts.completed > 0) summaryParts.push(summaryCounts.completed + '人完成');
-  summaryParts.push(summaryCounts.idle + '人空闲');
-  html += '<span style="font-size:.82rem;color:var(--muted)">' + summaryParts.join(' · ') + '</span>';
-  html += '<span id="osToggle_progress" style="font-size:.7rem;color:var(--muted);margin-left:auto">' + (progressCollapsed ? '展开 ▾' : '折叠 ▴') + '</span>';
-  html += '</div>';
-  html += '<div id="osBody_progress" style="' + (progressCollapsed ? 'display:none' : '') + '">';
-  if (sorted.length === 0) {
-    html += '<div style="color:var(--muted);padding:8px;font-size:.82rem">暂无冒险者数据</div>';
-  } else {
-    sorted.forEach(function(e) {
-      var name = e[0], d = e[1];
-      var pct = d.total > 0 ? Math.round(d.done / d.total * 100) : 0;
-      var barColor = pct >= 80 ? 'var(--green)' : (pct >= 40 ? 'var(--yellow)' : 'var(--red)');
-      html += '<div style="display:flex;align-items:center;gap:8px;margin:5px 0">' +
-        '<span style="width:70px;font-size:.82rem;font-weight:600">' + esc(name) + '</span>' +
-        '<div style="flex:1;height:10px;background:var(--border);border-radius:5px;overflow:hidden">' +
-        '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:5px"></div></div>' +
-        '<span style="font-size:.72rem;color:var(--muted);width:44px;text-align:right">' + d.done + '/' + d.total + '</span>' +
-        '<span style="font-size:.7rem;color:' + (STATUS_COLOR[d.status] || 'var(--muted)') + ';width:56px;text-align:right;font-weight:600">' + (STATUS_LABEL[d.status] || '') + '</span></div>';
-    });
-  }
-  html += sectionFooter();
-  html += '</div>'; // end card
+  html += '<div style="text-align:center;margin-top:10px"><button class="btn" onclick="markAllRead();renderInbox();closeInbox()" style="font-size:.75rem;padding:4px 12px">✅ 全部标为已读</button></div>';
 
-  // ── Layer 3: 🟢 NT Pool ──
-  html += '<div class="card"><h3>🟢 NT 池</h3>' +
-    '<div style="font-size:.85rem">💎 ' + poolTotal.toLocaleString() + ' · 已发 ' + totalIssued.toLocaleString() + '（' + issuedCount + '人）· NTA ' + esc(ntaText) + '</div>' +
-    '</div>';
-
-  panel.innerHTML = html;
+  document.getElementById('inboxContent').innerHTML = html;
   panel.classList.remove('hidden');
-
-  // Update mode button badge
-  updateOverseeBadge();
+  updateInboxBadge();
 }
 
-function switchToAdventurerPreview() {
-  previewMode = true; document.body.classList.remove('builder-mode'); document.body.classList.add('adventurer-mode');
-  document.getElementById('builderTabs').classList.add('hidden'); document.getElementById('builderModeBar').classList.add('hidden');
-  document.getElementById('adventurerTabs').classList.remove('hidden'); showPreviewBanner(); switchTab('questboard');
+function closeInbox() {
+  var panel = document.getElementById('inboxPanel');
+  if (panel) panel.classList.add('hidden');
 }
 
-function showPreviewBanner() {
+function toggleInbox() {
+  var panel = document.getElementById('inboxPanel');
+  if (panel && !panel.classList.contains('hidden')) { closeInbox(); return; }
+  renderInbox();
+}
+
+function jumpFromInbox(tab, highlight) {
+  closeInbox();
+  updateInboxLastOpened();
+  if (highlight) {
+    switchTab(tab, { highlight: highlight });
+  } else {
+    switchTab(tab);
+  }
+}
+
+function markAllRead() {
+  updateInboxLastOpened();
+  updateInboxBadge();
+}
+
+
+var PREVIEW_ROLES = { builder:'🧱共建者', adventurer:'⚔️冒险者', npc:'👥在地伙伴', visitor:'🏕️游客' };
+function switchToPreview(role) {
+  previewMode = true; previewRole = role;
+  hideAllTabs();
+  document.getElementById('builderTabs').classList.add('hidden');
+  document.getElementById('builderModeBar').classList.add('hidden');
+  document.getElementById('adventurerTabs').classList.add('hidden');
+  var pp = document.getElementById('plazaPlaceholder'); if (pp) pp.classList.add('hidden');
+  document.body.classList.remove('builder-mode', 'adventurer-mode');
+
+  if (role === 'adventurer') {
+    document.body.classList.add('adventurer-mode');
+    document.getElementById('adventurerTabs').classList.remove('hidden');
+    switchTab('workspace');
+  } else if (role === 'builder') {
+    document.body.classList.add('builder-mode');
+    document.getElementById('builderTabs').classList.remove('hidden');
+    switchTab('workspace');
+  } else {
+    document.body.classList.add('adventurer-mode');
+    showPlazaPlaceholder({ name: currentUser ? currentUser.name : '', role: role });
+  }
+  showPreviewBanner(role);
+}
+var previewRole = 'adventurer';
+
+function showPreviewBanner(role) {
+  var label = PREVIEW_ROLES[role] || role;
   var banner = document.getElementById('previewBanner');
-  if (!banner) { banner = document.createElement('div'); banner.id = 'previewBanner'; banner.innerHTML = '👁️ 你正在以冒险者视角预览 · <button onclick="exitPreview()" style="background:#1a1410;color:#c8a860;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-weight:600;margin-left:12px">返回世界终端</button>'; document.getElementById('worldHUD').after(banner); }
+  if (!banner) { banner = document.createElement('div'); banner.id = 'previewBanner'; banner.innerHTML = ''; document.getElementById('worldHUD').after(banner); }
+  banner.innerHTML = '👁️ 你正在以' + label + '视角预览 · <button onclick="exitPreview()" style="background:#1a1410;color:#c8a860;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-weight:600;margin-left:12px">返回管理界面</button>';
   banner.style.display = 'block';
 }
 
-function exitPreview() { previewMode = false; var banner = document.getElementById('previewBanner'); if (banner) banner.style.display = 'none'; document.body.classList.add('builder-mode'); document.body.classList.remove('adventurer-mode'); document.getElementById('builderTabs').classList.remove('hidden'); document.getElementById('builderModeBar').classList.remove('hidden'); document.getElementById('adventurerTabs').classList.add('hidden'); switchBuilderMode(currentBuilderMode); }
+function switchBuilderMode(mode) { if (mode === 'genesis') switchTab('settings'); }
+function exitPreview() { previewMode = false; var banner = document.getElementById('previewBanner'); if (banner) banner.style.display = 'none'; document.body.classList.add('builder-mode'); document.body.classList.remove('adventurer-mode'); document.getElementById('builderTabs').classList.remove('hidden'); document.getElementById('builderModeBar').classList.remove('hidden'); document.getElementById('adventurerTabs').classList.add('hidden'); var pp = document.getElementById('plazaPlaceholder'); if (pp) pp.classList.add('hidden'); switchBuilderMode(currentBuilderMode); }
 
 // ── Member Archive ──
 function filterMembers(type) {
@@ -1884,7 +1911,7 @@ function saveMember() {
   data.members[newName] = { name: newName, gender: document.getElementById('memberGender').value, role: document.getElementById('memberRole').value.trim(), bio: document.getElementById('memberBio').value.trim(), avatar_style: editingAvatarStyle, avatar_seed: editingAvatarSeed, nt_actual: parseInt(document.getElementById('memberNT').value) || 0 };
   var users = getUsers();
   if (users[oldName]) { users[newName] = users[oldName]; users[newName].name = newName; users[newName].avatar_seed = editingAvatarSeed; if (oldName !== newName) delete users[oldName]; }
-  else if (!users[newName]) { users[newName] = { name: newName, role: 'adventurer', password: null, avatar_seed: editingAvatarSeed, created: new Date().toISOString().slice(0, 10) }; }
+  else if (!users[newName]) { users[newName] = { name: newName, role: 'adventurer', password: null, avatar_seed: editingAvatarSeed, season: '', created: new Date().toISOString().slice(0, 10) }; }
   else { users[newName].avatar_seed = editingAvatarSeed; }
   var newPwd = document.getElementById('memberNewPassword').value;
   if (newPwd) { var confirmPwd = document.getElementById('memberConfirmPassword').value; if (newPwd !== confirmPwd) return alert('两次密码不一致'); if (newPwd.length < 2) return alert('密码至少 2 位'); users[newName].password = encodePassword(newPwd, newName); }
@@ -1919,6 +1946,150 @@ function getAchievements(userName) {
 }
 
 // ── Adventurer: My Profile ──
+// ═══ Personal Workspace ═══
+function renderWorkspace() {
+  if (!currentUser) return;
+  var container = document.getElementById('workspaceContent');
+  var name = currentUser.name;
+  var tasks = data.tasks || [];
+  var finance = data.finance || [];
+  var memInfo = (data.members || {})[name] || {};
+
+  // ── Calculate NT balances by scope ──
+  var campNT = 0, personalNT = 0;
+  finance.forEach(function(tx) {
+    var scope = tx.scope || 'camp';
+    if (tx.to === name) { if (scope === 'personal') personalNT += (tx.amount||0); else campNT += (tx.amount||0); }
+    if (tx.from === name) { if (scope === 'personal') personalNT -= (tx.amount||0); else campNT -= (tx.amount||0); }
+  });
+
+  // ── My tasks by scope ──
+  var myCampTasks = [], myPersonalTasks = [];
+  tasks.forEach(function(t, i) {
+    var scope = t.scope || 'camp';
+    var myClaim = (t.claimants || []).find(function(c) { return c.name === name && c.status !== 'dropped'; });
+    if (!myClaim) return;
+    var entry = { task: t, idx: i, claim: myClaim };
+    if (scope === 'personal') myPersonalTasks.push(entry); else myCampTasks.push(entry);
+  });
+
+  // ── Tasks I posted (for review) ──
+  var myPosted = [];
+  tasks.forEach(function(t, i) {
+    if (t.poster === name || t.reviewer === name) {
+      var pending = (t.claimants || []).filter(function(c) { return c.status === 'submitted'; });
+      if (pending.length > 0) myPosted.push({ task: t, idx: i, pending: pending });
+    }
+  });
+
+  // ── Flow ──
+  var myFlow = finance.filter(function(tx) { return tx.to === name || tx.from === name; }).slice(-20).reverse();
+
+  // ── Render ──
+  var panel = workspacePanel;
+  var html = '<div style="display:flex;gap:16px;max-width:960px;margin:0 auto;min-height:400px">';
+
+  // ── Sidebar ──
+  html += '<div style="flex:0 0 170px;border-right:1px solid var(--border);padding:12px 8px">';
+  var items = [
+    { key: 'overview', icon: '👤', label: '个人总览' },
+    { key: 'camp', icon: '🏕️', label: '活动任务', badge: myCampTasks.filter(function(e){return e.claim.status==='in_progress'||e.claim.status==='submitted'}).length },
+    { key: 'personal', icon: '✏️', label: '私人委托', badge: myPersonalTasks.filter(function(e){return e.claim.status==='in_progress'||e.claim.status==='submitted'}).length },
+    { key: 'flow', icon: '💰', label: '流水' },
+    { key: 'settings', icon: '⚙️', label: '设置' }
+  ];
+  items.forEach(function(item) {
+    var active = panel === item.key;
+    var badgeHtml = item.badge > 0 ? ' <span style="background:var(--accent);color:#fff;border-radius:8px;padding:1px 6px;font-size:.62rem;font-weight:700">'+item.badge+'</span>' : '';
+    html += '<div onclick="workspacePanel=\''+item.key+'\';renderWorkspace()" style="padding:6px 8px;margin:2px 0;border-radius:6px;cursor:pointer;font-size:.82rem;'+(active?'background:var(--accent);color:#fff;font-weight:600':'color:var(--text)')+'">'+item.icon+' '+item.label+badgeHtml+'</div>';
+  });
+  html += '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;font-size:.72rem">';
+  html += '<div style="margin:3px 0">💎 活动 <b>'+campNT.toLocaleString()+'</b></div>';
+  html += '<div style="margin:3px 0">🔗 个人 <b>'+personalNT.toLocaleString()+'</b></div>';
+  html += '</div></div>';
+
+  // ── Main Content ──
+  html += '<div style="flex:1;min-width:0;padding:8px 4px">';
+
+  if (panel === 'overview') {
+    var avatarSi = memInfo.avatar_seed !== undefined ? memInfo.avatar_seed : 0;
+    html += '<div style="text-align:center;margin-bottom:16px">'+avatarImg(avatarSi,80,0)+'</div>';
+    html += '<div style="text-align:center;font-size:1.1rem;font-weight:700;margin-bottom:4px">'+esc(name)+'</div>';
+    if (memInfo.bio) html += '<div style="text-align:center;font-size:.8rem;color:var(--muted);margin-bottom:12px;font-style:italic">"'+esc(memInfo.bio)+'"</div>';
+    html += '<div style="display:flex;gap:12px;justify-content:center;margin-bottom:16px;font-size:.82rem">';
+    html += '<span>💎 活动 <b>'+campNT.toLocaleString()+'</b></span><span>🔗 个人 <b>'+personalNT.toLocaleString()+'</b></span>';
+    html += '</div>';
+    html += '<div style="font-size:.78rem;color:var(--muted)"><b>进行中：</b>营队 ' + myCampTasks.filter(function(e){return e.claim.status==='in_progress'}).length + ' 项 · 私人 ' + myPersonalTasks.filter(function(e){return e.claim.status==='in_progress'}).length + ' 项</div>';
+  }
+
+  else if (panel === 'camp' || panel === 'personal') {
+    var list = panel === 'camp' ? myCampTasks : myPersonalTasks;
+    var scopeLabel = panel === 'camp' ? '🏕️ 活动任务' : '✏️ 私人委托';
+    html += '<h3>'+scopeLabel+' ('+list.length+'项)</h3>';
+    if (list.length === 0) {
+      html += '<div style="color:var(--muted);padding:20px;text-align:center">暂无任务</div>';
+    } else {
+      list.forEach(function(e) {
+        var t = e.task, c = e.claim;
+        var statusLabel = {in_progress:'进行中',submitted:'待审核',completed:'已完成',rejected:'已退回',triggered:'待领取'};
+        var status = statusLabel[c.status] || c.status;
+        html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:.82rem">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center">'+
+          '<span style="font-weight:600">'+esc(t.name)+'</span>'+
+          '<span style="font-size:.7rem;color:var(--muted)">NT '+(t.points||0)+' · '+esc(t.deadline)+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">'+
+          '<span style="font-size:.72rem">'+status+'</span>'+
+          (c.status==='in_progress' ? '<button class="btn" onclick="submitTask('+e.idx+')" style="font-size:.7rem;padding:3px 8px">📤 提交</button>' : '')+
+          (c.status==='rejected' ? '<button class="btn" onclick="" style="font-size:.7rem;padding:3px 8px">🔄 重新提交</button>' : '')+
+          '</div></div>';
+      });
+    }
+    // Pending reviews for camp
+    if (panel === 'camp' && myPosted.length > 0) {
+      html += '<h4 style="margin-top:16px">⏳ 待审核（我发布的）</h4>';
+      myPosted.forEach(function(p) {
+        p.pending.forEach(function(c) {
+          html += '<div style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:4px;font-size:.78rem">'+
+            esc(c.name)+' → '+esc(p.task.name)+' · NT'+(p.task.points||0)+
+            ' <button class="btn green" onclick="reviewTask('+p.idx+',\''+escAttr(c.name)+'\',\'approve\');renderWorkspace()" style="font-size:.65rem;padding:2px 8px">✅</button>'+
+            ' <button class="btn danger" onclick="reviewTask('+p.idx+',\''+escAttr(c.name)+'\',\'reject\');renderWorkspace()" style="font-size:.65rem;padding:2px 8px">❌</button>'+
+            '</div>';
+        });
+      });
+    }
+  }
+
+  else if (panel === 'flow') {
+    html += '<h3>💰 流水</h3>';
+    html += '<div style="margin-bottom:8px;display:flex;gap:8px"><button class="btn '+(flowFilter==='all'?'pri':'')+'" onclick="flowFilter=\'all\';renderWorkspace()" style="font-size:.72rem;padding:3px 10px">全部</button><button class="btn '+(flowFilter==='camp'?'pri':'')+'" onclick="flowFilter=\'camp\';renderWorkspace()" style="font-size:.72rem;padding:3px 10px">🏕️ 活动</button><button class="btn '+(flowFilter==='personal'?'pri':'')+'" onclick="flowFilter=\'personal\';renderWorkspace()" style="font-size:.72rem;padding:3px 10px">✏️ 私人</button></div>';
+    var filtered = myFlow.filter(function(tx) { return flowFilter==='all'||(tx.scope||'camp')===flowFilter; });
+    if (filtered.length === 0) {
+      html += '<div style="color:var(--muted);padding:20px;text-align:center">暂无流水</div>';
+    } else {
+      filtered.forEach(function(tx) {
+        var isIn = tx.to === name;
+        var scopeIcon = (tx.scope||'camp') === 'personal' ? '✏️' : '🏕️';
+        html += '<div style="font-size:.78rem;padding:4px 0;border-bottom:1px dotted var(--border)">'+
+          scopeIcon+' '+esc(tx.date||'')+' '+(isIn?'<span style="color:var(--green)">+'+tx.amount+' NT</span>':'<span style="color:var(--red)">-'+tx.amount+' NT</span>')+
+          ' · '+esc(tx.task_name||tx.type||'')+'</div>';
+      });
+    }
+  }
+
+  else if (panel === 'settings') {
+    html += '<h3>⚙️ 设置</h3>';
+    html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" id="wsSettingsName" style="width:100%" disabled><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))">'+esc(memInfo.bio||'')+'</textarea></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">头像</label><br><span style="font-size:.78rem;color:var(--muted)">点击头像编辑</span></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))" placeholder="0x..."></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
+  }
+
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+var flowFilter = 'all';
+
 function renderMyProfile() {
   if (!currentUser) return;
   var container = document.getElementById('profileContent'); var name = currentUser.name;
@@ -1987,22 +2158,36 @@ function renderNTAdmin() {
   var reviewItems = []; ntTasks.forEach(function(t) { var idx = tasks.indexOf(t); (t.claimants || []).forEach(function(c) { if (c.status === 'submitted') reviewItems.push({ task: t, idx: idx, claimant: c }); }); });
   html = '<h3 style="margin-top:16px">⏳ 待审核（' + reviewItems.length + '项）</h3>';
   if (reviewItems.length === 0) { html += '<div style="color:var(--muted);padding:8px">暂无待审核项</div>'; }
-  else { reviewItems.forEach(function(item) { html += '<div style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:.82rem"><div><b>' + esc(item.claimant.name) + '</b> · ' + esc(item.task.name) + ' · NT ' + (item.task.points||0) + '</div><div style="font-size:.72rem;color:var(--muted);margin:4px 0">提交于 ' + esc(item.claimant.submitted_at||'') + (item.claimant.submit_note ? ' · "' + esc(item.claimant.submit_note) + '"' : '') + '</div><div style="display:flex;gap:6px"><button class="btn green" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'approve\')" style="font-size:.7rem;padding:3px 10px">✅ 确认通过</button><button class="btn danger" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'reject\')" style="font-size:.7rem;padding:3px 10px">❌ 退回修改</button></div></div>'; }); }
+  else { reviewItems.forEach(function(item) { html += '<div id="ntReview_' + escAttr(item.claimant.name) + '" style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:.82rem"><div><b>' + esc(item.claimant.name) + '</b> · ' + esc(item.task.name) + ' · NT ' + (item.task.points||0) + '</div><div style="font-size:.72rem;color:var(--muted);margin:4px 0">提交于 ' + esc(item.claimant.submitted_at||'') + (item.claimant.submit_note ? ' · "' + esc(item.claimant.submit_note) + '"' : '') + '</div><div style="display:flex;gap:6px"><button class="btn green" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'approve\')" style="font-size:.7rem;padding:3px 10px">✅ 确认通过</button><button class="btn danger" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'reject\')" style="font-size:.7rem;padding:3px 10px">❌ 退回修改</button></div></div>'; }); }
   document.getElementById('ntadminReviewList').innerHTML = html;
   var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0);
   var pendingAmount = reviewItems.reduce(function(s, item) { return s + (item.task.points||0); }, 0);
   var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000;
   var remaining = poolTotal - totalIssued - pendingAmount;
   document.getElementById('ntadminPoolStats').innerHTML = '<h3>📊 NT 池统计</h3><div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.82rem"><span>本期总池：<b>' + poolTotal.toLocaleString() + ' NT</b></span><span>已发放：<b>' + totalIssued.toLocaleString() + ' NT</b></span><span>待审核：<b>' + pendingAmount.toLocaleString() + ' NT</b></span><span style="color:' + (remaining < 0 ? 'var(--red)' : 'var(--green)') + '">剩余：<b>' + remaining.toLocaleString() + ' NT</b></span></div>';
+
+  // ── Inbox highlight ──
+  if (tabHighlight && tabHighlight.type === 'review' && tabHighlight.person) {
+    setTimeout(function() {
+      var el = document.getElementById('ntReview_' + tabHighlight.person);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.transition = 'background .3s';
+        el.style.background = '#fef9c3';
+        setTimeout(function() { el.style.background = ''; }, 2000);
+      }
+      tabHighlight = null;
+    }, 200);
+  }
 }
 
 // ── Task Actions ──
-function claimTask(idx) { if (!currentUser) { alert('请先登录'); return; } var t = data.tasks[idx]; if (!t || !t.claimants) return; var alreadyClaimed = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (alreadyClaimed) { alert('你已经领取过该委托'); return; } var activeCount = t.claimants.filter(function(c) { return c.status !== 'dropped'; }).length; if (t.max_slots > 0 && activeCount >= t.max_slots) { alert('名额已满'); return; } t.claimants.push({ name: currentUser.name, claimed_at: new Date().toISOString().slice(0,10), status: 'in_progress' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); setStatus('已领取：' + t.name); }
-function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; var note = prompt('描述你完成的内容（可选）：'); myClaim.status = 'submitted'; myClaim.submitted_at = new Date().toISOString().slice(0,10); myClaim.submit_note = note || ''; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); setStatus('已提交：' + t.name); }
-function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); setStatus('已放弃：' + t.name); }
+function claimTask(idx) { if (!currentUser) { alert('请先登录'); return; } var t = data.tasks[idx]; if (!t || !t.claimants) return; var alreadyClaimed = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (alreadyClaimed) { alert('你已经领取过该委托'); return; } var activeCount = t.claimants.filter(function(c) { return c.status !== 'dropped'; }).length; if (t.max_slots > 0 && activeCount >= t.max_slots) { alert('名额已满'); return; } t.claimants.push({ name: currentUser.name, claimed_at: new Date().toISOString().slice(0,10), status: 'in_progress' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace(); setStatus('已领取：' + t.name); }
+function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; var note = prompt('描述你完成的内容（可选）：'); myClaim.status = 'submitted'; myClaim.submitted_at = new Date().toISOString().slice(0,10); myClaim.submit_note = note || ''; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace(); setStatus('已提交：' + t.name); }
+function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace(); setStatus('已放弃：' + t.name); }
 function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var targetName = prompt('输入要触发的冒险者姓名：'); if (!targetName) return; if (!t.claimants) t.claimants = []; var alreadyThere = t.claimants.find(function(c) { return c.name === targetName; }); if (alreadyThere) { alert('该冒险者已被触发'); return; } t.claimants.push({ name: targetName, claimed_at: new Date().toISOString().slice(0,10), status: 'triggered' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已触发隐藏任务给：' + targetName); }
-function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; if (action === 'approve') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); if (!data.finance) data.finance = []; data.finance.push({ type: 'task_reward', from: '系统', to: claimantName, amount: t.points || 0, task_name: t.name, date: new Date().toISOString().slice(0,10), confirmed_by: currentUser.name }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
-function showPostTask() { var name = prompt('任务名称：'); if (!name) return; var type = prompt('任务类型（主线/支线/共创/隐藏）：','支线') || '支线'; var category = prompt('任务分类（课程/宣传/生活/财务/管理）：','其他') || '其他'; var points = parseInt(prompt('NT 奖励：','15')) || 15; var maxSlots = parseInt(prompt('人数限制（0=不限）：','0')) || 0; var deadline = prompt('截止日期（如 6/18）：') || ''; var note = prompt('任务说明（可选）：') || ''; if (!data.tasks) data.tasks = []; data.tasks.push({ name: name, type: type, category: category, points: points, max_slots: maxSlots, deadline: deadline, source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '', posted_at: new Date().toISOString().slice(0,10), claimants: [], status: 'active', note: note }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已发布：' + name); }
+function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; if (action === 'approve') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); if (!data.finance) data.finance = []; data.finance.push({ type: 'task_reward', from: '系统', to: claimantName, amount: t.points || 0, task_name: t.name, date: new Date().toISOString().slice(0,10), confirmed_by: currentUser.name, scope: t.scope || 'camp' }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
+function showPostTask() { var name = prompt('任务名称：'); if (!name) return; var scope = prompt('范围（camp=营队 / personal=私人）：','camp') || 'camp'; var type = prompt('任务类型（主线/支线/共创/隐藏）：','支线') || '支线'; var category = prompt('任务分类（课程/宣传/生活/财务/管理）：','其他') || '其他'; var points = parseInt(prompt('NT 奖励：','15')) || 15; var maxSlots = parseInt(prompt('人数限制（0=不限）：','0')) || 0; var deadline = prompt('截止日期（如 6/18）：') || ''; var visibility = prompt('谁能领（all/adventurer/npc/visitor/builder）：','all') || 'all'; var reviewer = prompt('审核人（空=发布者自己审）：') || ''; var note = prompt('任务说明（可选）：') || ''; if (!data.tasks) data.tasks = []; data.tasks.push({ name: name, type: type, category: category, points: points, max_slots: maxSlots, deadline: deadline, source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '', posted_at: new Date().toISOString().slice(0,10), claimants: [], status: 'active', note: note, scope: scope, visibility: visibility, reviewer: reviewer, min_season: 0 }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已发布：' + name); }
 
 // ── Upgrade ──
 function showInviteManager() {
@@ -2044,13 +2229,15 @@ function startGame(role) {
   if (session) { try { currentUser = JSON.parse(session); enterWorld(currentUser); } catch(e) {} }
 }
 
-function switchTab(name) {
+function switchTab(name, opts) {
+  // ── Inbox highlight passthrough ──
+  tabHighlight = (opts && opts.highlight) ? opts.highlight : null;
   // ── 身份权限白名单 ──
   var roleTabs = {
-    admin: ['settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map'],
-    builder: ['members','taskhall','ntadmin','timeline','budget','settlement'],
-    adventurer: ['questboard','profile','timeline','leaderboard'],
-    npc: [], visitor: []
+    admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map'],
+    builder: ['workspace','questboard','members','taskhall','ntadmin','timeline','budget','settlement'],
+    adventurer: ['workspace','questboard','timeline','leaderboard'],
+    npc: ['workspace'], visitor: ['workspace']
   };
   if (currentUser && !previewMode) {
     var allowed = roleTabs[currentUser.role];
@@ -2058,7 +2245,7 @@ function switchTab(name) {
     if (!allowed || allowed.length === 0) return;
   }
   // ── 隐藏所有 tab 内容 ──
-  ['members','players','timeline','budget','settlement','map','taskhall','settings','profile','questboard','leaderboard','ntadmin'].forEach(function(n) {
+  ['members','players','timeline','budget','settlement','map','taskhall','settings','profile','questboard','leaderboard','ntadmin','workspace'].forEach(function(n) {
     var el = document.getElementById('tab-' + n); if (el) el.classList.toggle('hidden', n !== name);
   });
   // ── 高亮当前可见面板中的 active tab ──
@@ -2082,6 +2269,7 @@ function switchTab(name) {
   if (name === 'questboard') renderQuestBoard();
   if (name === 'leaderboard') renderLeaderboard();
   if (name === 'map') renderDailyView('player'); // backward compat
+  if (name === 'workspace') renderWorkspace();
 }
 
 // ── Update all views ──
@@ -2488,7 +2676,7 @@ function renderTasks() {
     const idx = data.tasks.indexOf(t);
     const sc = (t.status === '已完成' || t.status === '已确认') ? 'done' : (t.status === '进行中' ? 'progress' : 'todo');
     const sl = (t.status === '已确定') ? '已确定' : t.status;
-    return `<tr>
+    return `<tr id="taskRow_${idx}">
       <td><span style="font-weight:500">${esc(t.name)}</span></td>
       <td>${esc(t.assignee)}</td>
       <td>${esc(t.start||'')}</td>
@@ -2502,6 +2690,25 @@ function renderTasks() {
       </td>
     </tr>`;
   }).join('');
+
+  // ── Inbox highlight ──
+  if (tabHighlight && tabHighlight.type === 'task' && tabHighlight.name) {
+    var targetIdx = -1;
+    for (var i = 0; i < shown.length; i++) { if (shown[i].name === tabHighlight.name) { targetIdx = i; break; } }
+    if (targetIdx >= 0) {
+      var targetId = 'taskRow_' + data.tasks.indexOf(shown[targetIdx]);
+      setTimeout(function() {
+        var el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.style.transition = 'background .3s';
+          el.style.background = '#fef9c3';
+          setTimeout(function() { el.style.background = ''; }, 2000);
+        }
+        tabHighlight = null;
+      }, 200);
+    }
+  }
 }
 
 function quickConfirm(idx) {
@@ -2623,6 +2830,11 @@ function renderMembers() {
     avRow.insertBefore(btn, addBtn);
   });
 
+  // ── Inbox highlight: auto-select member ──
+  if (tabHighlight && tabHighlight.type === 'member' && tabHighlight.name && staffData[tabHighlight.name]) {
+    selectedMember = tabHighlight.name;
+    tabHighlight = null;
+  }
   if (!selectedMember || !staffData[selectedMember]) { selectedMember = sorted[0][0]; }
   renderMemberDetail(selectedMember);
 }
@@ -2914,8 +3126,26 @@ function saveTask() {
 
   const idx = parseInt(document.getElementById('editTaskIdx').value);
   if (idx >= 0) {
+    // Merge: preserve existing fields not in the form (scope, visibility, reviewer, claimants, active, etc.)
+    var existing = data.tasks[idx];
+    task.scope = existing.scope || 'camp';
+    task.visibility = existing.visibility || 'all';
+    task.reviewer = existing.reviewer || '';
+    task.min_season = existing.min_season || 0;
+    task.claimants = existing.claimants || [];
+    task.active = existing.active || 'yes';
+    task.poster = existing.poster || '';
+    task.posted_at = existing.posted_at || '';
     data.tasks[idx] = task;
   } else {
+    task.scope = task.scope || 'camp';
+    task.visibility = task.visibility || 'all';
+    task.reviewer = task.reviewer || '';
+    task.min_season = 0;
+    task.claimants = [];
+    task.active = 'yes';
+    task.poster = currentUser ? currentUser.name : '';
+    task.posted_at = new Date().toISOString().slice(0,10);
     data.tasks.push(task);
   }
 
@@ -5299,10 +5529,10 @@ var NT_DESIGN_CATEGORIES = [
 
 function ensureNTDesignData() {
   if (!data.budget) data.budget = {};
-  if (!data.budget.nt_task_design) {
-    data.budget.nt_task_design = { mainline:[], sideline:[], cocreate:[], hidden:[] };
-  }
-  return data.budget.nt_task_design;
+  if (!data.budget.nt_task_design) data.budget.nt_task_design = {};
+  var d = data.budget.nt_task_design;
+  NT_DESIGN_CATEGORIES.forEach(function(cat) { if (!Array.isArray(d[cat.key])) d[cat.key] = []; });
+  return d;
 }
 
 function renderNTDesignTable() {
@@ -5324,7 +5554,8 @@ function renderNTDesignTable() {
   var html = '';
   var grandTotal = 0;
   NT_DESIGN_CATEGORIES.forEach(function(cat) {
-    var tasks = nt[cat.key] || [];
+    if (!nt[cat.key] || !Array.isArray(nt[cat.key])) nt[cat.key] = [];
+    var tasks = nt[cat.key];
     var subTotal = 0;
     tasks.forEach(function(t) { subTotal += (parseInt(t.nt_per_person)||0); });
     grandTotal += subTotal;

@@ -69,19 +69,23 @@ function inject() {
   localStorage.setItem('nt_users', JSON.stringify(users));
   localStorage.setItem('nt_world_codes', JSON.stringify(['1100']));
 
-  // Clear old oversee state so all items appear as NEW
+  // Clear old oversee state
   localStorage.removeItem('oversee_state');
+  localStorage.removeItem('inbox_lastOpened');
 
   document.getElementById('log').innerHTML =
-    '<span class="ok">✅ 测试数据已注入 localStorage（已清除旧已读状态）</span>\n' +
+    '<span class="ok">✅ 测试数据已注入 localStorage（已清除旧状态）</span>\n' +
     '📋 6 位成员 | 📝 10 个任务 | ⏳ 2 项待审核 | ⚠️ 3 项逾期 | 💰 NT 池 30,000\n' +
-    '\n预期监察面板效果：\n' +
-    '🔴 Layer 1（始终展开）：\n' +
-    '  ⏳ 待审核 2 项 +2新 → 🆕陈若雨→用户访谈·2天前 / 🆕墨染→编写文档·1天前\n' +
-    '  ⚠️ 逾期 3 项 +3新 → 🆕小红：系统架构(4天)、彩蛋开发(7天) / 🆕墨染：前端优化(2天) / 🆕fc：代码审查(1天)\n' +
-    '🟡 Layer 2（默认折叠）：一行摘要 → 点击展开看进度条\n' +
-    '🟢 Layer 3（始终展开）：💎 30,000 · 已发 60（2人）· NTA 砚仁\n' +
-    '\n📊 按钮上应显示红色徽章 ⑤（= 2新待审核 + 3新逾期）';
+    '\n📬 信箱预期效果：\n' +
+    'HUD 栏 📬 按钮应有红色徽章（未读消息数）\n' +
+    '点开信箱 → 新消息：\n' +
+    '  🆕 陈若雨提交了 1 项任务 · 2天前      [去看看 →]\n' +
+    '  🆕 墨染提交了 1 项任务 · 1天前          [去看看 →]\n' +
+    '  ⚠️ 墨染 1 项任务逾期（前端优化(2天)）  [去看看 →]\n' +
+    '  ⚠️ 小红 2 项任务逾期（系统架构(4天)…）[去看看 →]\n' +
+    '  ⚠️ fc 1 项任务逾期（代码审查(1天)）     [去看看 →]\n' +
+    '  📉 小红仅完成 1/6（17%）                [去看看 →]\n' +
+    '\n点击 [去看看 →] → 跳转到对应 tab 并高亮目标条目 ✨';
 }
 
 function openDash() {
