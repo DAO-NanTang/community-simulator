@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🌍 南塘营地 · 实景地图</title>
+<style>
+:root {
+  --bg: #f7f3ed; --card: #fffdf9; --text: #3d3629; --muted: #9b9078;
+  --accent: #c88740; --green: #5d9442; --red: #b84c38; --border: #e5ddce;
+  --font: system-ui, -apple-system, 'Noto Sans SC', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font); color: var(--text); background: var(--bg);
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+}
+
+/* Header */
+header {
+  width: 100%; max-width: 800px; padding: 12px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border); background: var(--card);
+}
+header h1 { font-size: 1rem; font-weight: 700; }
+header .actions { display: flex; gap: 6px; }
+.btn {
+  padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 6px;
+  cursor: pointer; font-size: .78rem; font-family: var(--font); background: var(--card);
+  color: var(--text); font-weight: 500; white-space: nowrap;
+}
+.btn:active { background: #f0e8d8; }
+.btn.pri { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Legend */
+.legend {
+  width: 100%; max-width: 800px; padding: 8px 16px;
+  display: flex; gap: 12px; flex-wrap: wrap; font-size: .72rem; color: var(--muted);
+}
+.legend span { display: flex; align-items: center; gap: 4px; }
+.legend .dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+/* Map area */
+.map-wrap {
+  width: 100%; max-width: 800px; padding: 8px 16px;
+  display: flex; justify-content: center;
+}
+canvas {
+  border: 2px solid var(--border); border-radius: 8px;
+  background: #faf8f2; cursor: pointer;
+  max-width: 100%; height: auto;
+  image-rendering: pixelated;
+}
+
+/* Detail panel */
+.detail-panel {
+  width: 100%; max-width: 800px; padding: 0 16px 16px;
+}
+.panel-card {
+  background: var(--card); border: 2px solid var(--accent); border-radius: 10px;
+  padding: 14px 16px; display: none;
+}
+.panel-card.show { display: block; }
+.panel-card h3 { font-size: .9rem; margin-bottom: 8px; }
+.panel-card .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: .82rem; border-bottom: 1px dotted var(--border); }
+.panel-card .row:last-child { border-bottom: none; }
+.panel-card .row .label { color: var(--muted); }
+.panel-card .row .val { font-weight: 600; }
+.panel-card .actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+
+/* Status badges */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .7rem; font-weight: 600; }
+.badge.clean { background: #e8f0e2; color: var(--green); }
+.badge.dirty { background: #fce8e0; color: var(--red); }
+.badge.growing { background: #fef8e8; color: #c8892e; }
+.badge.ready { background: #e8f0e2; color: var(--green); }
+.badge.overdue { background: #fce8e0; color: var(--red); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: #3d3629; color: #fff; padding: 8px 20px; border-radius: 20px;
+  font-size: .8rem; z-index: 100; opacity: 0; transition: opacity .3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+@media (max-width: 500px) {
+  header h1 { font-size: .88rem; }
+  .btn { padding: 5px 10px; font-size: .72rem; }
+  .legend { gap: 8px; font-size: .68rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌍 南塘营地 · 实景地图</h1>
+  <div class="actions">
+    <button class="btn" onclick="resetMap()">🔄 重置</button>
+  </div>
+</header>
+
+<div class="legend">
+  <span><span class="dot" style="background:#c8956c"></span> 住宿</span>
+  <span><span class="dot" style="background:#8bab7a"></span> 田地</span>
+  <span><span class="dot" style="background:#7a8ea8"></span> 创作</span>
+  <span><span class="dot" style="background:#c4a060"></span> 厨房</span>
+  <span><span class="dot" style="background:#7a9ea8"></span> 浴室</span>
+  <span><span class="dot" style="background:#9b8aae"></span> 展览</span>
+  <span><span class="dot" style="background:#d8d0c0"></span> 路径</span>
+</div>
+
+<div class="map-wrap">
+  <canvas id="mapCanvas"></canvas>
+</div>
+
+<div class="detail-panel">
+  <div class="panel-card" id="panelNone">
+    <div style="text-align:center;color:var(--muted);padding:12px">
+      👆 点击地图上的建筑或田地查看详情
+    </div>
+  </div>
+  <div class="panel-card" id="panelBuilding"></div>
+  <div class="panel-card" id="panelField"></div>
+  <div class="panel-card" id="panelFacility"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// 地图数据
+// ═══════════════════════════════════════════════════
+var COLS = 16, ROWS = 10, TILE = 40; // 桌面端瓦片大小
+
+// 建筑定义：{ id, name, type, col, row, w, h, color, emoji, ... }
+var BUILDINGS = [
+  { id:'susu',    name:'素社',     type:'住宿', col:0, row:0, w:6, h:3, color:'#c8956c', emoji:'🏠',
+    status:'clean', person:'朝林', lastClean:'07/15', note:'含宿舍×4 + 食堂' },
+  { id:'fieldA',  name:'A区菜地',  type:'田地', col:7, row:0, w:4, h:3, color:'#8bab7a', emoji:'🥬',
+    crop:'番茄', planted:'2026-07-15', harvestDays:45, status:'growing' },
+  { id:'studio',  name:'画室',     type:'创作', col:0, row:4, w:6, h:3, color:'#7a8ea8', emoji:'🎨',
+    status:'clean', person:'若曦', lastClean:'07/16', note:'含画架×10 + 展览墙' },
+  { id:'fieldB',  name:'B区菜地',  type:'田地', col:7, row:4, w:4, h:3, color:'#8bab7a', emoji:'🌽',
+    crop:'玉米', planted:'2026-07-01', harvestDays:60, status:'ready' },
+  { id:'kitchen', name:'厨房',     type:'设施', col:0, row:8, w:2, h:2, color:'#c4a060', emoji:'🍳',
+    status:'clean', person:'朝林', lastClean:'07/16' },
+  { id:'bath',    name:'浴室',     type:'设施', col:3, row:8, w:2, h:2, color:'#7a9ea8', emoji:'🚿',
+    status:'clean', person:'朝林', lastClean:'07/16' },
+  { id:'exhibit', name:'展览厅',   type:'展览', col:7, row:8, w:5, h:2, color:'#9b8aae', emoji:'🖼️',
+    status:'clean', person:'若曦', lastClean:'07/18', note:'展览日 7/28' },
+];
+
+// 路径定义
+var PATHS = [
+  // 纵向路径：col=6, rows 0-9
+  { col:6, row:0, w:1, h:10 },
+  // 横向路径：row=3, cols 0-15
+  { col:0, row:3, w:16, h:1 },
+  // 横向路径：row=7, cols 0-15
+  { col:0, row:7, w:16, h:1 },
+];
+
+// 为每个瓦片建立索引：tileMap[row][col] = building | null
+var tileMap = [];
+function buildTileMap() {
+  tileMap = [];
+  for (var r = 0; r < ROWS; r++) {
+    tileMap[r] = [];
+    for (var c = 0; c < COLS; c++) {
+      tileMap[r][c] = null;
+      // 检查是否属于某条路径
+      for (var p = 0; p < PATHS.length; p++) {
+        var path = PATHS[p];
+        if (c >= path.col && c < path.col + path.w && r >= path.row && r < path.row + path.h) {
+          tileMap[r][c] = { type:'path' };
+        }
+      }
+      // 检查是否属于某个建筑（建筑覆盖路径）
+      for (var b = 0; b < BUILDINGS.length; b++) {
+        var bd = BUILDINGS[b];
+        if (c >= bd.col && c < bd.col + bd.w && r >= bd.row && r < bd.row + bd.h) {
+          tileMap[r][c] = { type:'building', building: bd };
+        }
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// 数据持久化
+// ═══════════════════════════════════════════════════
+function loadData() {
+  var saved = localStorage.getItem('world_map_data');
+  if (saved) {
+    try {
+      var d = JSON.parse(saved);
+      // 合并回 BUILDINGS
+      d.buildings.forEach(function(s) {
+        var bd = BUILDINGS.find(function(b) { return b.id === s.id; });
+        if (bd) { bd.status = s.status; bd.lastClean = s.lastClean; bd.person = s.person;
+          bd.crop = s.crop; bd.planted = s.planted; bd.harvestDays = s.harvestDays; }
+      });
+    } catch(e) {}
+  }
+}
+function saveData() {
+  var data = {
+    buildings: BUILDINGS.map(function(b) {
+      return { id:b.id, status:b.status, lastClean:b.lastClean, person:b.person,
+        crop:b.crop, planted:b.planted, harvestDays:b.harvestDays };
+    })
+  };
+  localStorage.setItem('world_map_data', JSON.stringify(data));
+}
+
+function resetMap() {
+  if (confirm('重置所有状态到初始值？')) {
+    localStorage.removeItem('world_map_data');
+    location.reload();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// Canvas 渲染
+// ═══════════════════════════════════════════════════
+var canvas, ctx;
+var selectedBuilding = null;
+
+function initCanvas() {
+  canvas = document.getElementById('mapCanvas');
+  ctx = canvas.getContext('2d');
+
+  // 响应式瓦片大小
+  var maxW = Math.min(window.innerWidth - 32, 800);
+  TILE = Math.floor(maxW / COLS);
+  if (TILE < 24) TILE = 24;
+  if (TILE > 48) TILE = 48;
+
+  canvas.width = COLS * TILE;
+  canvas.height = ROWS * TILE;
+  canvas.style.width = (COLS * TILE) + 'px';
+  canvas.style.height = (ROWS * TILE) + 'px';
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 画草地背景
+  ctx.fillStyle = '#e8e0d0';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 画草地纹理小点
+  ctx.fillStyle = '#ddd5c0';
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      if ((r + c) % 3 === 0) {
+        ctx.fillRect(c * TILE + TILE/2, r * TILE + TILE/2, 2, 2);
+      }
+    }
+  }
+
+  // 画路径
+  PATHS.forEach(function(path) {
+    ctx.fillStyle = '#d8d0c0';
+    ctx.fillRect(path.col * TILE, path.row * TILE, path.w * TILE, path.h * TILE);
+    // 路径纹理
+    ctx.fillStyle = '#ccc4b4';
+    for (var r = path.row; r < path.row + path.h; r++) {
+      for (var c = path.col; c < path.col + path.w; c++) {
+        if ((r + c) % 5 === 0) {
+          ctx.fillRect(c * TILE + 3, r * TILE + 3, TILE/3, TILE/3);
+        }
+      }
+    }
+  });
+
+  // 画建筑
+  BUILDINGS.forEach(function(bd) {
+    var x = bd.col * TILE, y = bd.row * TILE;
+    var w = bd.w * TILE, h = bd.h * TILE;
+
+    // 建筑底色
+    ctx.fillStyle = bd.color;
+    ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+
+    // 选中高亮
+    if (selectedBuilding === bd) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      ctx.strokeStyle = 'var(--accent)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+    }
+
+    // 边框
+    ctx.strokeStyle = 'rgba(0,0,0,.2)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+
+    // 内部分隔线（模拟房间/田垄）
+    ctx.strokeStyle = 'rgba(255,255,255,.25)';
+    ctx.lineWidth = 1;
+    if (bd.type === '田地') {
+      for (var i = 1; i < bd.h; i++) {
+        ctx.beginPath();
+        ctx.moveTo(x + 6, y + i * TILE);
+        ctx.lineTo(x + w - 6, y + i * TILE);
+        ctx.stroke();
+      }
+    } else if (bd.type === '住宿') {
+      for (var i = 1; i < bd.w / 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(x + i * TILE * 2, y + 6);
+        ctx.lineTo(x + i * TILE * 2, y + h - 6);
+        ctx.stroke();
+      }
+    }
+
+    // 状态指示角标
+    var dotX = x + w - 12, dotY = y + 8;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 5, 0, Math.PI * 2);
+    if (bd.type === '田地') {
+      ctx.fillStyle = bd.status === 'ready' ? '#5d9442' : (bd.status === 'overdue' ? '#b84c38' : '#c8892e');
+    } else {
+      ctx.fillStyle = bd.status === 'clean' ? '#5d9442' : '#b84c38';
+    }
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Emoji + 名称
+    ctx.font = (TILE > 35 ? 18 : 14) + 'px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    // 文字阴影
+    ctx.shadowColor = 'rgba(0,0,0,.4)';
+    ctx.shadowBlur = 2;
+    ctx.fillText(bd.emoji + ' ' + bd.name, x + w/2, y + h/2 + 6);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // 田地额外标注作物名
+    if (bd.type === '田地' && bd.crop) {
+      ctx.font = (TILE > 35 ? 11 : 9) + 'px system-ui';
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      ctx.fillText(bd.crop, x + w/2, y + h/2 - (TILE > 35 ? 14 : 10));
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// 初始化
+// ═══════════════════════════════════════════════════
+var canvas, ctx;
+var selectedBuilding = null;
+
+function init() {
+  canvas = document.getElementById('mapCanvas');
+  ctx = canvas.getContext('2d');
+  loadData();
+  buildTileMap();
+  initCanvas();
+  render();
+  hideAllPanels();
+
+  window.addEventListener('resize', function() {
+    initCanvas();
+    render();
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// 点击交互（必须在 init 之后绑定，因为需要 canvas）
+// ═══════════════════════════════════════════════════
+function bindEvents() {
+  canvas.addEventListener('click', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var mx = (e.clientX - rect.left) * scaleX;
+    var my = (e.clientY - rect.top) * scaleY;
+    var col = Math.floor(mx / TILE);
+    var row = Math.floor(my / TILE);
+
+    if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return;
+
+    var tile = tileMap[row][col];
+    if (tile && tile.type === 'building' && tile.building) {
+      selectedBuilding = tile.building;
+      showBuildingPanel(tile.building);
+    } else {
+      selectedBuilding = null;
+      hideAllPanels();
+    }
+    render();
+  });
+
+  canvas.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    var touch = e.changedTouches[0];
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var mx = (touch.clientX - rect.left) * scaleX;
+    var my = (touch.clientY - rect.top) * scaleY;
+    var col = Math.floor(mx / TILE);
+    var row = Math.floor(my / TILE);
+
+    if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return;
+
+    var tile = tileMap[row][col];
+    if (tile && tile.type === 'building' && tile.building) {
+      selectedBuilding = tile.building;
+      showBuildingPanel(tile.building);
+    } else {
+      selectedBuilding = null;
+      hideAllPanels();
+    }
+    render();
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// 详情面板
+// ═══════════════════════════════════════════════════
+function hideAllPanels() {
+  document.getElementById('panelNone').classList.add('show');
+  document.getElementById('panelBuilding').classList.remove('show');
+  document.getElementById('panelField').classList.remove('show');
+  document.getElementById('panelFacility').classList.remove('show');
+}
+
+function showBuildingPanel(bd) {
+  var panelNone = document.getElementById('panelNone');
+  var panelB = document.getElementById('panelBuilding');
+  var panelF = document.getElementById('panelField');
+  var panelFa = document.getElementById('panelFacility');
+
+  panelNone.classList.remove('show');
+  panelB.classList.remove('show');
+  panelF.classList.remove('show');
+  panelFa.classList.remove('show');
+
+  var panel, typeLabel;
+  if (bd.type === '田地') {
+    panel = panelF;
+    typeLabel = '田地';
+  } else if (bd.type === '设施') {
+    panel = panelFa;
+    typeLabel = '设施';
+  } else {
+    panel = panelB;
+    typeLabel = bd.type;
+  }
+
+  // 计算收获信息
+  var harvestInfo = '';
+  if (bd.type === '田地' && bd.planted && bd.harvestDays) {
+    var planted = new Date(bd.planted + 'T00:00:00');
+    var harvest = new Date(planted);
+    harvest.setDate(harvest.getDate() + bd.harvestDays);
+    var today = new Date(); today.setHours(0,0,0,0);
+    var remain = Math.ceil((harvest - today) / (1000*60*60*24));
+    var harvestStr = harvest.toISOString().slice(0,10);
+    if (remain < 0) {
+      harvestInfo = '⏰ 已成熟！逾期 ' + Math.abs(remain) + ' 天（预计 ' + harvestStr + '）';
+      bd.status = 'overdue';
+    } else if (remain === 0) {
+      harvestInfo = '🎉 今天成熟！（' + harvestStr + '）';
+      bd.status = 'ready';
+    } else {
+      harvestInfo = '🌱 生长中 · 还剩 ' + remain + ' 天（预计 ' + harvestStr + '）';
+      bd.status = 'growing';
+    }
+  }
+
+  var statusBadge = '';
+  if (bd.type === '田地') {
+    statusBadge = '<span class="badge ' + bd.status + '">' +
+      (bd.status==='ready'?'可收获':bd.status==='overdue'?'已逾期':'生长中') + '</span>';
+  } else {
+    statusBadge = '<span class="badge ' + (bd.status==='clean'?'clean':'dirty') + '">' +
+      (bd.status==='clean'?'已打扫':'待打扫') + '</span>';
+  }
+
+  var html = '<h3>' + bd.emoji + ' ' + bd.name + ' <span style="font-size:.72rem;color:var(--muted)">' + typeLabel + '</span></h3>';
+  html += '<div class="row"><span class="label">状态</span><span class="val">' + statusBadge + '</span></div>';
+  if (bd.person) html += '<div class="row"><span class="label">负责人</span><span class="val">' + bd.person + '</span></div>';
+  if (bd.lastClean && bd.type !== '田地') html += '<div class="row"><span class="label">上次打扫</span><span class="val">' + bd.lastClean + '</span></div>';
+  if (bd.crop) html += '<div class="row"><span class="label">种植作物</span><span class="val">' + bd.crop + '</span></div>';
+  if (bd.planted) html += '<div class="row"><span class="label">种植日期</span><span class="val">' + bd.planted + '</span></div>';
+  if (harvestInfo) html += '<div class="row"><span class="label">收获信息</span><span class="val" style="color:' + (bd.status==='overdue'?'var(--red)':bd.status==='ready'?'var(--green)':'var(--accent)') + '">' + harvestInfo + '</span></div>';
+  if (bd.note) html += '<div class="row"><span class="label">备注</span><span class="val" style="font-size:.75rem">' + bd.note + '</span></div>';
+
+  // 操作按钮
+  html += '<div class="actions">';
+  if (bd.type === '田地') {
+    html += '<button class="btn" onclick="markHarvested(\'' + bd.id + '\')">🧺 标记已收获</button>';
+    html += '<button class="btn" onclick="replant(\'' + bd.id + '\')">🌱 重新种植</button>';
+  } else {
+    html += '<button class="btn pri" onclick="toggleClean(\'' + bd.id + '\')">' +
+      (bd.status==='clean' ? '📋 标记为待打扫' : '✅ 标记为已打扫') + '</button>';
+  }
+  html += '<button class="btn" onclick="editNote(\'' + bd.id + '\')">📝 备注</button>';
+  html += '</div>';
+
+  panel.innerHTML = html;
+  panel.classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════
+// 操作函数
+// ═══════════════════════════════════════════════════
+function toggleClean(id) {
+  var bd = BUILDINGS.find(function(b) { return b.id === id; });
+  if (!bd) return;
+  bd.status = bd.status === 'clean' ? 'dirty' : 'clean';
+  bd.lastClean = bd.status === 'clean' ? new Date().toISOString().slice(5,10).replace('-','/') : bd.lastClean;
+  saveData();
+  showBuildingPanel(bd);
+  render();
+  toast(bd.status === 'clean' ? '✅ ' + bd.name + ' 已打扫' : '📋 ' + bd.name + ' 标记为待打扫');
+}
+
+function markHarvested(id) {
+  var bd = BUILDINGS.find(function(b) { return b.id === id; });
+  if (!bd) return;
+  var count = prompt('收获了 roughly 多少？', '');
+  bd.status = 'growing';
+  bd.crop = '';
+  bd.planted = '';
+  bd.harvestDays = 0;
+  saveData();
+  showBuildingPanel(bd);
+  render();
+  toast('🧺 ' + bd.name + ' 已收获' + (count ? ' ' + count : ''));
+}
+
+function replant(id) {
+  var bd = BUILDINGS.find(function(b) { return b.id === id; });
+  if (!bd) return;
+  var crop = prompt('种了什么？', bd.crop || '');
+  if (!crop) return;
+  var days = parseInt(prompt('预计多少天成熟？', bd.harvestDays || '45'));
+  if (!days) return;
+  bd.crop = crop;
+  bd.planted = new Date().toISOString().slice(0,10);
+  bd.harvestDays = days;
+  bd.status = 'growing';
+  saveData();
+  showBuildingPanel(bd);
+  render();
+  toast('🌱 ' + bd.name + ' 种下了 ' + crop + '，预计 ' + days + ' 天后成熟');
+}
+
+function editNote(id) {
+  var bd = BUILDINGS.find(function(b) { return b.id === id; });
+  if (!bd) return;
+  var note = prompt('备注：', bd.note || '');
+  if (note === null) return;
+  bd.note = note;
+  saveData();
+  showBuildingPanel(bd);
+  toast('📝 备注已保存');
+}
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  init();
+  bindEvents();
+});
+</script>
+</body>
+</html>

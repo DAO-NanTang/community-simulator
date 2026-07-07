@@ -271,7 +271,8 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 /* ── Login page ── */
 .login-page { position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:url('ai_expand_image1783014990973.png') center/cover; }
 .login-page::after { content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(25,15,8,.62),rgba(20,12,6,.72),rgba(15,8,4,.78));z-index:1; }
-.login-card { position:relative;z-index:2;background:rgba(252,248,240,.92);border:1px solid rgba(180,150,110,.2);border-radius:16px;padding:42px 30px;max-width:460px;width:92%;box-shadow:0 4px 24px rgba(0,0,0,.2); }
+.login-card { position:relative;z-index:2;background:rgba(252,248,240,.92);border:1px solid rgba(180,150,110,.2);border-radius:24px;padding:24px 20px 32px;max-width:400px;width:90%;box-shadow:0 4px 24px rgba(0,0,0,.2); }
+.login-card .login-decor { width:min(220px,65%);height:auto;margin:0 auto 2px;display:block; }
 .login-card h1,.login-card h2 { color:#3d3629;margin:0 0 8px; }
 .login-card p { color:#9b9078;font-size:.9rem; }
 .login-card input { display:block;width:100%;margin:8px 0;padding:10px;border:2px solid #e5ddce;border-radius:8px;font-size:.9rem;text-align:center;background:#fffdf9;color:#3d3629; }
@@ -324,17 +325,20 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   .ms-av-circle { width: 40px; height: 40px; }
   .quest-grid { grid-template-columns: 1fr; }
   header { min-height: 80px; max-height: 120px; }
-  .login-card { padding: 24px 16px; }
+  .login-card { padding: 22px 14px 28px; }
+  .login-card .login-decor { width: min(180px, 55%); }
   #memberSubNav .btn { font-size: .7rem; padding: 4px 6px; }
 }
 @media (max-width: 480px) {
   main { padding: 8px 4px; }
   .tab { padding: 6px 8px; }
   .btn { padding: 6px 10px; font-size: .78rem; }
-  .login-card { padding: 20px 14px; }
+  .login-card { padding: 18px 10px 24px; }
+  .login-card .login-decor { width: min(140px, 50%); }
 }
 </style>
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.1" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 </head>
 <body>
 
@@ -351,6 +355,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <!-- ═══ Login Page ═══ -->
   <div id="loginPage" class="login-page">
     <div id="loginEntry" class="login-card" style="text-align:center">
+      <img src="92e279b22d04d4c831aec15aa09213df (1).png" class="login-decor" alt="">
       <div style="font-size:3.5rem;margin-bottom:4px;line-height:1">⚔️</div>
       <h1 style="font-size:1.6rem;margin:0 0 4px">实景游戏 · 南塘云村</h1>
       <p style="margin:0 0 4px;font-size:.9rem">欢迎你，寻找人生副本</p>
@@ -737,57 +742,49 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <div id="wizMilestoneCards" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px"></div>
         <div style="overflow-x:auto"><table style="width:100%;font-size:.82rem" id="wizMilestoneTable"><thead><tr><th>节点</th><th>日期</th><th>计算规则</th><th>锁定</th><th></th></tr></thead><tbody id="wizMilestoneBody"></tbody></table></div>
       </div>
-      <div class="card"><h3>💰 预算框架</h3>
-        <!-- Input: 2 rows -->
-        <div style="background:#fdfaf5;border-radius:8px;padding:10px 14px;margin-bottom:12px">
-          <div style="font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:6px">📐 输入参数（天数=<span id="wizBudgetDays">15</span> 来自上方营期）</div>
-          <div style="display:flex;gap:8px 14px;flex-wrap:wrap;align-items:center;font-size:.82rem;margin-bottom:4px">
-            <span>👥员工 <input id="wizStaffCount2" value="6" style="width:45px;text-align:center" oninput="syncStaffCount()"> 人</span>
-            <span>RMB工资 <input id="wizSalaryBaseRMB" value="2000" style="width:55px;text-align:right" oninput="updateWizBudgetCalc()">/人</span>
-            <span style="color:var(--border)">│</span>
-            <span>🎨共创人 <input id="wizParticipantBudget" value="10" style="width:45px;text-align:center" oninput="updateWizBudgetCalc()"> 人</span>
-            <span>早鸟 <input id="wizEarlyBird" value="499" style="width:50px;text-align:right" oninput="updateWizBudgetCalc()">×<input id="wizEarlyBirdPct" value="60" style="width:35px;text-align:right" oninput="updateWizBudgetCalc()">%</span>
-            <span>原价 <input id="wizFullPrice" value="599" style="width:50px;text-align:right" oninput="updateWizBudgetCalc()"></span>
-          </div>
+      <!-- ── 📥 收入参数 ── -->
+      <div class="card"><h3>📥 收入参数</h3>
+        <div style="display:flex;gap:8px 14px;flex-wrap:wrap;align-items:center;font-size:.82rem;margin-bottom:6px">
+          <span>🎨共创人 <input id="wizParticipantBudget" value="10" style="width:45px;text-align:center" oninput="updateWizBudgetCalc()"> 人</span>
+          <span>👥工作人员 <input id="wizStaffCount2" value="6" style="width:45px;text-align:center" oninput="updateWizBudgetCalc()"> 人</span>
+          <span>📅天数 <b id="wizBudgetDays">15</b></span>
+          <span style="color:var(--border)">│</span>
+          <span>早鸟 <input id="wizEarlyBird" value="499" style="width:50px;text-align:right" oninput="updateWizBudgetCalc()">×<input id="wizEarlyBirdPct" value="60" style="width:35px;text-align:right" oninput="updateWizBudgetCalc()">%</span>
+          <span>原价 <input id="wizFullPrice" value="599" style="width:50px;text-align:right" oninput="updateWizBudgetCalc()"></span>
+        </div>
+        <div id="wizIncomeItems"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:2px solid var(--green)">
+          <button class="btn" onclick="addBudgetItem('income')" style="font-size:.7rem;padding:2px 8px">＋ 添加收入项</button>
+          <span style="font-weight:700;color:var(--green)">收入合计：RMB <span id="wizIncomeTotalRMB">¥0</span> ｜ NT <span id="wizIncomeTotalNT">NT 0</span></span>
+        </div>
+      </div>
+
+      <!-- ── 📤 支出参数 ── -->
+      <div class="card"><h3>📤 支出参数</h3>
+        <div style="background:#fdfaf5;border-radius:8px;padding:8px 14px;margin-bottom:8px">
+          <div style="font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:4px">📐 单价参数（自动 × 天数 × 共创人数）</div>
           <div style="display:flex;gap:8px 14px;flex-wrap:wrap;align-items:center;font-size:.82rem">
-            <span>🏠住宿 ¥<input id="wizLodgingRMB" value="30" style="width:40px;text-align:right" oninput="updateWizBudgetCalc()">+NT<input id="wizLodgingNT" value="40" style="width:40px;text-align:right" oninput="updateWizBudgetCalc()"></span>
-            <span>🍚吃饭 ¥<input id="wizMealRMB" value="8" style="width:35px;text-align:right" oninput="updateWizBudgetCalc()">+NT<input id="wizMealNT" value="10" style="width:35px;text-align:right" oninput="updateWizBudgetCalc()"> /人/天</span>
-            <span style="color:var(--border)">│</span>
-            <span>🎁回购 <input id="wizNTBuyback" value="300" style="width:45px;text-align:right" oninput="updateWizBudgetCalc()">NT/人</span>
-            <span>📚课程 <input id="wizNTPerDay" value="100" style="width:45px;text-align:right" oninput="updateWizBudgetCalc()">NT/人/天</span>
-            <span style="color:var(--border)">│</span>
-            <span>🔴赏金 RMB<input id="wizRMBPool" value="3000" style="width:55px;text-align:right" oninput="updateWizBudgetCalc()"> NT<input id="wizNTPool" value="4500" style="width:55px;text-align:right" oninput="updateWizBudgetCalc()"></span>
+            <span>🏠住宿 ¥<input id="wizLodgingRMB" value="30" style="width:40px;text-align:right" oninput="updateWizBudgetCalc()"> + NT<input id="wizLodgingNT" value="40" style="width:40px;text-align:right" oninput="updateWizBudgetCalc()"> /人/天</span>
+            <span>🍚吃饭 ¥<input id="wizMealRMB" value="8" style="width:35px;text-align:right" oninput="updateWizBudgetCalc()"> + NT<input id="wizMealNT" value="10" style="width:35px;text-align:right" oninput="updateWizBudgetCalc()"> /人/天</span>
           </div>
         </div>
-        <!-- Results: RMB left, NT right -->
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
-          <div style="flex:1;min-width:200px;background:#f8f6f0;border-radius:8px;padding:10px 14px">
-            <h4 style="font-size:.82rem;margin:0 0 6px">💴 RMB（盈亏平衡）</h4>
-            <div class="budget-line" style="color:var(--green)"><span>学费收入</span><span id="wizTuitionEst">¥0</span></div>
-            <div style="margin-top:6px;padding-top:4px;border-top:1px dotted var(--border)">
-              <div class="budget-line"><span>人工费</span><span id="wizSalaryEst">¥0</span></div>
-              <div class="budget-line"><span>食宿费</span><span id="wizLodgingEst">¥0</span></div>
-              <div class="budget-line"><span>赏金池</span><span id="wizRMBPoolShow">¥0</span></div>
-              <div class="budget-line" style="font-weight:600;border-top:1px dotted var(--border)"><span>支出合计</span><span id="wizRMBExpense">¥0</span></div>
-            </div>
-            <div class="budget-line" style="font-weight:700;font-size:.88rem;margin-top:4px;padding-top:6px;border-top:2px solid var(--accent);color:var(--accent)"><span>📌 需申请资助</span><span id="wizSponsorNeeded">¥0</span></div>
-          </div>
-          <div style="flex:1;min-width:200px;background:#f8f6f0;border-radius:8px;padding:10px 14px">
-            <h4 style="font-size:.82rem;margin:0 0 6px">💎 NT 发行</h4>
-            <div class="budget-line" style="font-weight:700"><span>NT 总需求</span><span id="wizNTTotal">NT 0</span></div>
-            <div style="margin-top:4px;font-size:.78rem;color:var(--muted)">
-              <div class="budget-line"><span>├ 工作人员NT</span><span id="wizNTStaffShow" style="color:var(--muted)">-- 待认领</span></div>
-              <div class="budget-line"><span>├ 赏金池NT</span><span id="wizNTPoolShow">NT 0</span></div>
-              <div class="budget-line"><span>└ 共创人任务NT池</span><span id="wizCreatorNTPool">NT 0</span></div>
-            </div>
-            <div id="wizNTPoolUsage" style="display:none;margin-top:6px;padding-top:4px;border-top:1px dotted var(--border);font-size:.78rem"></div>
-          </div>
+        <div id="wizExpenseItems"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:2px solid var(--red)">
+          <button class="btn" onclick="addBudgetItem('expense')" style="font-size:.7rem;padding:2px 8px">＋ 添加支出项</button>
+          <span style="font-weight:700;color:var(--red)">支出合计：RMB <span id="wizExpenseTotalRMB">¥0</span> ｜ NT <span id="wizExpenseTotalNT">NT 0</span></span>
         </div>
-        <!-- Bottom total -->
-        <div style="background:linear-gradient(90deg,#fef9ee,#fdf5e0);border:1px solid var(--accent);border-radius:8px;padding:8px 14px;text-align:center;font-size:.84rem">
-          📊 <b>总预算：</b>需准备 RMB <b id="wizSummaryRMB" style="color:var(--accent)">¥0</b>（学费<span id="wizSummaryTuition">¥0</span> + 资助<span id="wizSummarySponsor">¥0</span>）｜ NT发行 <b id="wizSummaryNT" style="color:var(--accent)">NT 0</b>
-          <span style="font-size:.68rem;color:var(--muted);margin-left:12px">物料费→步骤④⑤</span>
-        </div>
+      </div>
+
+      <!-- ── 📊 汇总 & 导出 ── -->
+      <div style="background:linear-gradient(90deg,#fef9ee,#fdf5e0);border:1px solid var(--accent);border-radius:8px;padding:8px 14px;text-align:center;font-size:.84rem;margin-bottom:8px">
+        📊 <b>预测损益：</b>
+        RMB <b id="wizSummaryRMB" style="color:var(--accent);font-size:.95rem">¥0</b>
+        （收入 <span id="wizSummaryTuition" style="color:var(--green)">¥0</span> − 支出 <span id="wizSummaryExpense" style="color:var(--red)">¥0</span>）
+        <span style="margin-left:16px">NT <b id="wizSummaryNT" style="color:var(--accent);font-size:.95rem">NT 0</b></span>
+        <span style="font-size:.65rem;color:var(--muted);margin-left:8px">（收 <span id="wizSummaryNTIn">NT 0</span> − 支 <span id="wizSummaryNTOut">NT 0</span>）</span>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:8px">
+        <button class="btn pri" onclick="exportBudgetExcel()" style="font-size:.82rem">📥 导出预算表 (Excel)</button>
       </div>
       <div class="card"><h3>👥 团队</h3>
         <div style="overflow-x:auto"><table style="width:100%" id="wizTeamTable"><thead><tr><th>姓名</th><th>角色</th><th></th></tr></thead><tbody id="wizTeamBody"></tbody></table></div>
@@ -1126,7 +1123,7 @@ const CHARACTER_SEEDS = [
 const AVATAR_STYLE = 'avataaars'; // single consistent style for all avatars
 
 // ── State (ALL shared variables declared here first) ──
-let data = { tasks: [], decisions: [], members: {}, budget: {}, finance_cny: {}, finance: [], schedule: {}, camp_progress: { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} }, camp_dates: { start: '', end: '', duration_days: 15, milestones: [] }, staff_cards: [] };
+let data = { tasks: [], decisions: [], members: {}, budget: {}, budget_items: [], finance_cny: {}, finance: [], schedule: {}, camp_progress: { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} }, camp_dates: { start: '', end: '', duration_days: 15, milestones: [] }, staff_cards: [] };
 let settleSelected = null;
 let staffData = {}, playerData = {}, selectedStaff = null, selectedPlayer = null;
 let selectedMember = null;
@@ -1176,12 +1173,6 @@ function toggleDropdown(id) { var el = document.getElementById(id); el.classList
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) { if (!e.target.closest('.dropdown')) { document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); }); } });
 
-function renderTimeline() {}
-function renderSettlementAll() {}
-function renderMemberDetail(name) {}
-function renderPlayers() {}
-function switchScheduleView(v) {}
-function renderBudget() {}
 function showAddMember() {
   var name = prompt('新成员姓名：');
   if (!name) return;
@@ -1258,6 +1249,7 @@ function loadData() {
         if (loaded.schedule) data.schedule = loaded.schedule;
         if (loaded.stats) data.stats = loaded.stats;
         if (loaded.budget) data.budget = loaded.budget;
+        if (loaded.budget_items) data.budget_items = loaded.budget_items;
         if (loaded.finance_cny) data.finance_cny = loaded.finance_cny;  // object with {summary, transactions, by_person, by_type}
         if (loaded.finance) data.finance = Array.isArray(loaded.finance) ? loaded.finance : [];
         if (loaded.version) { /* version check OK */ } else { console.warn('data.json missing version field'); }
@@ -1528,6 +1520,7 @@ function enterWorld(user) {
     if (user.role === 'admin') {
       document.getElementById('builderModeBar').classList.remove('hidden');
       switchBuilderMode('genesis');
+      updateOverseeBadge();
     } else { switchTab('taskhall'); }
   } else if (user.role === 'adventurer') {
     document.body.classList.add('adventurer-mode');
@@ -1556,12 +1549,86 @@ function updateWorldHUD() {
   document.getElementById('hudNT').textContent = totalNT ? totalNT.toLocaleString() : '—';
 }
 
+// ── Oversee State (read/unread tracking) ──
+function getOverseeState() {
+  try {
+    var s = JSON.parse(localStorage.getItem('oversee_state')) || {};
+    if (!s.seenSubmitted) s.seenSubmitted = [];
+    if (!s.seenOverdue) s.seenOverdue = [];
+    if (!s.collapsed) s.collapsed = { submitted: false, overdue: false, progress: true };
+    return s;
+  } catch(e) { return { seenSubmitted: [], seenOverdue: [], collapsed: { submitted: false, overdue: false, progress: true } }; }
+}
+function saveOverseeState(state) { localStorage.setItem('oversee_state', JSON.stringify(state)); }
+
+function updateOverseeBadge() {
+  var tasks = data.tasks || [];
+  var state = getOverseeState();
+  var today = new Date().toISOString().slice(0, 10);
+  var unread = 0;
+  tasks.forEach(function(t) {
+    (t.claimants || []).forEach(function(c) {
+      if (c.status === 'submitted' && state.seenSubmitted.indexOf(c.name + '|' + t.name) === -1) unread++;
+    });
+    if (t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认') {
+      if (state.seenOverdue.indexOf((t.assignee || '') + '|' + t.name) === -1) unread++;
+    }
+  });
+  var btn = document.querySelector('.mode-btn[data-mode="oversee"]');
+  if (btn) {
+    var existing = btn.querySelector('.oversee-badge');
+    if (existing) existing.remove();
+    if (unread > 0) {
+      var badge = document.createElement('span');
+      badge.className = 'oversee-badge';
+      badge.textContent = unread;
+      badge.style.cssText = 'background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:.65rem;margin-left:3px;font-weight:700;vertical-align:super;line-height:1';
+      btn.appendChild(badge);
+    }
+  }
+}
+
+function toggleOverseeSection(section) {
+  var state = getOverseeState();
+  if (state.collapsed[section] === undefined) state.collapsed[section] = true;
+  state.collapsed[section] = !state.collapsed[section];
+
+  // Mark ALL current items in this section as seen when expanding
+  if (!state.collapsed[section]) {
+    var tasks = data.tasks || [];
+    var today = new Date().toISOString().slice(0, 10);
+    if (section === 'submitted') {
+      tasks.forEach(function(t) {
+        (t.claimants || []).forEach(function(c) {
+          if (c.status === 'submitted') {
+            var key = c.name + '|' + t.name;
+            if (state.seenSubmitted.indexOf(key) === -1) state.seenSubmitted.push(key);
+          }
+        });
+      });
+    } else if (section === 'overdue') {
+      tasks.forEach(function(t) {
+        if (t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认') {
+          var key = (t.assignee || '') + '|' + t.name;
+          if (state.seenOverdue.indexOf(key) === -1) state.seenOverdue.push(key);
+        }
+      });
+    }
+    // 'progress' has no read tracking — just toggles visibility
+  }
+  saveOverseeState(state);
+  showOverseePanel();
+}
+
+// ── Builder Mode Switch ──
 function switchBuilderMode(mode) {
   currentBuilderMode = mode; document.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('active'); });
   var btn = document.querySelector('.mode-btn[data-mode="' + mode + '"]'); if (btn) btn.classList.add('active');
+  var op = document.getElementById('overseePanel'); if (op) op.classList.add('hidden');
   if (mode === 'genesis') switchTab('settings'); else if (mode === 'oversee') showOverseePanel();
 }
 
+// ── Oversee Panel ──
 function showOverseePanel() {
   hideAllTabs();
   var panel = document.getElementById('overseePanel');
@@ -1570,87 +1637,196 @@ function showOverseePanel() {
     panel.style.cssText = 'padding:8px 0';
     document.querySelector('main').appendChild(panel);
   }
+
   var tasks = data.tasks || [];
   var staffNames = getStaffNames();
-  // Adventurer progress
+  var today = new Date().toISOString().slice(0, 10);
+  var state = getOverseeState();
+
+  // ═══ Gather data ═══
+
+  // Pending reviews — each claimant with status 'submitted'
+  var pendingReviews = [];
+  tasks.forEach(function(t) {
+    (t.claimants || []).forEach(function(c) {
+      if (c.status === 'submitted') {
+        var key = c.name + '|' + t.name;
+        var waitDays = 0;
+        if (c.submitted_at) {
+          waitDays = Math.floor((new Date(today + 'T00:00:00') - new Date(c.submitted_at + 'T00:00:00')) / 86400000);
+        }
+        pendingReviews.push({
+          claimant: c.name, task: t.name, waitDays: waitDays,
+          isNew: state.seenSubmitted.indexOf(key) === -1, key: key
+        });
+      }
+    });
+  });
+
+  // Overdue tasks — grouped by person
+  var overdueTasks = tasks.filter(function(t) {
+    return t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认';
+  });
+  var overdueByPerson = {}; // name → [{task, deadline, overdueDays, isNew, key}]
+  overdueTasks.forEach(function(t) {
+    var name = t.assignee || '未分配';
+    var key = name + '|' + t.name;
+    if (!overdueByPerson[name]) overdueByPerson[name] = [];
+    overdueByPerson[name].push({
+      task: t.name, deadline: t.deadline,
+      overdueDays: Math.floor((new Date(today + 'T00:00:00') - new Date(t.deadline + 'T00:00:00')) / 86400000),
+      isNew: state.seenOverdue.indexOf(key) === -1, key: key
+    });
+  });
+
+  // Unread counts for badges
+  var unreadSubmitted = pendingReviews.filter(function(p) { return p.isNew; }).length;
+  var unreadOverdue = 0;
+  Object.values(overdueByPerson).forEach(function(items) {
+    items.forEach(function(item) { if (item.isNew) unreadOverdue++; });
+  });
+
+  // ═══ Adventurer progress map ═══
   var advMap = {};
   tasks.forEach(function(t) {
     var name = t.assignee || '';
     if (!name || staffNames.some(function(s) { return name.indexOf(s) !== -1; })) return;
-    if (!advMap[name]) advMap[name] = { total: 0, done: 0, points: 0 };
+    if (!advMap[name]) advMap[name] = { total: 0, done: 0, hasSubmitted: false, hasOverdue: false };
     advMap[name].total++;
-    advMap[name].points += (t.points || 0);
     if (t.status === '已完成' || t.status === '已确认') advMap[name].done++;
+    if (t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认') advMap[name].hasOverdue = true;
   });
-  // Also from members
+  pendingReviews.forEach(function(p) {
+    if (staffNames.some(function(s) { return p.claimant.indexOf(s) !== -1; })) return;
+    if (!advMap[p.claimant]) advMap[p.claimant] = { total: 0, done: 0, hasSubmitted: false, hasOverdue: false };
+    advMap[p.claimant].hasSubmitted = true;
+  });
   Object.keys(data.members || {}).forEach(function(n) {
     if (staffNames.some(function(s) { return n.indexOf(s) !== -1; })) return;
-    if (!advMap[n]) advMap[n] = { total: 0, done: 0, points: 0 };
+    if (!advMap[n]) advMap[n] = { total: 0, done: 0, hasSubmitted: false, hasOverdue: false };
   });
-  var sorted = Object.entries(advMap).sort(function(a, b) { return b[1].points - a[1].points; });
 
-  // NT pool stats
-  var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0);
+  var PRIORITY = { submitted: 1, overdue: 2, active: 3, completed: 4, idle: 5 };
+  Object.keys(advMap).forEach(function(name) {
+    var d = advMap[name];
+    if (d.hasSubmitted)      { d.status = 'submitted'; d.priority = PRIORITY.submitted; }
+    else if (d.hasOverdue)   { d.status = 'overdue';   d.priority = PRIORITY.overdue; }
+    else if (d.total === 0)  { d.status = 'idle';      d.priority = PRIORITY.idle; }
+    else if (d.done >= d.total) { d.status = 'completed'; d.priority = PRIORITY.completed; }
+    else                     { d.status = 'active';    d.priority = PRIORITY.active; }
+  });
+  var sorted = Object.entries(advMap).sort(function(a, b) {
+    if (a[1].priority !== b[1].priority) return a[1].priority - b[1].priority;
+    return a[0].localeCompare(b[0]);
+  });
+
+  // Progress summary counts
+  var summaryCounts = { submitted: 0, overdue: 0, active: 0, completed: 0, idle: 0 };
+  Object.values(advMap).forEach(function(d) { summaryCounts[d.status]++; });
+
+  // ═══ NT Pool ═══
   var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000;
+  var financeRewards = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; });
+  var totalIssued = financeRewards.reduce(function(s, tx) { return s + (tx.amount || 0); }, 0);
+  var issuedNames = {};
+  financeRewards.forEach(function(tx) { if (tx.to) issuedNames[tx.to] = true; });
+  var issuedCount = Object.keys(issuedNames).length;
+  var ntaNames = (data.staff_cards || []).filter(function(c) { return c.role === 'NT'; }).map(function(c) { return c.name; });
+  var ntaText = ntaNames.length === 1 ? ntaNames[0] : (ntaNames.length > 1 ? ntaNames[0] + ' 等 ' + ntaNames.length + ' 人' : '—');
 
-  // Overdue tasks
-  var today = new Date().toISOString().slice(0,10);
-  var overdue = tasks.filter(function(t) {
-    return t.deadline && t.deadline < today && t.status !== '已完成' && t.status !== '已确认';
-  });
+  // ═══ Render ═══
+  var STATUS_LABEL = { submitted: '待审核', overdue: '有逾期', active: '进行中', completed: '已完成', idle: '空闲' };
+  var STATUS_COLOR = { submitted: 'var(--accent)', overdue: 'var(--red)', active: 'var(--yellow)', completed: 'var(--green)', idle: 'var(--muted)' };
 
-  // Pending reviews (from NT tasks)
-  var pendingReviews = [];
-  tasks.forEach(function(t) {
-    (t.claimants || []).forEach(function(c) {
-      if (c.status === 'submitted') pendingReviews.push({ task: t, claimant: c });
-    });
-  });
+  function sectionHeader(icon, label, total, unread, section, defaultCollapsed) {
+    var collapsed = state.collapsed[section] !== undefined ? state.collapsed[section] : defaultCollapsed;
+    var h = '<div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0;user-select:none" onclick="toggleOverseeSection(\'' + section + '\')">';
+    h += '<span style="font-size:.85rem;font-weight:600">' + icon + ' ' + label + ' ' + total + ' 项</span>';
+    if (unread > 0) h += '<span style="background:var(--red);color:#fff;border-radius:8px;padding:1px 7px;font-size:.65rem;font-weight:700">+' + unread + '新</span>';
+    h += '<span id="osToggle_' + section + '" style="font-size:.7rem;color:var(--muted);margin-left:auto">' + (collapsed ? '展开 ▾' : '折叠 ▴') + '</span>';
+    h += '</div>';
+    h += '<div id="osBody_' + section + '" style="' + (collapsed ? 'display:none' : '') + '">';
+    return h;
+  }
+  function sectionFooter() { return '</div>'; }
 
   var html = '';
-  // Progress bars
-  html += '<div class="card"><h3>📊 冒险者进度总览</h3>';
+
+  // ── Layer 1: 🔴 Urgent ──
+  html += '<div class="card"><h3>🔴 待处理</h3>';
+
+  // Submitted section
+  html += sectionHeader('⏳', '待审核', pendingReviews.length, unreadSubmitted, 'submitted', false);
+  if (pendingReviews.length === 0) {
+    html += '<div style="color:var(--muted);font-size:.78rem;padding:2px 0">暂无</div>';
+  } else {
+    pendingReviews.forEach(function(p) {
+      html += '<div style="font-size:.78rem;padding:2px 0;' + (p.isNew ? 'font-weight:700' : '') + '">' +
+        (p.isNew ? '🆕 ' : '&nbsp;&nbsp;&nbsp;') + esc(p.claimant) + ' → ' + esc(p.task) + ' · ' + p.waitDays + '天前</div>';
+    });
+  }
+  html += sectionFooter();
+
+  // Overdue section
+  html += sectionHeader('⚠️', '逾期', overdueTasks.length, unreadOverdue, 'overdue', false);
+  if (overdueTasks.length === 0) {
+    html += '<div style="color:var(--green);font-size:.78rem">✅ 无逾期</div>';
+  } else {
+    Object.keys(overdueByPerson).forEach(function(name) {
+      var items = overdueByPerson[name];
+      var hasNew = items.some(function(i) { return i.isNew; });
+      var taskDescs = items.map(function(i) {
+        return esc(i.task) + '(' + i.overdueDays + '天)';
+      }).join('、');
+      html += '<div style="font-size:.78rem;padding:2px 0;' + (hasNew ? 'font-weight:700' : '') + '">' +
+        (hasNew ? '🆕 ' : '&nbsp;&nbsp;&nbsp;') + esc(name) + '：' + taskDescs + '</div>';
+    });
+  }
+  html += sectionFooter();
+  html += '</div>'; // end card
+
+  // ── Layer 2: 🟡 Progress ──
+  var progressCollapsed = state.collapsed.progress !== undefined ? state.collapsed.progress : true;
+  html += '<div class="card"><h3>🟡 全员进度</h3>';
+  html += '<div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0;user-select:none" onclick="toggleOverseeSection(\'progress\')">';
+  var summaryParts = [];
+  if (summaryCounts.submitted > 0) summaryParts.push('⚠️ ' + summaryCounts.submitted + '人待审核');
+  if (summaryCounts.overdue > 0) summaryParts.push(summaryCounts.overdue + '人逾期');
+  if (summaryCounts.active > 0) summaryParts.push(summaryCounts.active + '人进行中');
+  if (summaryCounts.completed > 0) summaryParts.push(summaryCounts.completed + '人完成');
+  summaryParts.push(summaryCounts.idle + '人空闲');
+  html += '<span style="font-size:.82rem;color:var(--muted)">' + summaryParts.join(' · ') + '</span>';
+  html += '<span id="osToggle_progress" style="font-size:.7rem;color:var(--muted);margin-left:auto">' + (progressCollapsed ? '展开 ▾' : '折叠 ▴') + '</span>';
+  html += '</div>';
+  html += '<div id="osBody_progress" style="' + (progressCollapsed ? 'display:none' : '') + '">';
   if (sorted.length === 0) {
-    html += '<div style="color:var(--muted);padding:8px">暂无冒险者数据</div>';
+    html += '<div style="color:var(--muted);padding:8px;font-size:.82rem">暂无冒险者数据</div>';
   } else {
     sorted.forEach(function(e) {
       var name = e[0], d = e[1];
       var pct = d.total > 0 ? Math.round(d.done / d.total * 100) : 0;
+      var barColor = pct >= 80 ? 'var(--green)' : (pct >= 40 ? 'var(--yellow)' : 'var(--red)');
       html += '<div style="display:flex;align-items:center;gap:8px;margin:5px 0">' +
         '<span style="width:70px;font-size:.82rem;font-weight:600">' + esc(name) + '</span>' +
         '<div style="flex:1;height:10px;background:var(--border);border-radius:5px;overflow:hidden">' +
-        '<div style="height:100%;width:' + pct + '%;background:' + (pct>=80?'var(--green)':pct>=40?'var(--yellow)':'var(--red)') + ';border-radius:5px"></div></div>' +
-        '<span style="font-size:.72rem;color:var(--muted);width:100px;text-align:right">' + d.done + '/' + d.total + ' · 💎' + d.points + '</span></div>';
+        '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:5px"></div></div>' +
+        '<span style="font-size:.72rem;color:var(--muted);width:44px;text-align:right">' + d.done + '/' + d.total + '</span>' +
+        '<span style="font-size:.7rem;color:' + (STATUS_COLOR[d.status] || 'var(--muted)') + ';width:56px;text-align:right;font-weight:600">' + (STATUS_LABEL[d.status] || '') + '</span></div>';
     });
   }
-  html += '</div>';
+  html += sectionFooter();
+  html += '</div>'; // end card
 
-  // NT pool
-  html += '<div class="card"><h3>💰 NT 池</h3>' +
-    '<div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.85rem">' +
-    '<span>总池：<b>' + poolTotal.toLocaleString() + ' NT</b></span>' +
-    '<span>已发放：<b>' + totalIssued.toLocaleString() + ' NT</b></span>' +
-    '<span style="color:' + (poolTotal-totalIssued<0?'var(--red)':'var(--green)') + '">剩余：<b>' + (poolTotal-totalIssued).toLocaleString() + ' NT</b></span>' +
-    '</div></div>';
-
-  // Overdue
-  html += '<div class="card"><h3>⚠️ 逾期任务（' + overdue.length + '）</h3>';
-  if (overdue.length === 0) html += '<div style="color:var(--green)">✅ 无逾期</div>';
-  else overdue.slice(0,10).forEach(function(t) {
-    html += '<div style="font-size:.78rem;padding:2px 0">🔴 ' + esc(t.name) + ' · ' + esc(t.assignee||'未分配') + ' · ' + esc(t.deadline) + '</div>';
-  });
-  html += '</div>';
-
-  // Pending reviews
-  html += '<div class="card"><h3>⏳ 待审核（' + pendingReviews.length + '）</h3>';
-  if (pendingReviews.length === 0) html += '<div style="color:var(--muted)">暂无</div>';
-  else pendingReviews.forEach(function(item) {
-    html += '<div style="font-size:.78rem;padding:2px 0">' + esc(item.claimant.name) + ' → ' + esc(item.task.name) + ' · NT' + (item.task.points||0) + '</div>';
-  });
-  html += '</div>';
+  // ── Layer 3: 🟢 NT Pool ──
+  html += '<div class="card"><h3>🟢 NT 池</h3>' +
+    '<div style="font-size:.85rem">💎 ' + poolTotal.toLocaleString() + ' · 已发 ' + totalIssued.toLocaleString() + '（' + issuedCount + '人）· NTA ' + esc(ntaText) + '</div>' +
+    '</div>';
 
   panel.innerHTML = html;
   panel.classList.remove('hidden');
+
+  // Update mode button badge
+  updateOverseeBadge();
 }
 
 function switchToAdventurerPreview() {
@@ -2641,20 +2817,6 @@ function renderMemberDetailFor(type, name, m) {
       <div class="ms-name">${genderIcon} ${esc(name)} <button class="btn" style="padding:1px 6px;font-size:.65rem" onclick="showEditMember('${escAttr(name)}')">✎</button></div>
       <div class="ms-role">${esc(role)}</div>
       ${bio ? `<div style="font-size:.75rem;color:var(--muted);margin-bottom:8px;font-style:italic">"${esc(bio)}"</div>` : ''}
-      <div class="ms-stats">
-        ${total > 0 ? `<div class="stat-row"><span>📋 总任务</span><span class="sv">${total}</span></div>` : ''}
-        ${(m.done||0) > 0 ? `<div class="stat-row"><span>✅ 完成</span><span class="sv g">${m.done||0}</span></div>` : ''}
-        ${(m.active||0) > 0 ? `<div class="stat-row"><span>🔄 进行中</span><span class="sv y">${m.active||0}</span></div>` : ''}
-        ${(m.todo||0) > 0 ? `<div class="stat-row"><span>⬜ 待开始</span><span class="sv r">${m.todo||0}</span></div>` : ''}
-        ${(m.points||0) > 0 ? `<div class="stat-row"><span>⭐ 激励点</span><span class="sv">${m.points||0}</span></div>` : ''}
-        ${ntInfo ? `<div class="stat-row"><span>💰 NT</span><span class="sv g">${ntInfo.toLocaleString()}</span></div>` : ''}
-        ${rmbInfo ? `<div class="stat-row"><span>💴 RMB</span><span class="sv">¥${rmbInfo.toLocaleString()}</span></div>` : ''}
-        ${matCount > 0 ? `<div class="stat-row"><span>📦 材料项</span><span class="sv">${matCount}</span></div>` : ''}
-        ${matBudget > 0 ? `<div class="stat-row"><span>💰 预算</span><span class="sv">¥${matBudget.toLocaleString()}</span></div>` : ''}
-        ${matActual > 0 ? `<div class="stat-row"><span>💳 实花</span><span class="sv" style="color:${matActual > matBudget ? 'var(--red)' : 'var(--green)'}">¥${matActual.toLocaleString()}</span></div>` : ''}
-      </div>
-      <div class="ms-bar-wrap"><div class="fill" style="width:${pct}%;background:var(--green)"></div></div>
-      <div style="font-size:.7rem;color:var(--muted)">${total > 0 ? pct + '% 完成' : (ntInfo ? 'NT ' + ntInfo.toLocaleString() : '共创人')}</div>
       <div style="margin-top:8px;display:flex;flex-direction:column;gap:3px">
         <button class="btn" style="padding:4px 12px;font-size:.72rem;width:100%;${view==='tasks'?'background:var(--accent);color:#fff;border-color:var(--accent)':''}" onclick="memberViewMode['${escAttr(name)}']='tasks';${type==='player'?'renderPlayerDetail':'renderMemberDetail'}('${escAttr(name)}')">📋 任务</button>
         <button class="btn" style="padding:4px 12px;font-size:.72rem;width:100%;${view==='materials'?'background:var(--accent);color:#fff;border-color:var(--accent)':''}" onclick="memberViewMode['${escAttr(name)}']='materials';${type==='player'?'renderPlayerDetail':'renderMemberDetail'}('${escAttr(name)}')">📦 材料表</button>
@@ -2780,797 +2942,6 @@ function closeModal() {
 document.getElementById('addTaskModal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
-
-
-
-// ── Utility: escape for HTML attributes ──
-function escAttr(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// ── Date parsing ──
-function parseDate(s) {
-  if (!s) return Infinity;
-  var m = s.match(/(\d+)\/(\d+)/);
-  if (m) return new Date(2025, parseInt(m[1])-1, parseInt(m[2])).getTime();
-  m = s.match(/(\d+)月(\d+)日?/);
-  if (m) return new Date(2025, parseInt(m[1])-1, parseInt(m[2])).getTime();
-  m = s.match(/(\d+)[.-](\d+)/);
-  if (m) return new Date(2025, parseInt(m[1])-1, parseInt(m[2])).getTime();
-  var d = new Date(s);
-  if (!isNaN(d.getTime())) return d.getTime();
-  return Infinity;
-}
-
-function parseDateStr(s) {
-  if (!s) return Infinity;
-  var m = s.match(/(\d+)\/(\d+)/);
-  if (m) return new Date(2025, parseInt(m[1])-1, parseInt(m[2])).getTime();
-  return Infinity;
-}
-
-// ── Avatar helpers (DiceBear API) ──
-function avatarCircle(seed, size, styleIdx) {
-  var name = typeof seed === 'string' ? seed : CHARACTER_SEEDS[seed % CHARACTER_SEEDS.length];
-  var url = 'https://api.dicebear.com/7.x/' + AVATAR_STYLE + '/svg?seed=' + encodeURIComponent(name) + '&size=' + (size*2) + '&radius=50';
-  return '<img src="' + url + '" width="' + size + '" height="' + size + '" style="border-radius:50%;object-fit:cover;display:block;width:100%;height:100%" alt="" onerror="this.style.opacity=\'0\'">';
-}
-
-function avatarImg(seed, size, styleIdx) {
-  var name = typeof seed === 'string' ? seed : CHARACTER_SEEDS[seed % CHARACTER_SEEDS.length];
-  var url = 'https://api.dicebear.com/7.x/' + AVATAR_STYLE + '/svg?seed=' + encodeURIComponent(name) + '&size=' + size;
-  return '<img src="' + url + '" width="' + size + '" height="' + size + '" style="object-fit:cover" alt="" onerror="this.style.display=\'none\'">';
-}
-
-function avatarInitial(seed) {
-  if (typeof seed === 'string') return (seed[0] || '?');
- return (CHARACTER_SEEDS[seed % CHARACTER_SEEDS.length] || '?')[0];
-}
-
-// ── Staff check ──
-function getStaffNames() {
-  // 优先级1：从 staff_cards（Wizard 步骤③建立的）
-  if (data.staff_cards && data.staff_cards.length > 0) {
-    return data.staff_cards.map(function(c) { return c.name; });
-  }
-  // 优先级2：从 members 中筛出有角色的
-  var names = Object.keys(data.members || {}).filter(function(n) {
-    var m = data.members[n];
-    return m && m.role && m.role !== '';
-  });
-  if (names.length > 0) return names;
-  // 优先级3：兜底硬编码
-  return ['砚仁','朝林','小红','若曦','淑惠','跳大爷','fc'];
-}
-
-// ── Finance recalculation ──
-function recalcFinanceByPerson() {
-  if (!data.finance_cny) data.finance_cny = { summary: {}, transactions: [], by_person: {}, by_type: {} };
-  var txs = data.finance_cny.transactions || [];
-  var by_person = {}, by_type = {};
-  txs.forEach(function(tx) {
-    var person = tx.person || '未知';
-    var type = tx.type || '其他';
-    var rmb = parseFloat(tx.rmb) || 0;
-    var nt = parseFloat(tx.nt) || 0;
-    if (!by_person[person]) by_person[person] = { rmb: 0, nt: 0 };
-    by_person[person].rmb += rmb;
-    by_person[person].nt += nt;
-    if (!by_type[type]) by_type[type] = { rmb: 0, nt: 0, count: 0 };
-    by_type[type].rmb += rmb;
-    by_type[type].nt += nt;
-    by_type[type].count++;
-  });
-  data.finance_cny.by_person = by_person;
-  data.finance_cny.by_type = by_type;
-}
-
-function aggregateMaterialBudgets() {
-  var matRMB = 0, matNT = 0, matItems = [];
-  var syncTasks = (data.tasks||[]).length > 0 ? data.tasks : (typeof wizardTasks !== 'undefined' && wizardTasks ? wizardTasks : []);
-  syncTasks.forEach(function(t) { (t.materials||[]).forEach(function(m) { matRMB += parseInt(m.rmb) || 0; matNT += parseInt(m.nt) || 0; matItems.push({ item: m.item||'未命名', rmb: parseInt(m.rmb)||0, nt: parseInt(m.nt)||0, task: t.name, person: t.assignee||'' }); }); });
-  var wizMat = { rmb: matRMB, nt: matNT, items: matItems };
-  var byPerson = {}; matItems.forEach(function(m) { var p = m.person||'未分配'; if (!byPerson[p]) byPerson[p] = { rmb:0, nt:0, items:[] }; byPerson[p].rmb += m.rmb; byPerson[p].nt += m.nt; byPerson[p].items.push(m); });
-  wizMat.byPerson = byPerson;
-  return wizMat;
-}
-
-// ── Milestone-task pairing ──
-function getMilestoneTasks(milestone) {
-  var tasks = data.tasks || []; var mName = milestone.name||''; var mDate = milestone.date||'';
-  return tasks.filter(function(t) { if (mName && t.name && t.name.indexOf(mName) >= 0) return true; return false; });
-}
-
-function isStaff2(name) {
-  var staffNames = getStaffNames();
-  return staffNames.some(function(s) { return name.indexOf(s) !== -1; });
-}
-
-function showAddMember() {
-  var name = prompt('新成员姓名：');
-  if (!name) return;
-  if (!data.members) data.members = {};
-  data.members[name] = data.members[name] || { name: name, role: '', avatar_seed: Math.floor(Math.random()*60), gender: '' };
-  localStorage.setItem('camp_data', JSON.stringify(data));
-  if (memViewType === 'players') renderPlayers();
-  else renderMembers();
-  setStatus('已添加成员: ' + name);
-}
-
-
-// ── renderMemberDetail wrapper ──
-function renderMemberDetail(name) {
-  var m = staffData[name];
-  renderMemberDetailFor('member', name, m);
-}
-
-// ── Render Players tab ──
-function renderPlayers() {
-  var tasks = data.tasks || [];
-  var staffNames = getStaffNames();
-  var members = data.members || {};
-  var financeByPerson = (data.finance_cny && data.finance_cny.by_person) ? data.finance_cny.by_person : {};
-
-  // Reset
-  playerData = {};
-
-  // 1. From tasks (non-staff)
-  tasks.forEach(function(t) {
-    var name = t.assignee || '';
-    if (!name || staffNames.some(function(s) { return name.indexOf(s) !== -1; })) return;
-    if (!playerData[name]) playerData[name] = { tasks: [], points: 0, done: 0, active: 0, todo: 0, nt: 0, rmb: 0 };
-    playerData[name].tasks.push(t);
-    playerData[name].points += (t.points || 1);
-    if (t.status === '已完成' || t.status === '已确认') playerData[name].done++;
-    else if (t.status === '进行中') playerData[name].active++;
-    else playerData[name].todo++;
-  });
-
-  // 2. From members (non-staff, even without tasks)
-  Object.keys(members).forEach(function(name) {
-    if (staffNames.some(function(s) { return name.indexOf(s) !== -1; })) return;
-    if (!playerData[name]) playerData[name] = { tasks: [], points: 0, done: 0, active: 0, todo: 0, nt: 0, rmb: 0 };
-    playerData[name].nt = members[name].nt_actual || members[name].nt_earned || 0;
-  });
-
-  // 3. From finance by_person (creators not yet in playerData)
-  // Name alias map: finance name → member name
-  var nameAlias = { '若雨':'陈若雨', '墨染':'墨染辰光', 'niya':'念儿', 'gg':'gg', '文峰':'文峰', '标哥':'标哥' };
-  Object.keys(financeByPerson).forEach(function(name) {
-    var displayName = nameAlias[name] || name;
-    if (staffNames.some(function(s) { return displayName.indexOf(s) !== -1; })) return;
-    if (!playerData[displayName]) playerData[displayName] = { tasks: [], points: 0, done: 0, active: 0, todo: 0, nt: 0, rmb: 0 };
-    playerData[displayName].nt = playerData[displayName].nt || (financeByPerson[name].nt || 0);
-    playerData[displayName].rmb = (playerData[displayName].rmb || 0) + (financeByPerson[name].rmb || 0);
-    if (!playerData[displayName]._financeCount) playerData[displayName]._financeCount = 0;
-    playerData[displayName]._financeCount += financeByPerson[name].count || 0;
-  });
-
-  // Also pull NT from members for finance-only entries
-  Object.keys(playerData).forEach(function(name) {
-    if (members[name] && !playerData[name].nt) {
-      playerData[name].nt = members[name].nt_actual || members[name].nt_earned || 0;
-    }
-  });
-
-  var sorted = Object.entries(playerData).sort(function(a, b) {
-    return (b[1].nt || 0) - (a[1].nt || 0);
-  });
-  var avRow = document.getElementById('playerAvatars');
-  var empty = document.getElementById('playerEmpty');
-
-  if (sorted.length === 0) {
-    avRow.querySelectorAll('.ms-avatar-btn:not(.ms-add-btn)').forEach(function(b) { b.remove(); });
-    document.getElementById('playerDetail').innerHTML = '';
-    empty.classList.remove('hidden');
-    return;
-  }
-  empty.classList.add('hidden');
-
-  avRow.querySelectorAll('.ms-avatar-btn:not(.ms-add-btn)').forEach(function(b) { b.remove(); });
-  var addBtn = avRow.querySelector('.ms-add-btn');
-  sorted.forEach(function(entry) {
-    var name = entry[0], m = entry[1];
-    var btn = document.createElement('button');
-    btn.className = 'ms-avatar-btn' + (name === selectedPlayer ? ' active' : '');
-    btn.onclick = function() { selectPlayer(name); };
-    btn.ondblclick = function(e) { e.stopPropagation(); showEditMember(name); };
-    btn.title = '双击编辑';
-    var mi = data.members?.[name] || {};
-    var si = mi.avatar_seed !== undefined ? mi.avatar_seed : 0;
-    btn.innerHTML = '<div class="ms-av-circle">' + avatarCircle(si, 64, 0) + '</div><div class="ms-av-name">' + esc(name) + '</div>';
-    avRow.insertBefore(btn, addBtn);
-  });
-
-  if (!selectedPlayer || !playerData[selectedPlayer]) {
-    selectedPlayer = sorted[0][0];
-  }
-  renderPlayerDetail(selectedPlayer);
-}
-
-function selectPlayer(name) {
-  selectedPlayer = name;
-  renderPlayers();
-}
-
-function renderPlayerDetail(name) {
-  var m = playerData[name] || { tasks: [], points: 0, done: 0, active: 0, todo: 0, nt: 0, rmb: 0 };
-  renderMemberDetailFor('player', name, m);
-}
-
-// ── Render Timeline tab ──
-function renderTimeline() {
-  var container = document.getElementById('timelineView');
-  var empty = document.getElementById('timelineEmpty');
-  var tasks = data.tasks || [];
-  if (tasks.length === 0) {
-    container.innerHTML = '';
-    empty.classList.remove('hidden');
-    return;
-  }
-  empty.classList.add('hidden');
-
-  // Group tasks by deadline, sort by date
-  var groups = {};
-  tasks.forEach(function(t) {
-    var dl = normalizeMD(t.deadline) || '未定';
-    if (!groups[dl]) groups[dl] = [];
-    groups[dl].push(t);
-  });
-
-  var dates = Object.keys(groups).sort(function(a, b) {
-    return parseDateStr(a) - parseDateStr(b);
-  });
-
-  var html = '';
-  dates.forEach(function(date, di) {
-    var ts = groups[date];
-    var side = di % 2 === 0 ? 'left' : 'right';
-    html += '<div class="tl-day-block ' + side + '">';
-    html += '<div class="tl-day-box">';
-    html += '<div class="tl-dbox-header"><span>📅 ' + esc(date) + '</span><span class="count">' + ts.length + '项</span></div>';
-    ts.forEach(function(t) {
-      var statusIcon = (t.status === '已完成' || t.status === '已确认') ? '✅' : (t.status === '进行中' ? '🔄' : '⬜');
-      html += '<div class="tl-day-event"><span class="tl-title">' + statusIcon + ' ' + esc(t.name) + '</span><br><span class="tl-time">👤 ' + esc(t.assignee) + ' · ⭐' + (t.points||1) + '点</span></div>';
-    });
-    html += '</div><div class="tl-branch"></div></div>';
-  });
-
-  container.innerHTML = html;
-}
-
-// ── Render Calendar tab ──
-var scheduleData = [];
-
-function renderCalendar() {
-  var grid = document.getElementById('calendarGrid');
-  var schedule = data.schedule;
-  if (!schedule || !schedule.dates || schedule.dates.length === 0) {
-    // Fallback: build from tasks
-    var tasks = data.tasks || [];
-    if (tasks.length === 0) { grid.innerHTML = '<div class="empty-state"><div class="icon">📅</div>还没有日程数据</div>'; return; }
-    var dateSet = {};
-    tasks.forEach(function(t) {
-      var d = normalizeMD(t.deadline); if (d) dateSet[d] = true;
-      if (t.start) { var s = normalizeMD(t.start); if (s) dateSet[s] = true; }
-    });
-    schedule = { dates: Object.keys(dateSet).sort(function(a,b){ return parseDateStr(a)-parseDateStr(b); }), weekdays: [], slots: [] };
-  }
-
-  var dates = schedule.dates || [];
-  var weekdays = schedule.weekdays || [];
-  var slots = schedule.slots || [];
-  if (dates.length === 0) { grid.innerHTML = '<div class="empty-state">📅 没有日程数据</div>'; return; }
-
-  var today = new Date();
-  var todayMD = ('0'+(today.getMonth()+1)).slice(-2) + '/' + ('0'+today.getDate()).slice(-2);
-  var sectionColors = { '行动':'#e8f0e2', '吃饭沟通':'#fef8e8', '小组会议':'#f0e8f8', '延期':'#fce8e0', '':'#f8f6f0' };
-
-  // Group slots by section
-  var sections = [];
-  var currentSection = null;
-  slots.forEach(function(slot) {
-    if (!currentSection || currentSection.name !== slot.section) {
-      currentSection = { name: slot.section || '', slots: [] };
-      sections.push(currentSection);
-    }
-    currentSection.slots.push(slot);
-  });
-
-  // Build Gantt table
-  var html = '<table class="cal-table" style="min-width:' + (dates.length * 110 + 100) + 'px">';
-
-  // Header row 1: weekdays
-  html += '<thead><tr><th class="time-col" style="min-width:90px">时间</th>';
-  dates.forEach(function(d, i) {
-    var wd = weekdays[i] || '';
-    var isToday = d === todayMD;
-    html += '<th class="day-col" style="min-width:100px;' + (isToday ? 'background:#fdf5e0;color:var(--accent);font-weight:700' : '') + '">' + esc(wd) + '</th>';
-  });
-  html += '</tr>';
-
-  // Header row 2: dates
-  html += '<tr><th class="time-col" style="min-width:90px">时段</th>';
-  dates.forEach(function(d) {
-    var isToday = d === todayMD;
-    html += '<th class="day-col" style="min-width:100px;' + (isToday ? 'background:#fdf5e0;color:var(--accent);font-weight:700' : '') + '">' + esc(d) + (isToday ? ' 📍' : '') + '</th>';
-  });
-  html += '</tr></thead><tbody>';
-
-  // Body: one row per time slot, grouped by section
-  sections.forEach(function(sec) {
-    var bg = sectionColors[sec.name] || '#f8f6f0';
-    sec.slots.forEach(function(slot, si) {
-      html += '<tr>';
-      // Time column: show section name on first slot row only
-      html += '<td class="time-cell" style="font-size:.72rem">';
-      if (si === 0) html += '<b>' + esc(sec.name) + '</b><br>';
-      html += esc(slot.time) + '</td>';
-      // Activity columns
-      var activities = slot.activities || [];
-      dates.forEach(function(d, di) {
-        var act = activities[di] || '';
-        var isToday = d === todayMD;
-        html += '<td style="padding:4px 6px;font-size:.72rem;line-height:1.3;vertical-align:top;background:' + (act ? bg : 'transparent') + ';' + (isToday ? 'border-left:2px solid var(--accent);border-right:2px solid var(--accent)' : '') + '">' + esc(act) + '</td>';
-      });
-      html += '</tr>';
-    });
-  });
-
-  html += '</tbody></table>';
-  grid.innerHTML = html;
-}
-
-// ── Switch schedule view ──
-function switchScheduleView(view) {
-  currentScheduleView = view;
-  var btnCal = document.getElementById('btnCalendarView');
-  var btnTL = document.getElementById('btnTimelineView');
-  var calView = document.getElementById('calendarView');
-  var tlCard = document.getElementById('timelineViewCard');
-
-  if (view === 'calendar') {
-    btnCal.className = 'btn pri';
-    btnTL.className = 'btn';
-    calView.classList.remove('hidden');
-    tlCard.classList.add('hidden');
-  } else {
-    btnCal.className = 'btn';
-    btnTL.className = 'btn pri';
-    calView.classList.add('hidden');
-    tlCard.classList.remove('hidden');
-  }
-}
-
-// ── Render Budget tab ──
-function renderBudget() {
-  var budget = data.budget || {};
-  var finObj = data.finance_cny || {};
-  var finSummary = finObj.summary || {};
-  var transactions = Array.isArray(finObj.transactions) ? finObj.transactions : [];
-  var byPerson = finObj.by_person || {};
-
-  // ── RMB: use budget.income / budget.expense + summary as fallback ──
-  var rmbTotal = finSummary.rmb_total_budget || (budget.income || 0) + (budget.tuition || 0) + (budget.sponsor || 0) || 0;
-  var rmbSpent = finSummary.rmb_spent || budget.expense || 0;
-  var rmbRemain = finSummary.rmb_remaining || (rmbTotal - rmbSpent);
-
-  document.getElementById('bmRMBTotal').textContent = '¥' + Math.round(rmbTotal).toLocaleString();
-  document.getElementById('bmRMBSpent').textContent = '¥' + Math.round(rmbSpent).toLocaleString();
-  document.getElementById('bmRMBRemain').textContent = '¥' + Math.round(rmbRemain).toLocaleString();
-  var rmbPct = rmbTotal > 0 ? Math.min(100, Math.round(rmbSpent / rmbTotal * 100)) : 0;
-  document.getElementById('bmRMBBar').style.width = rmbPct + '%';
-
-  // ── NT: use budget fields ──
-  var ntIncome = finSummary.nt_income_total || budget.nt_raised || 0;
-  var ntSpent = finSummary.nt_spent || budget.nt_total_out || 0;
-  var ntRemain = finSummary.nt_remaining || (ntIncome - ntSpent);
-
-  document.getElementById('bmNTIncome').textContent = 'NT ' + Math.round(ntIncome).toLocaleString();
-  document.getElementById('bmNTSpent').textContent = 'NT ' + Math.round(ntSpent).toLocaleString();
-  document.getElementById('bmNTRemain').textContent = 'NT ' + Math.round(ntRemain).toLocaleString();
-  var ntPct = ntIncome > 0 ? Math.min(100, Math.round(ntSpent / ntIncome * 100)) : 0;
-  document.getElementById('bmNTBar').style.width = ntPct + '%';
-
-  // ── Type filter blocks ──
-  // Build typeSet from transactions
-  var typeSet = {};
-  transactions.forEach(function(tx) {
-    var cat = tx.type || '其他';
-    if (!typeSet[cat]) typeSet[cat] = [];
-    typeSet[cat].push(tx);
-  });
-  // Merge known types (persisted) so new types show even without transactions
-  if (!data.financeTypes) data.financeTypes = [];
-  data.financeTypes.forEach(function(t) {
-    if (!typeSet[t]) typeSet[t] = [];
-  });
-
-  var typeIcons = { '宣传':'📢','物料':'📦','课程物料':'🎨','食宿':'🏠','活动':'🎉','人工费':'💼','资助收入':'💰','其他':'📋' };
-  document.getElementById('financeTypeBlocks').innerHTML =
-    '<button class="phase-block' + (financeFilter === '全部' ? ' active' : '') + '" onclick="financeFilter=\'全部\';renderBudget()"><span class="ph-icon">📋</span><span class="ph-label">全部</span><span class="ph-count">' + transactions.length + '笔</span></button>' +
-    Object.entries(typeSet).sort(function(a,b) { return b[1].length - a[1].length; }).map(function(e) {
-      var t = e[0], txs = e[1];
-      return '<button class="phase-block' + (financeFilter === t ? ' active' : '') + '" onclick="financeFilter=\'' + escAttr(t) + '\';renderBudget()" ondblclick="renameFinanceType(\'' + escAttr(t) + '\')" title="双击重命名" style="position:relative"><span class="ph-icon">' + (typeIcons[t]||'📋') + '</span><span class="ph-label">' + esc(t) + '</span><span class="ph-count">' + txs.length + '笔</span><span onclick="event.stopPropagation();deleteFinanceType(\'' + escAttr(t) + '\')" title="删除类型" style="position:absolute;top:0;right:3px;cursor:pointer;opacity:.3;font-size:.65rem">×</span></button>';
-    }).join('') +
-    '<button class="phase-block" onclick="addFinanceType()" title="新增类型" style="border-style:dashed;opacity:.5"><span class="ph-icon">＋</span><span class="ph-label">新增</span></button>';
-
-  // ── Person filter ──
-  var personSet = {};
-  transactions.forEach(function(tx) { if (tx.person) personSet[tx.person] = (personSet[tx.person] || 0) + 1; });
-  document.getElementById('financePersonBlocks').innerHTML =
-    '<button class="phase-block' + (personFilter === '' ? ' active' : '') + '" onclick="personFilter=\'\';renderBudget()"><span class="ph-icon">👥</span><span class="ph-label">全部</span></button>' +
-    Object.entries(personSet).sort(function(a,b) { return b[1] - a[1]; }).map(function(e) {
-      return '<button class="phase-block' + (personFilter === e[0] ? ' active' : '') + '" onclick="personFilter=\'' + escAttr(e[0]) + '\';renderBudget()"><span class="ph-label">' + esc(e[0]) + '</span><span class="ph-count">' + e[1] + '笔</span></button>';
-    }).join('');
-
-  // ── Material budget summary ──
-  var matBudget = aggregateMaterialBudgets();
-  var matEl = document.getElementById('matBudgetSummary');
-  if (matEl) {
-    var hasMat = (matBudget.rmb||0) > 0 || (matBudget.nt||0) > 0;
-    matEl.innerHTML = hasMat ?
-      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-        '<span style="font-weight:600;font-size:.82rem">🎨 材料预算</span>' +
-        '<span style="padding:3px 8px;background:#eaf4e2;border-radius:4px;font-size:.78rem">RMB: ¥' + (matBudget.rmb||0).toLocaleString() + '</span>' +
-        '<span style="padding:3px 8px;background:#fef8e8;border-radius:4px;font-size:.78rem">NT: ' + (matBudget.nt||0).toLocaleString() + '</span>' +
-        Object.entries(matBudget.byPerson).sort(function(a,b){return b[1].rmb-a[1].rmb}).map(function(e) {
-          return '<span style="font-size:.72rem;color:var(--muted);padding:2px 6px;border-right:1px solid var(--border)">' + esc(e[0]) + ': ¥' + e[1].rmb.toLocaleString() + ' + NT ' + e[1].nt.toLocaleString() + '</span>';
-        }).join('') +
-      '</div>' :
-      '<div style="font-size:.78rem;color:var(--muted)">🎨 暂无材料预算数据（请在营地设置步骤④中填写）</div>';
-  }
-  // ── Transaction table ──
-  var shown = financeFilter === '全部' ? transactions : (typeSet[financeFilter] || []); if (personFilter) shown = shown.filter(function(tx) { return (tx.person||'') === personFilter; });
-  var txTbody = document.querySelector('#txTable tbody');
-  if (txTbody) {
-    if (shown.length === 0) {
-      txTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">📭 暂无流水记录，请加载数据文件</td></tr>';
-    } else {
-      txTbody.innerHTML = shown.map(function(tx, i) {
-        var idx = transactions.indexOf(tx);
-        var rmb = tx.rmb != null ? '¥' + (parseFloat(tx.rmb)||0).toLocaleString() : '—';
-        var nt = tx.nt != null ? 'NT ' + (parseFloat(tx.nt)||0).toLocaleString() : '—';
-        return '<tr ondblclick="editTx(' + idx + ')" title="双击编辑">' +
-          '<td><span class="badge" style="background:#f0ece0;color:#5a4a38">' + esc(tx.type||'其他') + '</span></td>' +
-          '<td>' + esc(tx.person||'') + '</td>' +
-          '<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escAttr(tx.desc||'') + '">' + esc(tx.desc||'') + '</td>' +
-          '<td style="text-align:right">' + rmb + '</td>' +
-          '<td style="text-align:right">' + nt + '</td>' +
-          '<td><span onclick="event.stopPropagation();deleteTx(' + idx + ')" title="删除" style="cursor:pointer;opacity:.3;font-size:.8rem">×</span></td>' +
-        '</tr>';
-      }).join('');
-    }
-  }
-
-  // ── Person summary (use pre-computed by_person if available) ──
-  var personMap = {};
-  if (Object.keys(byPerson).length > 0) {
-    personMap = byPerson;
-  } else {
-    transactions.forEach(function(tx) {
-      var p = tx.person || '未知';
-      if (!personMap[p]) personMap[p] = { rmb: 0, nt: 0, count: 0 };
-      personMap[p].count++;
-      if (tx.rmb != null) personMap[p].rmb += parseFloat(tx.rmb) || 0;
-      if (tx.nt != null) personMap[p].nt += parseFloat(tx.nt) || 0;
-    });
-  }
-
-  var personTbody = document.querySelector('#personFinanceTable tbody');
-  if (personTbody) {
-    var entries = Object.entries(personMap).sort(function(a,b) {
-      var va = (a[1].rmb||0) + (a[1].nt||0);
-      var vb = (b[1].rmb||0) + (b[1].nt||0);
-      return vb - va;
-    });
-    if (entries.length === 0) {
-      personTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">📭 暂无汇总数据</td></tr>';
-    } else {
-      personTbody.innerHTML = entries.map(function(e) {
-        var p = e[0], v = e[1];
-        return '<tr><td><b>' + esc(p) + '</b></td><td style="text-align:right">¥' + (v.rmb||0).toLocaleString() + '</td><td style="text-align:right">NT ' + (v.nt||0).toLocaleString() + '</td><td style="text-align:center">' + (v.count||0) + '</td></tr>';
-      }).join('');
-    }
-  }
-  console.log('renderBudget done: rmbTotal=' + rmbTotal + ' ntIncome=' + ntIncome + ' txShown=' + shown.length);
-}
-
-// ── Edit / Delete transaction ──
-// Collect all known finance types
-function getFinanceTypes() {
-  var types = {};
-  if (data.finance_cny && data.finance_cny.transactions) {
-    data.finance_cny.transactions.forEach(function(tx) { if (tx.type) types[tx.type] = true; });
-  }
-  // Ensure defaults
-  ['宣传','物料','课程物料','食宿','活动','人工费','资助收入','其他'].forEach(function(t) { types[t] = true; });
-  return Object.keys(types).sort();
-}
-
-function renameFinanceType(oldName) {
-  var newName = prompt('重命名类型：', oldName);
-  if (!newName || newName === oldName) return;
-  if (data.finance_cny && data.finance_cny.transactions) {
-    data.finance_cny.transactions.forEach(function(tx) { if (tx.type === oldName) tx.type = newName; });
-  }
-  updateAll();
-  setStatus('类型已更新: ' + oldName + ' → ' + newName);
-}
-
-function deleteFinanceType(typeName) {
-  if (!confirm('删除类型「' + typeName + '」？\n该类型下的流水不会被删除，类型将变为"其他"。')) return;
-  if (data.finance_cny && data.finance_cny.transactions) {
-    data.finance_cny.transactions.forEach(function(tx) { if (tx.type === typeName) tx.type = '其他'; });
-  }
-  if (data.financeTypes) {
-    var i = data.financeTypes.indexOf(typeName);
-    if (i >= 0) data.financeTypes.splice(i, 1);
-  }
-  if (financeFilter === typeName) financeFilter = '全部';
-  updateAll();
-  setStatus('已删除类型: ' + typeName);
-}
-
-function addFinanceType() {
-  var newType = prompt('新类型名称：');
-  if (!newType) return;
-  if (!data.financeTypes) data.financeTypes = [];
-  if (data.financeTypes.indexOf(newType) < 0) data.financeTypes.push(newType);
-  financeFilter = newType;
-  updateAll();
-  setStatus('新类型已创建: ' + newType);
-}
-
-function editTx(idx) {
-  var tx = (idx >= 0 && data.finance_cny && data.finance_cny.transactions) ? data.finance_cny.transactions[idx] : null;
-  var isNew = !tx;
-  // Build numbered type selection
-  var types = getFinanceTypes();
-  var typeList = types.map(function(t, i) { return (i+1) + '. ' + t; }).join('  ');
-  var typePrompt = '选择类型（输入序号，或直接输入新类型名称）：\n\n' + typeList + '\n\n0. ➕ 新增类型';
-  var typeInput = prompt(typePrompt, tx ? (types.indexOf(tx.type)+1) : (financeFilter !== '全部' ? (types.indexOf(financeFilter)+1) : ''));
-  if (typeInput === null) return;
-  var type;
-  var typeNum = parseInt(typeInput);
-  if (typeNum === 0) {
-    // Add new type inline
-    type = prompt('新类型名称：');
-    if (!type) return;
-    if (!data.financeTypes) data.financeTypes = [];
-    if (data.financeTypes.indexOf(type) < 0) data.financeTypes.push(type);
-  } else if (typeNum > 0 && typeNum <= types.length) {
-    type = types[typeNum - 1];
-  } else {
-    type = typeInput; // User typed a custom name
-  }
-  var person = prompt('出纳人：', tx ? tx.person : '');
-  if (person === null) return;
-  var desc = prompt('事由：', tx ? tx.desc : '');
-  if (desc === null) return;
-  var rmb = prompt('RMB 金额（无则留空）：', tx && tx.rmb != null ? tx.rmb : '');
-  if (rmb === null) return;
-  var nt = prompt('NT 金额（无则留空）：', tx && tx.nt != null ? tx.nt : '');
-  if (nt === null) return;
-
-  var entry = {
-    type: type || '其他',
-    person: person,
-    desc: desc,
-    rmb: rmb !== '' ? (parseFloat(rmb) || 0) : null,
-    nt: nt !== '' ? (parseFloat(nt) || 0) : null,
-  };
-
-  if (!data.finance_cny) data.finance_cny = { summary: {}, transactions: [], by_person: {}, by_type: {} };
-  if (!data.finance_cny.transactions) data.finance_cny.transactions = [];
-
-  if (isNew) {
-    data.finance_cny.transactions.push(entry);
-  } else {
-    data.finance_cny.transactions[idx] = entry;
-  }
-  updateAll();
-  setStatus(isNew ? '已添加流水' : '已更新流水');
-}
-
-function deleteTx(idx) {
-  if (!data.finance_cny || !data.finance_cny.transactions) return;
-  var tx = data.finance_cny.transactions[idx];
-  if (!tx || !confirm('删除「' + (tx.desc||'') + '」？')) return;
-  data.finance_cny.transactions.splice(idx, 1);
-  updateAll();
-  setStatus('已删除流水');
-}
-
-// ── Render Settlement tab ──
-// ── Helper: draw SVG pie chart ──
-// ── Toggle collapsible section ──
-function toggleCollapse(id) {
-  var el = document.getElementById(id);
-  if (el) el.classList.toggle('hidden');
-  var btn = document.getElementById(id + 'Btn');
-  if (btn) btn.textContent = el && el.classList.contains('hidden') ? '[展开 ▾]' : '[折叠 ▴]';
-}
-
-function renderSettlementAll() {
-  var tasks = data.tasks || [];
-  var members = data.members || {};
-  var staffNames = getStaffNames();
-  var financeByPerson = (data.finance_cny && data.finance_cny.by_person) ? data.finance_cny.by_person : {};
-
-  // Split people: staff vs players
-  var staffMap = {};  // name → { nt, rmb, tasks:[] }
-  var playerMap = {};
-
-  // From members
-  Object.keys(members).forEach(function(name) {
-    var isStaff = staffNames.some(function(s) { return name.indexOf(s) !== -1; });
-    var bucket = isStaff ? staffMap : playerMap;
-    if (!bucket[name]) bucket[name] = { nt: 0, rmb: 0, tasks: [], points: 0, done: 0 };
-    bucket[name].nt = members[name].nt_actual || members[name].nt_earned || 0;
-  });
-
-  // From finance
-  var aliasMap = { 'fc':'淑惠', '若雨':'陈若雨', '墨染':'墨染辰光', 'niya':'念儿' };
-  Object.keys(financeByPerson).forEach(function(fname) {
-    var name = aliasMap[fname] || fname;
-    var isStaff = staffNames.some(function(s) { return name.indexOf(s) !== -1; });
-    var bucket = isStaff ? staffMap : playerMap;
-    if (!bucket[name]) bucket[name] = { nt: 0, rmb: 0, tasks: [], points: 0, done: 0 };
-    bucket[name].nt = bucket[name].nt || (financeByPerson[fname].nt || 0);
-    bucket[name].rmb = (bucket[name].rmb || 0) + (financeByPerson[fname].rmb || 0);
-  });
-
-  // From tasks
-  tasks.forEach(function(t) {
-    var name = t.assignee || '';
-    if (!name) return;
-    var isStaff = staffNames.some(function(s) { return name.indexOf(s) !== -1; });
-    var bucket = isStaff ? staffMap : playerMap;
-    if (!bucket[name]) bucket[name] = { nt: 0, rmb: 0, tasks: [], points: 0, done: 0 };
-    bucket[name].tasks.push(t);
-    bucket[name].points += (t.points || 1);
-    if (t.status === '已完成' || t.status === '已确认') bucket[name].done++;
-  });
-
-  // ── Render avatar cards ──
-  function renderAvatars(containerId, map, selClass) {
-    var sorted = Object.entries(map).sort(function(a,b) { return (b[1].nt||0) - (a[1].nt||0); });
-    var container = document.getElementById(containerId);
-    container.innerHTML = sorted.map(function(e) {
-      var name = e[0], info = e[1];
-      var mi = members[name] || {};
-      var si = mi.avatar_seed !== undefined ? mi.avatar_seed : 0;
-      var sel = name === settleSelected;
-      var bg = sel ? (selClass === 'staff' ? '#fdf5e0' : '#e8f0f8') : '';
-      var bd = sel ? '2px solid ' + (selClass === 'staff' ? 'var(--accent)' : '#5b8cb8') : '1px solid transparent';
-      return '<button class="ms-avatar-btn' + (sel ? ' active' : '') + '" onclick="settleSelected=\'' + escAttr(name) + '\';renderSettlementAll()" style="' + (bg ? 'background:' + bg + ';' : '') + 'border:' + bd + '">' +
-        '<div class="ms-av-circle">' + avatarCircle(si, 48, 0) + '</div>' +
-        '<div class="ms-av-name">' + esc(name) + '</div>' +
-        '<div class="ms-av-badge">NT ' + (info.nt||0).toLocaleString() + '</div>' +
-      '</button>';
-    }).join('');
-  }
-  renderAvatars('settleStaffAvatars', staffMap, 'staff');
-  renderAvatars('settlePlayerAvatars', playerMap, 'player');
-
-  // ── Render detail ──
-  var card = document.getElementById('settlementCard');
-  if (!settleSelected) {
-    card.innerHTML = '<div class="empty-state" id="settlementEmpty">👆 点击头像查看结算详情</div>';
-    return;
-  }
-
-  // Determine which bucket the selected person is in
-  var bucket = staffMap[settleSelected] || playerMap[settleSelected] || { nt:0, rmb:0, tasks:[], points:0, done:0 };
-  var personTasks = bucket.tasks || [];
-  var doneTasks = personTasks.filter(function(t) { return t.status === '已完成' || t.status === '已确认'; });
-  var personPoints = doneTasks.reduce(function(s, t) { return s + (t.points || 1); }, 0);
-  var mi = members[settleSelected] || {};
-  var ntVal = bucket.nt || mi.nt_actual || mi.nt_earned || 0;
-  var rmbVal = bucket.rmb || 0;
-  var si = mi.avatar_seed !== undefined ? mi.avatar_seed : 0;
-  var uid = 's_' + settleSelected.replace(/[^a-zA-Z0-9一-鿿]/g, '_');
-
-  // Category breakdown
-  var catBreakdown = {};
-  doneTasks.forEach(function(t) {
-    var cat = t.category || '其他';
-    if (!catBreakdown[cat]) catBreakdown[cat] = 0;
-    catBreakdown[cat] += (t.points || 1);
-  });
-
-  card.innerHTML =
-    // ── Big avatar + name ──
-    '<div style="text-align:center;margin-bottom:8px">' +
-      '<div class="ms-av-circle" style="width:72px;height:72px;margin:0 auto 8px">' + avatarCircle(si, 80, 0) + '</div>' +
-      '<div style="font-size:1.1rem;font-weight:700">' + esc(settleSelected) + '</div>' +
-      '<div style="font-size:.8rem;color:var(--muted)">' + esc(mi.role||'') + '</div>' +
-      (mi.bio ? '<div style="font-size:.75rem;color:var(--muted);margin-top:4px;font-style:italic;max-width:400px;margin-left:auto;margin-right:auto">"' + esc(mi.bio) + '"</div>' : '') +
-    '</div>' +
-    // ── Summary cards ──
-    '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:nowrap;margin-bottom:8px">' +
-      '<div class="stat" style="min-width:80px"><div class="num" style="color:var(--accent)">' + (personTasks.length||0) + '</div><div class="label">📋 任务</div></div>' +
-      '<div class="stat" style="min-width:80px"><div class="num" style="color:var(--accent)">' + personPoints + '</div><div class="label">⭐ 激励点</div></div>' +
-      '<div class="stat green" style="min-width:80px"><div class="num">NT ' + ntVal.toLocaleString() + '</div><div class="label">💰 NT</div></div>' +
-      (rmbVal > 0 ? '<div class="stat" style="min-width:80px"><div class="num" style="color:#c47d5a">¥' + rmbVal.toLocaleString() + '</div><div class="label">💴 RMB</div></div>' : '') +
-      '<div class="stat yellow" style="min-width:80px"><div class="num">' + (personTasks.length > 0 ? Math.round(bucket.done / personTasks.length * 100) + '%' : '—') + '</div><div class="label">✅ 完成率</div></div>' +
-    '</div>' +
-
-    // ── NT 计算 (collapsible) ──
-    '<div style="margin-bottom:6px">' +
-      '<div onclick="toggleCollapse(\'' + uid + '_calc\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#faf8f0;border-radius:8px;border:1px solid var(--border)">' +
-        '<span style="font-weight:600;font-size:.85rem">💰 NT 计算方式</span>' +
-        '<span style="font-size:.75rem;color:var(--muted)" id="' + uid + '_calcBtn">[展开 ▾]</span>' +
-      '</div>' +
-      '<div id="' + uid + '_calc" class="hidden" style="padding:12px;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;font-size:.85rem">' +
-        (personTasks.length > 0 ? '<div style="display:flex;justify-content:space-between;padding:3px 0"><span>📋 任务激励</span><span>' + personTasks.length + '项 × 加权 = <b>' + personPoints + ' 点</b></span></div>' : '') +
-        (ntVal !== personPoints ? '<div style="display:flex;justify-content:space-between;padding:3px 0"><span>💼 角色/活动 NT</span><span><b>NT ' + (ntVal - personPoints).toLocaleString() + '</b></span></div>' : '') +
-        '<div style="border-top:1px solid var(--text);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700"><span>合计</span><span>NT ' + ntVal.toLocaleString() + '</span></div>' +
-        (rmbVal > 0 ? '<div style="margin-top:8px;padding-top:8px;border-top:1px dotted var(--border);display:flex;justify-content:space-between"><span>💴 RMB 经手</span><span>¥' + rmbVal.toLocaleString() + '</span></div>' : '') +
-      '</div>' +
-    '</div>' +
-
-    // ── 工资分配 (collapsible) ──
-    '<div style="margin-bottom:6px">' +
-      '<div onclick="toggleCollapse(\'' + uid + '_sal\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fef8e8;border-radius:8px;border:1px solid var(--border)">' +
-        '<span style="font-weight:600;font-size:.85rem">💼 工资分配</span>' +
-        '<span style="font-size:.75rem;color:var(--muted)" id="' + uid + '_salBtn">[展开 ▾]</span>' +
-      '</div>' +
-      '<div id="' + uid + '_sal" class="hidden" style="padding:12px;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;font-size:.85rem">' +
-        '<div style="display:flex;justify-content:space-between;padding:3px 0"><span>💴 RMB 工资</span><span>' + ((data.budget && data.budget.salary_base_rmb) ? '¥' + data.budget.salary_base_rmb.toLocaleString() + '/人' : '— 待设定') + '</span></div>' +
-        '<div style="display:flex;justify-content:space-between;padding:3px 0"><span>💎 NT 薪水</span><span>' + ((data.staff_cards||[]).find(function(c){return c.name===settleSelected;}) ? (((data.staff_cards||[]).find(function(c){return c.name===settleSelected;})._nt_salary||0)>0 ? 'NT '+((data.staff_cards||[]).find(function(c){return c.name===settleSelected;})._nt_salary||0).toLocaleString() : '— 待设定') : '— 非工作人员') + '</span></div>' +
-      '</div>' +
-    '</div>' +
-
-    // ── 任务明细 (collapsible) ──
-    (personTasks.length > 0 ?
-    '<div>' +
-      '<div onclick="toggleCollapse(\'' + uid + '_tasks\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#faf8f0;border-radius:8px;border:1px solid var(--border)">' +
-        '<span style="font-weight:600;font-size:.85rem">⭐ 任务明细 (' + doneTasks.length + '/' + personTasks.length + '项, ' + personPoints + '点)</span>' +
-        '<span style="font-size:.75rem;color:var(--muted)" id="' + uid + '_tasksBtn">[展开 ▾]</span>' +
-      '</div>' +
-      '<div id="' + uid + '_tasks" class="hidden" style="padding:8px 12px;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;max-height:300px;overflow-y:auto">' +
-        personTasks.sort(function(a,b){ return parseDate(a.deadline) - parseDate(b.deadline); }).map(function(t) {
-          var icon = (t.status==='已完成'||t.status==='已确认') ? '✅' : (t.status==='进行中'?'🔄':'⬜');
-          return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted var(--border);font-size:.82rem"><span>' + icon + ' ' + esc(t.name) + ' <span style="font-size:.7rem;color:var(--muted)">' + esc(t.category||'') + '</span></span><span style="font-weight:600;white-space:nowrap">+' + (t.points||1) + '点</span></div>';
-        }).join('') +
-      '</div>' +
-    '</div>' : '<div style="color:var(--muted);text-align:center;padding:12px">🎨 暂无分配任务 · NT 来自活动奖励/拍卖分成等</div>') +
-  '';
-}
-
-// ── Avatar picker ──
-function showAvatarPicker() {
-  var picker = document.getElementById('avatarPicker');
-  if (picker.style.display === 'none') {
-    picker.style.display = 'block';
-    var grid = document.getElementById('avatarGrid');
-    // Show all 60 seeds in one style — 10 per row × 6 rows
-    grid.innerHTML = '<div style="display:flex;gap:4px;flex-wrap:wrap;max-height:240px;overflow-y:auto">' +
-      CHARACTER_SEEDS.map(function(name, i) {
-        var url = 'https://api.dicebear.com/7.x/' + AVATAR_STYLE + '/svg?seed=' + encodeURIComponent(name) + '&size=48&radius=50';
-        var active = i === editingAvatarSeed ? 'border:3px solid var(--accent);background:#fdf5e0' : 'border:1px solid var(--border)';
-        return '<div onclick="editingAvatarSeed=' + i + ';showAvatarPicker();updateAvatarPreview()" style="cursor:pointer;padding:3px;border-radius:8px;' + active + '" title="' + esc(name) + '"><img src="' + url + '" width="40" height="40" style="border-radius:50%" alt=""></div>';
-      }).join('') +
-    '</div>' +
-    '<div style="width:100%;margin-top:6px;font-size:.7rem;color:var(--muted)">' +
-      '共' + CHARACTER_SEEDS.length + '个头像 · ' +
-      '<button class="btn" style="font-size:.65rem;padding:2px 8px" onclick="editingAvatarSeed=Math.floor(Math.random()*CHARACTER_SEEDS.length);showAvatarPicker();updateAvatarPreview()">🎲 随机</button>' +
-    '</div>';
-  } else {
-    picker.style.display = 'none';
-  }
-}
-
-function updateAvatarPreview() {
-  var preview = document.getElementById('avatarPreview');
-  var name = CHARACTER_SEEDS[editingAvatarSeed % CHARACTER_SEEDS.length];
-  var url = 'https://api.dicebear.com/7.x/' + AVATAR_STYLE + '/svg?seed=' + encodeURIComponent(name) + '&size=64&radius=50';
-  preview.innerHTML = '<img src="' + url + '" width="64" height="64" style="border-radius:50%" alt="">';
-}
-
-
 // ── Utility: escape for HTML attributes ──
 function escAttr(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -4424,21 +3795,17 @@ function renderStep1() {
   }
   recalcMilestonesUI();
   renderDailySchedule();
-  // Budget parameters
+  // Budget parameters（仅恢复仍存在的 UI 元素）
   var b = data.budget || {};
-  document.getElementById('wizSalaryBaseRMB').value = b.salary_base_rmb || 2000;
-  document.getElementById('wizParticipantBudget').value = b.participant_budget || 10;
-  document.getElementById('wizEarlyBird').value = b.early_bird_price || 499;
-  document.getElementById('wizEarlyBirdPct').value = b.early_bird_pct || 60;
-  document.getElementById('wizFullPrice').value = b.full_price || 599;
-  document.getElementById('wizLodgingRMB').value = b.lodging_rmb || 30;
-  document.getElementById('wizLodgingNT').value = b.lodging_nt || 40;
-  document.getElementById('wizMealRMB').value = b.meal_rmb || 8;
-  document.getElementById('wizMealNT').value = b.meal_nt || 10;
-  document.getElementById('wizNTBuyback').value = b.buyback_nt || 300;
-  document.getElementById('wizNTPerDay').value = b.nt_per_day || 100;
-  document.getElementById('wizRMBPool').value = b.rmb_pool || 3000;
-  document.getElementById('wizNTPool').value = b.nt_pool || 4500;
+  var el;
+  el = document.getElementById('wizParticipantBudget'); if (el) el.value = b.participant_budget || 10;
+  el = document.getElementById('wizEarlyBird'); if (el) el.value = b.early_bird_price || 499;
+  el = document.getElementById('wizEarlyBirdPct'); if (el) el.value = b.early_bird_pct || 60;
+  el = document.getElementById('wizFullPrice'); if (el) el.value = b.full_price || 599;
+  el = document.getElementById('wizLodgingRMB'); if (el) el.value = b.lodging_rmb || 30;
+  el = document.getElementById('wizLodgingNT'); if (el) el.value = b.lodging_nt || 40;
+  el = document.getElementById('wizMealRMB'); if (el) el.value = b.meal_rmb || 8;
+  el = document.getElementById('wizMealNT'); if (el) el.value = b.meal_nt || 10;
   updateWizBudgetCalc();
   // Team
   var members = data.members || {};
@@ -4686,12 +4053,12 @@ function rebuildScheduleDates() {
 }
 
 // ── 公共：获取锚点列索引集合 ──
+var RESERVED_TAIL_COLS = 3; // 布展、展览、结营始终在末尾
 function getAnchorSet(dates) {
   var n = dates.length;
-  var photoDay = Math.floor(n / 2), exhDay = n - 2, lastDay = n - 1;
   var anchorSet = {};
-  // 开营日=index 1, 合影日, 展览相关, 结营日（不含index 0=报道日）
-  [1, photoDay, exhDay-3, exhDay-2, exhDay-1, exhDay, lastDay].forEach(function(d) {
+  // 仅保留开营日=index 1 作为锚点（不含index 0=报道日）
+  [1].forEach(function(d) {
     if (d >= 0) anchorSet[d] = true;
   });
   return anchorSet;
@@ -4844,6 +4211,8 @@ function closeScheduleEdit() {
 function addScheduleDay() {
   if (!data.schedule || !data.schedule.dates) return;
   var insertAt = selectedCol >= 0 ? selectedCol + 1 : data.schedule.dates.length;
+  var maxInsert = Math.max(0, data.schedule.dates.length - RESERVED_TAIL_COLS);
+  if (insertAt > maxInsert) insertAt = maxInsert;
   var prevDate = data.schedule.dates[Math.min(insertAt-1, data.schedule.dates.length-1)];
   var parts = prevDate.split('/');
   var d = new Date(2026, parseInt(parts[0])-1, parseInt(parts[1]));
@@ -4860,6 +4229,8 @@ function addScheduleDay() {
 function removeScheduleDay() {
   if (!data.schedule || !data.schedule.dates || data.schedule.dates.length <= 1) return;
   var removeAt = selectedCol >= 0 ? selectedCol : data.schedule.dates.length - 1;
+  var minReserved = Math.max(0, data.schedule.dates.length - RESERVED_TAIL_COLS);
+  if (removeAt >= minReserved) { alert('最后 ' + RESERVED_TAIL_COLS + ' 天（布展/展览/结营）不可删除'); return; }
   var dayLabel = data.schedule.dates[removeAt] || 'day' + removeAt;
   if (!confirm('删除第 ' + (removeAt + 1) + ' 天（' + dayLabel + '）\\n删除后该天的活动数据将丢失。确定？')) return;
   data.schedule.dates.splice(removeAt, 1);
@@ -4872,10 +4243,12 @@ function removeScheduleDay() {
 }
 function copyPrevDaySchedule() {
   if (!data.schedule || !data.schedule.dates) return;
-  var srcCol = selectedCol >= 0 ? selectedCol : data.schedule.dates.length - 2;
+  var maxInsert = Math.max(0, data.schedule.dates.length - RESERVED_TAIL_COLS);
+  var srcCol = selectedCol >= 0 ? selectedCol : Math.max(0, maxInsert - 1);
   if (srcCol < 0) return;
   // Copy srcCol content and insert after it
   var insertAt = srcCol + 1;
+  if (insertAt > maxInsert) insertAt = maxInsert;
   var prevDate = data.schedule.dates[srcCol];
   var parts = prevDate.split('/');
   var d = new Date(2026, parseInt(parts[0])-1, parseInt(parts[1]));
@@ -4957,81 +4330,217 @@ function cellDrop(e, toSi, toDi) {
   renderDailySchedule();
 }
 
-function syncStaffCount() {
-  var v = parseInt(document.getElementById('wizStaffCount2').value) || 0;
+
+// ── Budget Framework ──
+var BUDGET_ITEM_ID = 0;
+function nextBudgetId() { return ++BUDGET_ITEM_ID; }
+
+function initDefaultBudgetItems() {
+  // 迁移：检测旧格式（含 amt 对象或 category 字段）
+  if (data.budget_items && data.budget_items.length > 0) {
+    var first = data.budget_items[0];
+    if (first.amt || first.category !== undefined) {
+      data.budget_items = [];
+    } else {
+      // 恢复 ID 计数器，防止页面刷新后 nextBudgetId() 产生碰撞
+      var maxId = 0;
+      data.budget_items.forEach(function(x) { if (x.id > maxId) maxId = x.id; });
+      BUDGET_ITEM_ID = Math.max(BUDGET_ITEM_ID, maxId);
+      return;
+    }
+  }
+  BUDGET_ITEM_ID = 100;
+  var items = [
+    // ── 收入 ──
+    { id:nextBudgetId(), name:'基金/资助申请', type:'income', group:'总协调', rmb:25000, nt:0, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'社区募捐', type:'income', group:'总协调', rmb:0, nt:30000, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'南塘DAO申请', type:'income', group:'总协调', rmb:0, nt:10000, calcType:'fixed', isCustom:false, note:'' },
+    // ── 支出：自动计算 ──
+    { id:nextBudgetId(), name:'住宿费', type:'expense', group:'生活', rmb:30, nt:40, calcType:'per_day_person', isCustom:false, note:'= 上方住宿单价 × 天数 × 共创人数' },
+    { id:nextBudgetId(), name:'餐费', type:'expense', group:'生活', rmb:8, nt:10, calcType:'per_day_person', isCustom:false, note:'= 上方餐费单价 × 天数 × 共创人数' },
+    { id:nextBudgetId(), name:'画材费用', type:'expense', group:'课程', rmb:100, nt:0, calcType:'per_person_all', isCustom:false, note:'= 单价 ×（工作人员+共创人）' },
+    { id:nextBudgetId(), name:'保险费', type:'expense', group:'生活', rmb:50, nt:0, calcType:'per_person_all', isCustom:false, note:'= 单价 ×（工作人员+共创人）' },
+    // ── 支出：固定金额 ──
+    { id:nextBudgetId(), name:'娱乐资金', type:'expense', group:'活动', rmb:600, nt:0, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'破冰活动经费', type:'expense', group:'活动', rmb:100, nt:0, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'展览费用', type:'expense', group:'活动', rmb:600, nt:0, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'日常经费', type:'expense', group:'生活', rmb:500, nt:0, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'开营晚餐/接风宴', type:'expense', group:'生活', rmb:168, nt:112, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'迎新晚会/篝火', type:'expense', group:'活动', rmb:400, nt:200, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'结营聚会', type:'expense', group:'生活', rmb:400, nt:0, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'备用金', type:'expense', group:'总协调', rmb:1000, nt:0, calcType:'fixed', isCustom:false, note:'' },
+    { id:nextBudgetId(), name:'推广费', type:'expense', group:'宣发', rmb:1200, nt:0, calcType:'fixed', isCustom:false, note:'' },
+  ];
+  data.budget_items = items;
+}
+
+function calcBudgetItemAmt(item, p) {
+  var rmb = item.rmb || 0, nt = item.nt || 0;
+  switch (item.calcType) {
+    case 'per_day_person':
+      if (item.name === '住宿费') { rmb = p.lodgingRMB; nt = p.lodgingNT; }
+      if (item.name === '餐费') { rmb = p.mealRMB; nt = p.mealNT; }
+      return { rmb: p.participantCount * p.duration * rmb, nt: p.participantCount * p.duration * nt };
+    case 'per_person_all':
+      return { rmb: p.totalPeople * rmb, nt: p.totalPeople * nt };
+    default:
+      return { rmb: rmb, nt: nt };
+  }
+}
+
+function getBudgetCalcParams() {
+  var pc = parseInt(document.getElementById('wizParticipantBudget').value) || 0;
+  var sc = parseInt(document.getElementById('wizStaffCount2').value) || 0;
+  var dur = parseInt(document.getElementById('wizDuration').value) || 15;
+  var eb = parseInt(document.getElementById('wizEarlyBird').value) || 0;
+  var ep = parseInt(document.getElementById('wizEarlyBirdPct').value) || 0;
+  var fp = parseInt(document.getElementById('wizFullPrice').value) || 0;
+  var ec = Math.round(pc * ep / 100);
+  var tuition = ec * eb + (pc - ec) * fp;
+  var lr = parseInt(document.getElementById('wizLodgingRMB').value) || 0;
+  var ln = parseInt(document.getElementById('wizLodgingNT').value) || 0;
+  var mr = parseInt(document.getElementById('wizMealRMB').value) || 0;
+  var mn = parseInt(document.getElementById('wizMealNT').value) || 0;
+  return { participantCount:pc, staffCount:sc, duration:dur, earlyBirdPrice:eb, earlyBirdPct:ep, fullPrice:fp, earlyCount:ec, tuition:tuition, totalPeople:pc+sc, lodgingRMB:lr, lodgingNT:ln, mealRMB:mr, mealNT:mn };
+}
+
+function renderBudgetFramework() {
+  // 注意：initDefaultBudgetItems() 已由调用方 updateWizBudgetCalc() 执行，此处不重复调用
+  var p = getBudgetCalcParams();
+
+  function renderRow(item) {
+    var amt = item._computed || { rmb:item.rmb||0, nt:item.nt||0 };
+    var isAuto = item.calcType !== 'fixed';
+    var rmbHtml = isAuto
+      ? '<span style="color:var(--muted);min-width:70px;text-align:right;display:inline-block">¥'+amt.rmb.toLocaleString()+'</span>'
+      : '¥ <input value="'+(item.rmb||0)+'" onchange="updateBudgetItemField('+item.id+',\'rmb\',this.value)" style="width:70px;text-align:right">';
+    var ntHtml = isAuto
+      ? '<span style="color:var(--muted);min-width:70px;text-align:right;display:inline-block">NT '+amt.nt.toLocaleString()+'</span>'
+      : 'NT <input value="'+(item.nt||0)+'" onchange="updateBudgetItemField('+item.id+',\'nt\',this.value)" style="width:70px;text-align:right">';
+    var autoLabel = isAuto ? '<span style="font-size:.75rem;color:var(--accent)">'+esc(item.note||'自动计算')+'</span>' : '';
+    var delBtn = item.isCustom ? '<button class="btn" onclick="removeBudgetItem('+item.id+')" style="font-size:.7rem;padding:0 4px;color:var(--red)">✕</button>' : '';
+
+    return '<div style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-bottom:1px dotted var(--border);font-size:.8rem;flex-wrap:wrap">'+
+      '<span style="min-width:100px;font-weight:600">'+esc(item.name)+'</span>'+
+      '<span style="font-size:.75rem;color:var(--muted);min-width:40px">'+esc(item.group||'')+'</span>'+
+      rmbHtml+'  '+ntHtml+
+      autoLabel+
+      '<span style="font-weight:600;min-width:90px;text-align:right;font-size:.8rem">= ¥'+amt.rmb.toLocaleString()+' / NT'+amt.nt.toLocaleString()+'</span>'+
+      delBtn+
+      '</div>';
+  }
+
+  var incEl = document.getElementById('wizIncomeItems');
+  if (incEl) {
+    var tuitionRow = '<div style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-bottom:1px dotted var(--border);font-size:.8rem;flex-wrap:wrap;background:#f8fdf5">'+
+      '<span style="min-width:100px;font-weight:600">🎓 学费收入</span>'+
+      '<span style="font-size:.75rem;color:var(--muted)">早鸟×'+p.earlyBirdPct+'% + 原价×'+(100-p.earlyBirdPct)+'%</span>'+
+      '<span style="font-weight:600;font-size:.8rem">= ¥'+p.tuition.toLocaleString()+'</span>'+
+      '</div>';
+    incEl.innerHTML = tuitionRow + data.budget_items.filter(function(x){return x.type==='income';}).map(renderRow).join('');
+  }
+
+  var expEl = document.getElementById('wizExpenseItems');
+  if (expEl) {
+    var expRows = data.budget_items.filter(function(x){return x.type==='expense';}).map(renderRow).join('');
+    // ── 追加任务材料汇总行（来自 Step④ 的实际材料数据）──
+    var mat = data.budget || {};
+    if ((mat._taskMatRMB || 0) > 0 || (mat._taskMatNT || 0) > 0) {
+      expRows += '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:2px solid var(--accent);font-size:.8rem;flex-wrap:wrap;background:#fef9ee">' +
+        '<span style="min-width:100px;font-weight:700;color:var(--accent)">📦 任务材料费</span>' +
+        '<span style="font-size:.75rem;color:var(--muted);min-width:40px">Step④</span>' +
+        '<span style="color:var(--muted);min-width:240px;font-size:.75rem">共 ' + (mat._taskMatDetail || []).length + ' 项 · 来自任务分配</span>' +
+        '<span style="font-weight:600;min-width:90px;text-align:right;font-size:.8rem;color:var(--accent)">= ¥' + (mat._taskMatRMB || 0).toLocaleString() + ' / NT' + (mat._taskMatNT || 0).toLocaleString() + '</span>' +
+        '</div>';
+    }
+    expEl.innerHTML = expRows;
+}
+	}
+
+function addBudgetItem(type) {
+  initDefaultBudgetItems();
+  var name = prompt('项目名称：');
+  if (!name) return;
+  var group = prompt('组别（总协调/课程/宣发/生活/活动）：', '活动');
+  data.budget_items.push({
+    id: nextBudgetId(), name: name, type: type, group: group || '活动',
+    rmb: 0, nt: 0, calcType: 'fixed', isCustom: true, note: ''
+  });
+  localStorage.setItem('camp_data', JSON.stringify(data));
   updateWizBudgetCalc();
 }
 
+function removeBudgetItem(id) {
+  if (!confirm('删除此项目？')) return;
+  data.budget_items = data.budget_items.filter(function(x){return x.id!==id;});
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  updateWizBudgetCalc();
+}
+
+function updateBudgetItemField(id, field, value) {
+  var item = data.budget_items.find(function(x){return x.id===id;});
+  if (!item) return;
+  if (field === 'rmb' || field === 'nt') item[field] = parseInt(value) || 0;
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  updateWizBudgetCalc();
+}
+
+// syncStaffCount 已删除——wizStaffCount2 的 oninput 直接调用 updateWizBudgetCalc()
+
 function updateWizBudgetCalc() {
-  var staffCount = parseInt(document.getElementById('wizStaffCount2').value) || 0;
-  var salaryBaseRMB = parseInt(document.getElementById('wizSalaryBaseRMB').value) || 0;
-  var participantCount = parseInt(document.getElementById('wizParticipantBudget').value) || 0;
-  var earlyBirdPrice = parseInt(document.getElementById('wizEarlyBird').value) || 0;
-  var earlyBirdPct = parseInt(document.getElementById('wizEarlyBirdPct').value) || 0;
-  var fullPrice = parseInt(document.getElementById('wizFullPrice').value) || 0;
-  var lodgingRMB = parseInt(document.getElementById('wizLodgingRMB').value) || 0;
-  var lodgingNT = parseInt(document.getElementById('wizLodgingNT').value) || 0;
-  var mealRMB = parseInt(document.getElementById('wizMealRMB').value) || 0;
-  var mealNT = parseInt(document.getElementById('wizMealNT').value) || 0;
-  var buybackNT = parseInt(document.getElementById('wizNTBuyback').value) || 0;
-  var ntPerDay = parseInt(document.getElementById('wizNTPerDay').value) || 0;
-  var rmbPool = parseInt(document.getElementById('wizRMBPool').value) || 0;
-  var ntPool = parseInt(document.getElementById('wizNTPool').value) || 0;
-  var duration = parseInt(document.getElementById('wizDuration').value) || 15;
-  document.getElementById('wizBudgetDays').textContent = duration;
+  initDefaultBudgetItems();
+  var p = getBudgetCalcParams();
+  var el = document.getElementById('wizBudgetDays'); if (el) el.textContent = p.duration;
 
-  // --- RMB ---
-  var earlyCount = Math.round(participantCount * earlyBirdPct / 100);
-  var fullCount = participantCount - earlyCount;
-  var tuition = earlyCount * earlyBirdPrice + fullCount * fullPrice;
-  var salaryRMB = staffCount * salaryBaseRMB;
-  var foodLodgingRMB = participantCount * duration * (lodgingRMB + mealRMB);
-  var rmbExpense = salaryRMB + foodLodgingRMB + rmbPool;
-  var sponsorNeeded = Math.max(0, rmbExpense - tuition);
+  var incRMB = p.tuition, incNT = 0, expRMB = 0, expNT = 0;
+  data.budget_items.forEach(function(item) {
+    var amt = calcBudgetItemAmt(item, p);
+    item._computed = amt;
+    if (item.type === 'income') { incRMB += amt.rmb; incNT += amt.nt; }
+    else { expRMB += amt.rmb; expNT += amt.nt; }
+  });
 
-  document.getElementById('wizTuitionEst').textContent = '¥' + tuition.toLocaleString();
-  document.getElementById('wizSalaryEst').textContent = '¥' + salaryRMB.toLocaleString();
-  document.getElementById('wizLodgingEst').textContent = '¥' + foodLodgingRMB.toLocaleString();
-  document.getElementById('wizRMBPoolShow').textContent = '¥' + rmbPool.toLocaleString();
-  document.getElementById('wizRMBExpense').textContent = '¥' + rmbExpense.toLocaleString();
-  document.getElementById('wizSponsorNeeded').textContent = '¥' + sponsorNeeded.toLocaleString() + '（=支出' + rmbExpense.toLocaleString() + '−学费' + tuition.toLocaleString() + '）';
+  // ── 任务材料汇总：从 wizardTasks / data.tasks 聚合实际材料费 ──
+  var taskMatRMB = 0, taskMatNT = 0, taskMatDetail = [];
+  var matSource = (typeof wizardTasks !== 'undefined' && wizardTasks && wizardTasks.length > 0) ? wizardTasks : (data.tasks || []);
+  matSource.forEach(function(t) {
+    if ((t.active || 'yes') === 'no') return;
+    (t.materials || []).forEach(function(m) {
+      var r = parseInt(m.rmb) || 0, n = parseInt(m.nt) || 0;
+      if (r > 0 || n > 0) {
+        taskMatRMB += r; taskMatNT += n;
+        taskMatDetail.push({ item: m.item || '未命名', rmb: r, nt: n, task: t.name, person: t.assignee || '' });
+      }
+    });
+  });
+  // 存储供 renderBudgetFramework / exportBudgetExcel 使用
+  if (!data.budget) data.budget = {};
+  data.budget._taskMatRMB = taskMatRMB;
+  data.budget._taskMatNT = taskMatNT;
+  data.budget._taskMatDetail = taskMatDetail;
+  // 材料费计入支出（不可重复计——budget_items 中的「画材费用」等固定项视为预估，任务材料为实际）
+  expRMB += taskMatRMB;
+  expNT += taskMatNT;
 
-  // --- NT ---
-  // Staff NT salary: filled in step ③④, show -- for now
-  var staffNTKnown = (data.budget && data.budget.staff_nt_total) ? data.budget.staff_nt_total : 0;
-  var staffNTHasData = (data.budget && data.budget.staff_nt_total != null);
-  var foodLodgingNT = participantCount * duration * (lodgingNT + mealNT);
-  var buybackNTTotal = participantCount * buybackNT;
-  var taskNTEstimate = participantCount * duration * ntPerDay;
-  var ntTotal = foodLodgingNT + buybackNTTotal + taskNTEstimate + ntPool + staffNTKnown;
-  // Creator task NT pool = NT total - staff NT - prize pool NT
-  var creatorPool = ntTotal - staffNTKnown - ntPool;
+  el = document.getElementById('wizIncomeTotalRMB'); if (el) el.textContent = '¥' + incRMB.toLocaleString();
+  el = document.getElementById('wizIncomeTotalNT'); if (el) el.textContent = 'NT ' + incNT.toLocaleString();
+  el = document.getElementById('wizExpenseTotalRMB'); if (el) el.textContent = '¥' + expRMB.toLocaleString();
+  el = document.getElementById('wizExpenseTotalNT'); if (el) el.textContent = 'NT ' + expNT.toLocaleString();
 
-  document.getElementById('wizNTTotal').textContent = 'NT ' + ntTotal.toLocaleString();
-  document.getElementById('wizNTStaffShow').textContent = staffNTHasData ? ('NT ' + staffNTKnown.toLocaleString()) : '-- 待步骤③④认领';
-  document.getElementById('wizNTPoolShow').textContent = 'NT ' + ntPool.toLocaleString();
-  document.getElementById('wizCreatorNTPool').textContent = 'NT ' + creatorPool.toLocaleString();
+  var profitR = incRMB - expRMB, profitN = incNT - expNT;
+  el = document.getElementById('wizSummaryRMB'); if (el) el.textContent = '¥' + profitR.toLocaleString();
+  el = document.getElementById('wizSummaryTuition'); if (el) el.textContent = '¥' + incRMB.toLocaleString();
+  el = document.getElementById('wizSummaryExpense'); if (el) el.textContent = '¥' + expRMB.toLocaleString();
+  el = document.getElementById('wizSummaryNT'); if (el) el.textContent = 'NT ' + profitN.toLocaleString();
+  el = document.getElementById('wizSummaryNTIn'); if (el) el.textContent = 'NT ' + incNT.toLocaleString();
+  el = document.getElementById('wizSummaryNTOut'); if (el) el.textContent = 'NT ' + expNT.toLocaleString();
 
-  // Pool usage (shown in step ④ when NT role fills task design)
-  var poolUsageEl = document.getElementById('wizNTPoolUsage');
-  if (data.budget && data.budget.creator_task_nt_used != null && data.budget.creator_task_nt_used > 0) {
-    poolUsageEl.style.display = 'block';
-    var used = data.budget.creator_task_nt_used;
-    var remaining = creatorPool - used;
-    var color = remaining >= 0 ? 'var(--green)' : 'var(--red)';
-    var icon = remaining >= 0 ? '✅' : '🔴';
-    poolUsageEl.innerHTML = '<div>已分配 <b>' + used.toLocaleString() + ' NT</b></div>' +
-      '<div style="color:' + color + ';font-weight:700">' + icon + ' 剩余可分配 <b>' + remaining.toLocaleString() + ' NT</b>' +
-      (remaining < 0 ? ' <span style="color:var(--red)">⚠ 超出池上限！请削减任务激励点</span>' : '') + '</div>';
-  } else {
-    poolUsageEl.style.display = 'none';
-  }
+  // 清理旧版 budget 废弃字段（salary_base_rmb, buyback_nt, nt_per_day 等）
+  var deadKeys = ['salary_base_rmb','salary','buyback_nt','buyback_nt_total','nt_per_day','rmb_pool','nt_pool','nt_raised','staff_nt_total','creator_task_nt_used'];
+  if (data.budget) deadKeys.forEach(function(k) { delete data.budget[k]; });
 
-  // --- Bottom summary ---
-  document.getElementById('wizSummaryRMB').textContent = '¥' + rmbExpense.toLocaleString();
-  document.getElementById('wizSummaryTuition').textContent = '¥' + tuition.toLocaleString();
-  document.getElementById('wizSummarySponsor').textContent = '¥' + sponsorNeeded.toLocaleString();
-  document.getElementById('wizSummaryNT').textContent = 'NT ' + ntTotal.toLocaleString();
+  renderBudgetFramework();
+  localStorage.setItem('camp_data', JSON.stringify(data));
 }
 
 function addWizMember() {
@@ -5069,27 +4578,19 @@ function saveStep1() {
   var pCount = parseInt(document.getElementById('wizParticipantBudget').value) || 10;
   var days = data.camp_dates.duration_days || 15;
   data.budget.staff_count = staffCount;
-  data.budget.salary_base_rmb = parseInt(document.getElementById('wizSalaryBaseRMB').value) || 2000;
   data.budget.participant_budget = pCount;
-  data.budget.early_bird_price = parseInt(document.getElementById('wizEarlyBird').value) || 499;
-  data.budget.early_bird_pct = parseInt(document.getElementById('wizEarlyBirdPct').value) || 60;
-  data.budget.full_price = parseInt(document.getElementById('wizFullPrice').value) || 599;
-  data.budget.lodging_rmb = parseInt(document.getElementById('wizLodgingRMB').value) || 30;
-  data.budget.lodging_nt = parseInt(document.getElementById('wizLodgingNT').value) || 40;
-  data.budget.meal_rmb = parseInt(document.getElementById('wizMealRMB').value) || 8;
-  data.budget.meal_nt = parseInt(document.getElementById('wizMealNT').value) || 10;
-  data.budget.buyback_nt = parseInt(document.getElementById('wizNTBuyback').value) || 300;
-  data.budget.nt_per_day = parseInt(document.getElementById('wizNTPerDay').value) || 100;
-  data.budget.rmb_pool = parseInt(document.getElementById('wizRMBPool').value) || 3000;
-  data.budget.nt_pool = parseInt(document.getElementById('wizNTPool').value) || 4500;
-  // Computed
-  var earlyCount = Math.round(pCount * data.budget.early_bird_pct / 100);
-  data.budget.tuition = earlyCount * data.budget.early_bird_price + (pCount - earlyCount) * data.budget.full_price;
-  data.budget.salary = staffCount * data.budget.salary_base_rmb;
-  data.budget.food_lodging_rmb = pCount * days * (data.budget.lodging_rmb + data.budget.meal_rmb);
-  data.budget.food_lodging_nt = pCount * days * (data.budget.lodging_nt + data.budget.meal_nt);
-  data.budget.buyback_nt_total = pCount * data.budget.buyback_nt;
-  data.budget.nt_raised = data.budget.food_lodging_nt + data.budget.buyback_nt_total + pCount * days * data.budget.nt_per_day + data.budget.nt_pool;
+  var el;
+  el = document.getElementById('wizEarlyBird'); if (el) data.budget.early_bird_price = parseInt(el.value) || 499;
+  el = document.getElementById('wizEarlyBirdPct'); if (el) data.budget.early_bird_pct = parseInt(el.value) || 60;
+  el = document.getElementById('wizFullPrice'); if (el) data.budget.full_price = parseInt(el.value) || 599;
+  el = document.getElementById('wizLodgingRMB'); if (el) data.budget.lodging_rmb = parseInt(el.value) || 30;
+  el = document.getElementById('wizLodgingNT'); if (el) data.budget.lodging_nt = parseInt(el.value) || 40;
+  el = document.getElementById('wizMealRMB'); if (el) data.budget.meal_rmb = parseInt(el.value) || 8;
+  el = document.getElementById('wizMealNT'); if (el) data.budget.meal_nt = parseInt(el.value) || 10;
+  // Computed (simplified)
+  data.budget.tuition = (Math.round(pCount * (data.budget.early_bird_pct||60) / 100)) * (data.budget.early_bird_price||499) + (pCount - Math.round(pCount * (data.budget.early_bird_pct||60) / 100)) * (data.budget.full_price||599);
+  data.budget.food_lodging_rmb = pCount * days * ((data.budget.lodging_rmb||30) + (data.budget.meal_rmb||8));
+  data.budget.food_lodging_nt = pCount * days * ((data.budget.lodging_nt||40) + (data.budget.meal_nt||10));
   if (!data.stats) data.stats = {};
   data.stats.participant_count = pCount;
   // Progress
@@ -6508,6 +6009,202 @@ function restoreDefaultTemplates() {
   localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templates));
   refreshTemplateSelects();
   setStatus('已恢复 ' + Object.keys(PRESET_TEMPLATES).length + ' 个预设模板');
+}
+
+// ── Export Budget to Excel ──
+function exportBudgetExcel() {
+  initDefaultBudgetItems();
+  var p = getBudgetCalcParams();
+  data.budget_items.forEach(function(item) { item._computed = calcBudgetItemAmt(item, p); });
+
+  var incomeItems = data.budget_items.filter(function(x) { return x.type === 'income'; });
+  var expenseItems = data.budget_items.filter(function(x) { return x.type === 'expense'; });
+
+  var incTotalRMB = p.tuition, incTotalNT = 0;
+  incomeItems.forEach(function(item) { var a=item._computed; incTotalRMB+=a.rmb; incTotalNT+=a.nt; });
+  var expTotalRMB = 0, expTotalNT = 0;
+  expenseItems.forEach(function(item) { var a=item._computed; expTotalRMB+=a.rmb; expTotalNT+=a.nt; });
+
+  var groupedExp = {};
+  expenseItems.forEach(function(item) {
+    var g = item.group || '其他';
+    if (!groupedExp[g]) groupedExp[g] = [];
+    groupedExp[g].push(item);
+  });
+  var groupOrder = Object.keys(groupedExp).sort();
+
+  var wb = new ExcelJS.Workbook();
+  wb.creator = '南塘DAO预算系统';
+
+  // ═══ Sheet 1: 任务&预算 ═══
+  var ws1 = wb.addWorksheet('任务&预算');
+  [12,6,8,28,6,12,10,10,10,10,10,10,10,12,8,12,8,40,35,12,12,12,12].forEach(function(w,i){ ws1.getColumn(i+1).width = w; });
+
+  ws1.mergeCells('D1:G1');
+  var r1 = ws1.getRow(1); r1.height = 30;
+  r1.getCell('D').value = '说明：人力经费及劳务费用人民币部分项目营收会优先发放，\n项目营收不足则南塘DAO有充足资金时发放，NT部分结项后直接发放。';
+  r1.getCell('D').font = {size:8, italic:true};
+  r1.getCell('H').value = '预算'; r1.getCell('H').font = {size:10, bold:true};
+
+  ws1.mergeCells('O2:P2'); ws1.mergeCells('Q2:R2');
+  var r2 = ws1.getRow(2);
+  r2.getCell('B').value = '预算表'; r2.getCell('B').font = {size:12, bold:true};
+  r2.getCell('C').value = '人民币¥'; r2.getCell('D').value = '南塘豆nt';
+  r2.getCell('H').value = '¥'; r2.getCell('I').value = 'nt'; r2.getCell('J').value = '¥'; r2.getCell('K').value = 'nt';
+  r2.getCell('L').value = '¥'; r2.getCell('M').value = 'nt'; r2.getCell('N').value = 'nt';
+  r2.getCell('O').value = 'RMB'; r2.getCell('Q').value = 'NT';
+
+  ws1.mergeCells('O3:P3'); ws1.mergeCells('Q3:R3');
+  var r3 = ws1.getRow(3);
+  r3.getCell('B').value = '1-预收入'; r3.getCell('C').value = incTotalRMB; r3.getCell('D').value = incTotalNT;
+  r3.getCell('O').value = incTotalRMB; r3.getCell('Q').value = incTotalNT;
+
+  ws1.mergeCells('O4:P4'); ws1.mergeCells('Q4:R4');
+  var r4 = ws1.getRow(4);
+  r4.getCell('B').value = '2-预支出'; r4.getCell('C').value = expTotalRMB; r4.getCell('D').value = expTotalNT;
+  r4.getCell('O').value = expTotalRMB; r4.getCell('Q').value = expTotalNT;
+
+  var r5 = ws1.getRow(5);
+  r5.getCell('B').value = '预测损益'; r5.getCell('C').value = incTotalRMB-expTotalRMB; r5.getCell('D').value = incTotalNT-expTotalNT;
+
+  ws1.mergeCells('H6:I6'); ws1.mergeCells('J6:M6'); ws1.mergeCells('U6:V6'); ws1.mergeCells('W6:X6');
+  var r6 = ws1.getRow(6);
+  r6.getCell('B').value = '人数'; r6.getCell('C').value = p.participantCount; r6.getCell('E').value = p.participantCount;
+  r6.getCell('H').value = '人力经费'; r6.getCell('J').value = '（任务/工作）'; r6.getCell('N').value = '共创协作';
+  r6.getCell('O').value = 'RMB'; r6.getCell('Q').value = 'NT'; r6.getCell('U').value = 'RMB'; r6.getCell('W').value = 'NT';
+
+  var headers = ['预算类型','Item','组别','Task 任务 / work 工作包','状况','关联（费用）','￥人力','nt人力','¥雇佣','nt雇佣','¥经费','nt经费','nt激励','RMB','比例','NT','比例','综合说明','预算科目','已使用','余可用','已使用','余可用'];
+  var r7 = ws1.getRow(7); r7.height = 35;
+  headers.forEach(function(h,i){ var c=r7.getCell(i+1); c.value=h; c.font={size:7,bold:true}; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; });
+
+  var rowNum = 8, incomeIdx = 0, expenseIdx = 0;
+
+  function fillAmt(r, a) {
+    if(a.rmb) r.getCell('K').value = a.rmb;
+    if(a.nt) r.getCell('L').value = a.nt;
+  }
+
+  // Income header + items
+  var rIncH = ws1.getRow(rowNum++);
+  rIncH.getCell('A').value = '1-预收入'; rIncH.getCell('B').value = 0; rIncH.getCell('C').value = '总协调';
+  rIncH.getCell('D').value = '收入总项（含学费 ¥'+p.tuition.toLocaleString()+'）';
+  rIncH.getCell('K').value = p.tuition; rIncH.getCell('S').value = '1-预收入｜（0）【收入总项】';
+  rIncH.getCell('T').value = 0; rIncH.getCell('U').value = incTotalRMB;
+
+  incomeItems.forEach(function(item) {
+    var a = item._computed; incomeIdx++;
+    var r = ws1.getRow(rowNum++);
+    r.getCell('A').value = '1-预收入'; r.getCell('B').value = incomeIdx;
+    r.getCell('C').value = item.group; r.getCell('D').value = item.name + (item.note?'（'+item.note+'）':'');
+    fillAmt(r, a);
+    r.getCell('N').value = a.rmb||0; r.getCell('P').value = a.nt||0;
+    r.getCell('S').value = '1-预收入｜（'+incomeIdx+'）【'+item.name+'】';
+  });
+
+  // Expense header + items by group
+  var rExpH = ws1.getRow(rowNum++);
+  rExpH.getCell('A').value = '2-预支出'; rExpH.getCell('B').value = 0; rExpH.getCell('D').value = '支出总项';
+  rExpH.getCell('S').value = '2-预支出｜（0）【支出总项】';
+
+  groupOrder.forEach(function(grp) {
+    var items = groupedExp[grp]; if (!items || items.length===0) return;
+    var gr = ws1.getRow(rowNum++);
+    gr.getCell('A').value = '2-预支出'; gr.getCell('D').value = '── '+grp+' ──';
+    gr.getCell('D').font = {size:9, bold:true, color:{argb:'FFC88740'}};
+    items.forEach(function(item) {
+      var a = item._computed; expenseIdx++;
+      var r = ws1.getRow(rowNum++);
+      r.getCell('A').value = '2-预支出'; r.getCell('B').value = expenseIdx;
+      r.getCell('C').value = item.group; r.getCell('D').value = item.name + (item.note?'——'+item.note:'');
+      fillAmt(r, a);
+      r.getCell('N').value = a.rmb||0; r.getCell('P').value = a.nt||0;
+      r.getCell('R').value = item.note||'';
+      r.getCell('S').value = '2-预支出｜（'+expenseIdx+'）【'+item.name+'】';
+    });
+  });
+
+  // ── 任务材料明细（来自 Step④ / 任务分配）──
+  var taskMats = (data.budget && data.budget._taskMatDetail) ? data.budget._taskMatDetail : [];
+  if (taskMats.length > 0) {
+    var matGR = ws1.getRow(rowNum++);
+    matGR.getCell('A').value = '2-预支出'; matGR.getCell('D').value = '── 📦 任务材料费（' + taskMats.length + '项）──';
+    matGR.getCell('D').font = {size:9, bold:true, color:{argb:'FFC88740'}};
+    // 按人分组
+    var matByPerson = {};
+    taskMats.forEach(function(m) { var p = m.person || '未认领'; if (!matByPerson[p]) matByPerson[p] = []; matByPerson[p].push(m); });
+    Object.keys(matByPerson).sort().forEach(function(person) {
+      var pMats = matByPerson[person];
+      pMats.forEach(function(m) {
+        expenseIdx++;
+        var r = ws1.getRow(rowNum++);
+        r.getCell('A').value = '2-预支出'; r.getCell('B').value = expenseIdx;
+        r.getCell('C').value = person; r.getCell('D').value = m.item + '（任务：' + (m.task||'') + '）';
+        if (m.rmb) r.getCell('K').value = m.rmb;
+        if (m.nt) r.getCell('L').value = m.nt;
+        r.getCell('N').value = m.rmb||0; r.getCell('P').value = m.nt||0;
+        r.getCell('S').value = '2-预支出｜（'+expenseIdx+'）【📦' + m.item + '】';
+      });
+    });
+  }
+
+  for (var ri=8; ri<rowNum; ri++) {
+    var row = ws1.getRow(ri);
+    for (var ci=1; ci<=24; ci++) {
+      var cell = row.getCell(ci);
+      cell.border = {top:{style:'thin'},bottom:{style:'thin'},left:{style:'thin'},right:{style:'thin'}};
+      if (!cell.font || !cell.font.size) cell.font = {size:9};
+      if (!cell.alignment) cell.alignment = {vertical:'middle',wrapText:true};
+    }
+  }
+
+  // ═══ Sheet 2: 收支出纳记录 ═══
+  var ws2 = wb.addWorksheet('收支出纳记录');
+  for (var ci=1; ci<=41; ci++) ws2.getColumn(ci).width = 12;
+
+  ws2.mergeCells('G1:H1'); ws2.mergeCells('I1:L1');
+  ws2.getRow(1).getCell('G').value = '人力经费'; ws2.getRow(1).getCell('I').value = '（任务/工作）经费'; ws2.getRow(1).getCell('M').value = '共创协作';
+
+  ws2.mergeCells('B2:B3');
+  ws2.getRow(2).getCell('B').value = '总共支出'; ws2.getRow(2).getCell('C').value = 'RMB';
+  ws2.getRow(2).getCell('G').value = '人力'; ws2.getRow(2).getCell('I').value = '劳务'; ws2.getRow(2).getCell('K').value = '非劳务'; ws2.getRow(2).getCell('M').value = '激励';
+
+  ws2.mergeCells('G3:H3'); ws2.mergeCells('I3:J3'); ws2.mergeCells('K3:L3');
+  ws2.getRow(3).getCell('C').value = 'NT'; ws2.getRow(3).getCell('F').value = '营队收入=>';
+  ws2.getRow(3).getCell('AF').value = incTotalRMB; ws2.getRow(3).getCell('AG').value = incTotalNT;
+
+  ws2.mergeCells('B4:B5'); ws2.mergeCells('P4:S4'); ws2.mergeCells('T4:AA4'); ws2.mergeCells('AH4:AI4'); ws2.mergeCells('AK4:AL4');
+  ws2.getRow(4).getCell('B').value = '总共剩余'; ws2.getRow(4).getCell('C').value = 'RMB'; ws2.getRow(4).getCell('F').value = '营队支出=>';
+  ws2.getRow(4).getCell('P').value = '人力经费'; ws2.getRow(4).getCell('T').value = '（任务/工作）经费';
+  ws2.getRow(4).getCell('AF').value = -expTotalRMB; ws2.getRow(4).getCell('AG').value = -expTotalNT;
+  ws2.getRow(4).getCell('AH').value = 'RMB'; ws2.getRow(4).getCell('AK').value = 'NT';
+
+  ws2.getRow(5).getCell('C').value = 'NT'; ws2.getRow(5).getCell('F').value = '剩余'; ws2.getRow(5).getCell('O').value = '营队剩余';
+  ws2.getRow(5).getCell('AF').value = incTotalRMB-expTotalRMB; ws2.getRow(5).getCell('AG').value = incTotalNT-expTotalNT;
+
+  var cashHeaders = ['Item','收支','出纳人','领款人','出纳事由','￥','nt','￥','nt','￥','nt','nt','使用预算','出纳类型',
+    '累积','剩余','累积','剩余','累积','剩余','累积','剩余','累积','剩余','累积','剩余','累积','剩余',
+    'RMB','NT','累积收支','剩余可用','预算额','累计收','剩余可用','预算额'];
+  var sr6 = ws2.getRow(6);
+  cashHeaders.forEach(function(h,i){ var c=sr6.getCell(i+2); c.value=h; c.font={size:7,bold:true}; c.alignment={horizontal:'center',vertical:'middle',wrapText:true}; });
+
+  // ═══ Sheet 3: 下拉选单 ═══
+  var ws3 = wb.addWorksheet('下拉选单');
+  ws3.getCell('A1').value = '生活组支出类型';
+  ['1.日用消耗品','2.机器设备','3.在地工程','4.维修设备','5.专项活动'].forEach(function(v,i){ ws3.getCell('A'+(i+2)).value = v; });
+  ws3.getCell('D1').value = '人力￥'; ws3.getCell('D2').value = '人力nt'; ws3.getCell('D3').value = '劳务 ¥';
+  ws3.getCell('D4').value = '劳务 nt'; ws3.getCell('D5').value = '非劳务¥'; ws3.getCell('D6').value = '非劳务nt'; ws3.getCell('D7').value = '激励nt';
+
+  // ── Download ──
+  wb.xlsx.writeBuffer().then(function(buffer) {
+    var blob = new Blob([buffer], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '预算表_' + new Date().toISOString().slice(0,10) + '.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setStatus('✅ 预算表已导出');
+  }).catch(function(err) { console.error(err); alert('导出失败：'+err.message); });
 }
 
 </script>

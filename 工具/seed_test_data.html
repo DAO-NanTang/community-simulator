@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>监察面板 · 测试数据注入</title>
+<style>
+  body { font-family: system-ui; max-width: 700px; margin: 60px auto; padding: 20px; line-height: 1.8; }
+  h1 { color: #5a3e28; } .ok { color: green; font-weight: bold; }
+  pre { background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: .82rem; overflow-x: auto; }
+  button { padding: 12px 32px; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; margin: 8px; }
+  .inject { background: #5a8a3c; color: #fff; }
+  .open { background: #3a6a9c; color: #fff; }
+  .info { color: #666; font-size: .85rem; }
+</style></head>
+<body>
+<h1>🧪 监察面板测试数据注入器</h1>
+<p>点击下方按钮，将模拟数据写入 localStorage，然后打开 Dashboard 查看监察面板效果。</p>
+<p class="info">模拟场景：6 位冒险者，10 个任务，2 项待审核，3 项逾期，NT 池数据齐全。</p>
+<button class="inject" onclick="inject()">💉 注入测试数据</button>
+<button class="open" onclick="openDash()">📊 打开 Dashboard</button>
+<pre id="log"></pre>
+
+<script>
+function inject() {
+  var today = '2026-07-07';
+  var tasks = [
+    { name: '设计首页', type: '主线', category: '课程', assignee: '陈若雨', points: 30, deadline: '2026-07-10', status: '已完成', source: '测试数据', claimants: [], active: 'yes' },
+    { name: '用户访谈', type: '支线', category: '宣传', assignee: '陈若雨', points: 20, deadline: '2026-07-15', status: '进行中', source: '测试数据', claimants: [
+      { name: '陈若雨', claimed_at: '2026-07-02', status: 'submitted', submitted_at: '2026-07-05' }
+    ], active: 'yes' },
+    { name: '编写文档', type: '支线', category: '管理', assignee: '墨染', points: 25, deadline: '2026-07-12', status: '进行中', source: '测试数据', claimants: [
+      { name: '墨染', claimed_at: '2026-07-01', status: 'submitted', submitted_at: '2026-07-06' }
+    ], active: 'yes' },
+    { name: '前端优化', type: '支线', category: '管理', assignee: '墨染', points: 15, deadline: '2026-07-05', status: '进行中', source: '测试数据', claimants: [], active: 'yes' },
+    { name: '海报设计', type: '共创', category: '宣传', assignee: '念儿', points: 20, deadline: '2026-07-20', status: '已完成', source: '测试数据', claimants: [], active: 'yes' },
+    { name: '社交媒体', type: '支线', category: '宣传', assignee: '念儿', points: 10, deadline: '2026-07-08', status: '已完成', source: '测试数据', claimants: [], active: 'yes' },
+    { name: '系统架构', type: '主线', category: '课程', assignee: '小红', points: 40, deadline: '2026-07-03', status: '进行中', source: '测试数据', claimants: [], active: 'yes' },
+    { name: '彩蛋开发', type: '隐藏', category: '财务', assignee: '小红', points: 50, deadline: '2026-06-30', status: '进行中', source: '测试数据', claimants: [], active: 'yes' },
+    { name: '代码审查', type: '支线', category: '管理', assignee: 'fc', points: 15, deadline: '2026-07-06', status: '进行中', source: '测试数据', claimants: [], active: 'yes' },
+    { name: '活动策划', type: '共创', category: '生活', assignee: 'fc', points: 20, deadline: '2026-07-25', status: '进行中', source: '测试数据', claimants: [], active: 'yes' }
+  ];
+
+  var members = {
+    '陈若雨': { name: '陈若雨', role: 'adventurer', gender: '女' },
+    '墨染':   { name: '墨染',   role: 'adventurer', gender: '男' },
+    '念儿':   { name: '念儿',   role: 'adventurer', gender: '女' },
+    '小红':   { name: '小红',   role: 'adventurer', gender: '女' },
+    'fc':     { name: 'fc',     role: 'adventurer', gender: '男' },
+    '王五':   { name: '王五',   role: 'adventurer', gender: '男' }
+  };
+
+  var finance = [
+    { type: 'task_reward', from: '系统', to: '陈若雨', amount: 30, task_name: '设计首页', date: '2026-07-10' },
+    { type: 'task_reward', from: '系统', to: '念儿',   amount: 10, task_name: '社交媒体', date: '2026-07-08' },
+    { type: 'task_reward', from: '系统', to: '念儿',   amount: 20, task_name: '海报设计', date: '2026-07-20' }
+  ];
+
+  var budget = { nt_total_pool: 30000 };
+  var staff_cards = [{ name: '砚仁', role: 'NT' }];
+  var camp_progress = { step: 3, steps: {'1':'done','2':'done','3':'active','4':'locked','5':'locked'} };
+  var camp_dates = { start: '2026-06-20', end: '2026-07-25', duration_days: 35, milestones: [] };
+
+  var data = {
+    tasks: tasks, decisions: [], members: members, budget: budget,
+    finance_cny: {}, finance: finance, schedule: {},
+    camp_progress: camp_progress, camp_dates: camp_dates, staff_cards: staff_cards
+  };
+  localStorage.setItem('camp_data', JSON.stringify(data));
+
+  // Also seed a user account
+  var users = { '砚仁': { name: '砚仁', role: 'admin', pwd: btoa(encodeURIComponent('123:砚仁')) } };
+  localStorage.setItem('nt_users', JSON.stringify(users));
+  localStorage.setItem('nt_world_codes', JSON.stringify(['1100']));
+
+  // Clear old oversee state so all items appear as NEW
+  localStorage.removeItem('oversee_state');
+
+  document.getElementById('log').innerHTML =
+    '<span class="ok">✅ 测试数据已注入 localStorage（已清除旧已读状态）</span>\n' +
+    '📋 6 位成员 | 📝 10 个任务 | ⏳ 2 项待审核 | ⚠️ 3 项逾期 | 💰 NT 池 30,000\n' +
+    '\n预期监察面板效果：\n' +
+    '🔴 Layer 1（始终展开）：\n' +
+    '  ⏳ 待审核 2 项 +2新 → 🆕陈若雨→用户访谈·2天前 / 🆕墨染→编写文档·1天前\n' +
+    '  ⚠️ 逾期 3 项 +3新 → 🆕小红：系统架构(4天)、彩蛋开发(7天) / 🆕墨染：前端优化(2天) / 🆕fc：代码审查(1天)\n' +
+    '🟡 Layer 2（默认折叠）：一行摘要 → 点击展开看进度条\n' +
+    '🟢 Layer 3（始终展开）：💎 30,000 · 已发 60（2人）· NTA 砚仁\n' +
+    '\n📊 按钮上应显示红色徽章 ⑤（= 2新待审核 + 3新逾期）';
+}
+
+function openDash() {
+  window.open('dashboard.html', '_blank');
+}
+</script>
+</body>
+</html>

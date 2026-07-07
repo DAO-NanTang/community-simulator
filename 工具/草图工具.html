@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文字画草图工具 · 画完截图发给我</title>
+<style>
+:root{--bg:#0d0d0d;--s:#161613;--b:#2a2820;--t:#c8c0b0;--m:#6b6658;--a:#c88740;--r:#c05040}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Courier New','Consolas','SimSun',monospace;background:var(--bg);color:var(--t);height:100vh;display:flex;flex-direction:column;user-select:none;overflow:hidden}
+/* Toolbar */
+#bar{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--s);border-bottom:1px solid var(--b);flex-shrink:0;flex-wrap:wrap}
+#bar h1{font-size:.85rem;color:var(--a);font-weight:400;margin-right:6px;white-space:nowrap}
+#bar .sep{color:var(--b);margin:0 2px}
+.btn{padding:6px 14px;border:1px solid var(--b);border-radius:3px;background:transparent;color:var(--m);cursor:pointer;font-family:inherit;font-size:.75rem;white-space:nowrap;transition:.1s}
+.btn:hover{color:var(--t);border-color:var(--m)}
+.btn.on{color:var(--a);border-color:var(--a);background:rgba(200,135,64,.1)}
+.btn.accent{color:var(--a)}
+.btn.danger{color:var(--r)}
+
+/* Canvas */
+#canvas{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:flex-start;cursor:crosshair}
+#canvas-inner{padding:30px;transform-origin:0 0}
+#grid-table{border-collapse:collapse;font-family:'Courier New','Consolas','SimSun',monospace;font-size:15px;line-height:1}
+#grid-table td{width:17px;height:17px;text-align:center;vertical-align:middle;padding:0;cursor:inherit;border:0.5px solid rgba(255,255,255,.035);position:relative;overflow:hidden}
+#grid-table td:hover{outline:1px solid rgba(200,135,64,.3);outline-offset:-1px;z-index:1}
+#grid-table td.preview{background:rgba(200,200,200,.1)}
+#grid-table td.selected{outline:2px solid var(--a);outline-offset:-2px;z-index:2}
+
+/* Status */
+#status{display:flex;align-items:center;gap:16px;padding:4px 14px;background:var(--s);border-top:1px solid var(--b);font-size:.65rem;color:var(--m);flex-shrink:0}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--s);border:1px solid var(--a);border-radius:6px;padding:20px 24px;min-width:300px;max-width:90vw;font-family:inherit;color:var(--t)}
+.modal h3{font-size:.85rem;color:var(--a);margin-bottom:12px;font-weight:400}
+.modal textarea{width:100%;height:200px;background:var(--bg);border:1px solid var(--b);color:var(--t);font-family:inherit;font-size:.7rem;padding:8px;border-radius:3px;resize:vertical}
+.modal .row{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- TOOLBAR -->
+<div id="bar">
+  <h1>▍文字画草图</h1>
+  <span class="sep">│</span>
+  <button class="btn on" data-tool="box">⬜ 画框</button>
+  <button class="btn" data-tool="line">╱ 画线</button>
+  <button class="btn" data-tool="text">T 文字</button>
+  <button class="btn" data-tool="freeform">✏️ 自由画</button>
+  <button class="btn" data-tool="move">↖ 移动</button>
+  <button class="btn" data-tool="erase">⌫ 擦除</button>
+  <span class="sep">│</span>
+  <button class="btn" id="btnUndo">↩ 撤销</button>
+  <button class="btn" id="btnRedo">↪ 重做</button>
+  <span class="sep">│</span>
+  <button class="btn danger" id="btnClear">清空</button>
+  <span class="sep">│</span>
+  <button class="btn accent" id="btnCopy">📋 复制文字</button>
+  <span style="color:var(--m);font-size:.65rem;margin-left:8px;">1-6切换工具 Ctrl+Z/Y 撤销重做 右键擦除</span>
+</div>
+
+<!-- CANVAS -->
+<div id="canvas">
+  <div id="canvas-inner">
+    <table id="grid-table"></table>
+  </div>
+</div>
+
+<!-- STATUS -->
+<div id="status">
+  <span id="stTool">工具: 画框</span>
+  <span id="stPos">行列: - , -</span>
+  <span id="stCount">内容: 0 格</span>
+  <span style="color:var(--a);">画完截图或用「复制文字」导出发给我</span>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="modalCopy">
+  <div class="modal">
+    <h3>📋 复制文字画</h3>
+    <textarea id="copyOutput" readonly></textarea>
+    <div class="row">
+      <button class="btn" onclick="document.getElementById('modalCopy').classList.remove('show')">关闭</button>
+      <button class="btn accent" onclick="copyText()">复制到剪贴板</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  Simple Box / Line / Text Editor
+// ============================================================
+const ROWS=45, COLS=65;
+let grid=[], mode='box', mousedown=false, dragging=false;
+let dragSR=-1,dragSC=-1,dragER=-1,dragEC=-1; // for box
+let lineR1=-1,lineC1=-1; // for line
+let freeformChar='▓'; // current freeform char
+let textInput=''; // for text tool
+let history=[], historyIdx=-1, MAX_HIST=200;
+
+// Init grid
+for(let r=0;r<ROWS;r++){grid[r]=[];for(let c=0;c<COLS;c++)grid[r][c]={ch:' '};}
+saveHistory();
+
+// Build table
+const table=document.getElementById('grid-table');
+function buildTable(){
+  table.innerHTML='';
+  for(let r=0;r<ROWS;r++){
+    const tr=document.createElement('tr');
+    for(let c=0;c<COLS;c++){
+      const td=document.createElement('td');
+      td.dataset.r=r;td.dataset.c=c;
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+}
+buildTable();
+
+// Render
+function render(r,c){
+  const td=table.rows[r]?.cells[c];if(!td)return;
+  const ch=grid[r][c].ch;
+  td.textContent=ch===' '?'':ch;
+  td.classList.remove('preview','selected');
+}
+function renderAll(){for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)render(r,c);updateStatus();}
+function renderPreview(cells){for(const[r,c]of cells)render(r,c);}
+
+// Get cell coords
+function getRC(e){
+  const td=e.target.closest('td');
+  if(!td)return null;
+  return{r:parseInt(td.dataset.r),c:parseInt(td.dataset.c)};
+}
+
+// Clear previews
+function clearPreviews(){
+  table.querySelectorAll('td.preview').forEach(td=>td.classList.remove('preview'));
+}
+
+// ---- History ----
+function saveHistory(){
+  const snap=grid.map(r=>r.map(c=>({ch:c.ch})));
+  historyIdx++;
+  history=history.slice(0,historyIdx);
+  history.push(snap);
+  if(history.length>MAX_HIST)history.shift(),historyIdx--;
+}
+function undo(){
+  if(historyIdx<=0)return;
+  historyIdx--;
+  const snap=history[historyIdx];
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)grid[r][c].ch=snap[r][c].ch;
+  renderAll();
+}
+function redo(){
+  if(historyIdx>=history.length-1)return;
+  historyIdx++;
+  const snap=history[historyIdx];
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)grid[r][c].ch=snap[r][c].ch;
+  renderAll();
+}
+
+// ---- Box drawing helper ----
+function setBoxChar(r,c,r1,c1,r2,c2){
+  let ch=' ';
+  const rMin=Math.min(r1,r2),rMax=Math.max(r1,r2);
+  const cMin=Math.min(c1,c2),cMax=Math.max(c1,c2);
+  if(r===rMin&&c===cMin)ch='┌';
+  else if(r===rMin&&c===cMax)ch='┐';
+  else if(r===rMax&&c===cMin)ch='└';
+  else if(r===rMax&&c===cMax)ch='┘';
+  else if(r===rMin||r===rMax)ch='─';
+  else if(c===cMin||c===cMax)ch='│';
+  if(ch!==' ')grid[r][c].ch=ch;
+}
+
+// Bresenham line
+function lineCells(r1,c1,r2,c2){
+  const cells=[];
+  let r=r1,c=c1;
+  const dr=Math.abs(r2-r1),dc=Math.abs(c2-c1);
+  const sr=r1<r2?1:-1,sc=c1<c2?1:-1;
+  let err=dr-dc;
+  while(true){
+    cells.push([r,c]);
+    if(r===r2&&c===c2)break;
+    const e2=2*err;
+    if(e2>-dc){err-=dc;r+=sr;}
+    if(e2<dr){err+=dr;c+=sc;}
+  }
+  return cells;
+}
+
+// ---- Mouse events ----
+let lastPreviewCells=[];
+table.addEventListener('mousedown',e=>{
+  if(e.button===2)return; // right click = erase handled by contextmenu
+  const rc=getRC(e);if(!rc)return;
+  mousedown=true;dragging=false;
+  if(mode==='box'){
+    saveHistory();
+    dragSR=rc.r;dragSC=rc.c;dragER=rc.r;dragEC=rc.c;
+  }else if(mode==='line'){
+    saveHistory();
+    lineR1=rc.r;lineC1=rc.c;
+  }else if(mode==='freeform'){
+    saveHistory();
+    grid[rc.r][rc.c].ch=freeformChar;
+    render(rc.r,rc.c);updateStatus();
+  }else if(mode==='text'){
+    const ch=grid[rc.r][rc.c].ch;
+    const c=prompt('输入文字（1-3个字）:',ch===' '?'':ch);
+    if(c!==null){
+      saveHistory();
+      const chars=[...c].slice(0,4);
+      for(let i=0;i<chars.length&&rc.c+i<COLS;i++){
+        grid[rc.r][rc.c+i].ch=chars[i];
+        render(rc.r,rc.c+i);
+      }
+      updateStatus();
+    }
+  }else if(mode==='erase'){
+    saveHistory();
+    grid[rc.r][rc.c].ch=' ';
+    render(rc.r,rc.c);updateStatus();
+  }else if(mode==='move'){
+    // Simple: click to show coords, user can edit manually
+    const ch=grid[rc.r][rc.c].ch;
+    document.getElementById('stPos').textContent='选中: '+rc.r+','+rc.c+' = ['+(ch===' '?'空':ch)+']';
+  }
+  e.preventDefault();
+});
+
+table.addEventListener('mousemove',e=>{
+  const rc=getRC(e);if(!rc)return;
+  document.getElementById('stPos').textContent='行列: '+rc.r+','+rc.c;
+
+  if(mousedown&&mode==='box'){
+    dragging=true;
+    clearPreviews();
+    dragER=rc.r;dragEC=rc.c;
+    const rMin=Math.min(dragSR,dragER),rMax=Math.max(dragSR,dragER);
+    const cMin=Math.min(dragSC,dragEC),cMax=Math.max(dragSC,dragEC);
+    lastPreviewCells=[];
+    for(let r=rMin;r<=rMax;r++){for(let c=cMin;c<=cMax;c++){lastPreviewCells.push([r,c]);}}
+    // Show preview on cells
+    for(const[r,c]of lastPreviewCells){
+      const td=table.rows[r]?.cells[c];if(td)td.classList.add('preview');
+    }
+  }else if(mousedown&&mode==='line'){
+    dragging=true;
+    clearPreviews();
+    lastPreviewCells=lineCells(lineR1,lineC1,rc.r,rc.c);
+    for(const[r,c]of lastPreviewCells){
+      const td=table.rows[r]?.cells[c];if(td)td.classList.add('preview');
+    }
+  }else if(mousedown&&mode==='freeform'){
+    grid[rc.r][rc.c].ch=freeformChar;
+    render(rc.r,rc.c);
+  }else if(mousedown&&mode==='erase'){
+    grid[rc.r][rc.c].ch=' ';
+    render(rc.r,rc.c);
+  }
+});
+
+window.addEventListener('mouseup',e=>{
+  if(!mousedown)return;
+  if(mode==='box'&&dragging){
+    const rMin=Math.min(dragSR,dragER),rMax=Math.max(dragSR,dragER);
+    const cMin=Math.min(dragSC,dragEC),cMax=Math.max(dragSC,dragEC);
+    for(let r=rMin;r<=rMax;r++)for(let c=cMin;c<=cMax;c++)setBoxChar(r,c,dragSR,dragSC,dragER,dragEC);
+    clearPreviews();
+    renderAll();
+  }else if(mode==='line'&&dragging){
+    const rc=getRC(e);
+    if(rc){
+      const cells=lineCells(lineR1,lineC1,rc.r,rc.c);
+      for(const[r,c]of cells)grid[r][c].ch='─';
+    }
+    clearPreviews();
+    renderAll();
+  }
+  mousedown=false;dragging=false;
+  lastPreviewCells=[];
+  updateStatus();
+});
+
+// Right click = erase
+table.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  const rc=getRC(e);if(!rc)return;
+  saveHistory();
+  grid[rc.r][rc.c].ch=' ';
+  render(rc.r,rc.c);updateStatus();
+});
+
+// ---- Tool switching ----
+document.querySelectorAll('[data-tool]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-tool]').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    mode=btn.dataset.tool;
+    document.getElementById('stTool').textContent='工具: '+{box:'⬜ 画框',line:'╱ 画线',text:'T 文字',freeform:'✏️ 自由画',move:'↖ 移动',erase:'⌫ 擦除'}[mode];
+    document.getElementById('canvas').style.cursor=mode==='text'?'text':mode==='move'?'grab':mode==='erase'?'not-allowed':'crosshair';
+  });
+});
+
+// Init cursor
+document.getElementById('canvas').style.cursor='crosshair';
+
+// ---- Buttons ----
+document.getElementById('btnUndo').addEventListener('click',undo);
+document.getElementById('btnRedo').addEventListener('click',redo);
+document.getElementById('btnClear').addEventListener('click',()=>{
+  if(confirm('确定清空画布？')){saveHistory();for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)grid[r][c].ch=' ';renderAll();}
+});
+document.getElementById('btnCopy').addEventListener('click',()=>{
+  // Export current grid as text
+  let lines=[];
+  // Find bounding box
+  let rMin=ROWS,rMax=0,cMin=COLS,cMax=0;
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(grid[r][c].ch!==' '){rMin=Math.min(rMin,r);rMax=Math.max(rMax,r);cMin=Math.min(cMin,c);cMax=Math.max(cMax,c);}
+  if(rMin>rMax){lines.push('（画布为空）');return;}
+  for(let r=rMin;r<=rMax;r++){
+    let line='';
+    for(let c=cMin;c<=cMax;c++)line+=grid[r][c].ch===' '?' ':grid[r][c].ch;
+    lines.push(line);
+  }
+  document.getElementById('copyOutput').value=lines.join('\n');
+  document.getElementById('modalCopy').classList.add('show');
+});
+
+function copyText(){
+  const text=document.getElementById('copyOutput').value;
+  navigator.clipboard.writeText(text).then(()=>{
+    alert('已复制到剪贴板！粘贴到对话里发给我。');
+    document.getElementById('modalCopy').classList.remove('show');
+  }).catch(()=>alert('复制失败，请手动选中文本框内容复制'));
+}
+
+// ---- Keyboard ----
+window.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo();}
+  if(e.ctrlKey&&e.key==='y'){e.preventDefault();redo();}
+  const tools={1:'box',2:'line',3:'text',4:'freeform',5:'move',6:'erase'};
+  if(tools[e.key]&&!e.ctrlKey){
+    mode=tools[e.key];
+    document.querySelectorAll('[data-tool]').forEach(b=>b.classList.remove('on'));
+    document.querySelector('[data-tool="'+mode+'"]')?.classList.add('on');
+    document.getElementById('stTool').textContent='工具: '+{box:'⬜ 画框',line:'╱ 画线',text:'T 文字',freeform:'✏️ 自由画',move:'↖ 移动',erase:'⌫ 擦除'}[mode];
+  }
+});
+
+// ---- Functions ----
+function updateStatus(){
+  let n=0;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(grid[r][c].ch!==' ')n++;
+  document.getElementById('stCount').textContent='内容: '+n+' 格';
+}
+
+renderAll();
+console.log('✅ 文字画草图工具已就绪');
+console.log('  1-6 切换工具 | Ctrl+Z/Y 撤销重做 | 右键擦除');
+console.log('  画框: 拖拽画矩形 | 画线: 拖拽画线 | 文字: 点击输入');
+console.log('  画完点「复制文字」导出，粘贴给我');
+</script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>地图画板 · 南塘合作社</title>
+<style>
+:root {
+  --bg: #0d0d0d; --text: #c8c0b0;
+  --road: #5a6a50; --wall: #8b7355; --tile: #c8956a;
+  --flat: #9b8b7b; --gate: #d4a040; --label: #c8b890;
+  --fence: #7b6b4b; --green: #5a8a4a; --water: #4a7a8a;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Cascadia Code','Consolas','Courier New','SimSun',monospace; font-size:16px; line-height:1.05; overflow:auto; }
+.toolbar {
+  position:sticky; top:0; z-index:10; background:#161613; border-bottom:1px solid #2a2820;
+  padding:8px 12px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+}
+.toolbar button { padding:6px 12px; border:1px solid #2a2820; border-radius:4px; background:transparent; color:var(--text); cursor:pointer; font-family:inherit; font-size:.8rem; }
+.toolbar button:hover { border-color:#c88740; }
+.toolbar button.on { border-color:#c88740; color:#c88740; background:rgba(200,135,64,.1); }
+.toolbar .sep { color:#2a2820; margin:0 4px; }
+/* 地图区 */
+#map {
+  padding:30px; white-space:pre; min-width:max-content;
+  background-image: radial-gradient(circle, rgba(255,255,255,.008) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+#map:focus { outline:none; }
+/* 可编辑光标 */
+#map .cell { cursor:default; }
+#map .cell:hover { outline:1px solid rgba(255,255,255,.15); }
+/* 颜色 */
+.c-r { color:var(--road); }  .c-w { color:var(--wall); }
+.c-t { color:var(--tile); }  .c-f { color:var(--flat); }
+.c-g { color:var(--gate); }  .c-l { color:var(--label); }
+.c-n { color:var(--fence); } .c-e { color:var(--green); }
+.c-a { color:var(--water); } .c-d { color:#6b6658; }
+
+.legend { position:fixed; bottom:10px; right:14px; font-size:.7rem; color:#6b6658; display:flex; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <b style="color:#c88740;">地图画板</b>
+  <span class="sep">|</span>
+  <button id="btnRoad" class="on">🛤 画路</button>
+  <button id="btnWall">🧱 画墙</button>
+  <button id="btnText">📝 文字</button>
+  <button id="btnErase">⌫ 擦除</button>
+  <span class="sep">|</span>
+  <button id="btnColor">🎨 颜色:<span id="curColor">路</span></button>
+  <span class="sep">|</span>
+  <span style="font-size:.7rem;color:#6b6658;">点击格子=放置 | 拖拽=连线 | 右键=删除</span>
+</div>
+
+<div id="map" contenteditable="false"></div>
+
+<div class="legend">
+  <span class="c-r">══ 路</span><span class="c-w">┌┐ 墙</span><span class="c-t">︽瓦顶</span><span class="c-f">═平顶</span><span class="c-g">╔门</span><span class="c-e">树</span><span class="c-a">≈水</span>
+</div>
+
+<script>
+// ===== 极简地图画板 =====
+// 每行是一个数组，每个格子存储 { char, color }
+
+const COLS = 70;
+const ROWS = 50;
+
+let grid = [];       // grid[r][c] = { char, color }
+let mode = 'road';   // 'road' | 'wall' | 'text' | 'erase'
+let curColor = 'c-r'; // 当前绘制颜色
+let isDrawing = false;
+let lastR = -1, lastC = -1;
+let lineBuffer = [];
+
+// 颜色切换
+const colors = [
+  { id:'c-r', name:'路', css:'var(--road)' },
+  { id:'c-w', name:'墙', css:'var(--wall)' },
+  { id:'c-t', name:'瓦顶', css:'var(--tile)' },
+  { id:'c-f', name:'平顶', css:'var(--flat)' },
+  { id:'c-g', name:'大门', css:'var(--gate)' },
+  { id:'c-l', name:'标签', css:'var(--label)' },
+  { id:'c-n', name:'围墙', css:'var(--fence)' },
+  { id:'c-e', name:'绿植', css:'var(--green)' },
+  { id:'c-a', name:'水', css:'var(--water)' },
+  { id:'c-d', name:'暗灰', css:'#6b6658' },
+];
+
+// 路字符映射 (连接位: 上下左右 = 1248)
+const ROAD_MAP = {
+  0:  '·',  1:  '╵', 2: '╷', 4: '╴', 8: '╶',
+  3:  '│',  12: '─',
+  5:  '┘',  9: '└', 6: '┐', 10: '┌',
+  7:  '┤',  11:'├', 13:'┴', 14:'┬', 15:'┼'
+};
+
+function init() {
+  for (let r = 0; r < ROWS; r++) {
+    grid[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      grid[r][c] = { char:' ', color:'' };
+    }
+  }
+  render();
+}
+
+function render() {
+  const map = document.getElementById('map');
+  let html = '';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = grid[r][c];
+      const ch = cell.char === ' ' ? ' ' : cell.char;
+      if (cell.color) {
+        html += `<span class="cell ${cell.color}" data-r="${r}" data-c="${c}">${esc(ch)}</span>`;
+      } else {
+        html += `<span class="cell" data-r="${r}" data-c="${c}">${esc(ch)}</span>`;
+      }
+    }
+    html += '\n';
+  }
+  map.innerHTML = html;
+
+  // 绑定事件
+  map.querySelectorAll('.cell').forEach(cell => {
+    cell.addEventListener('mousedown', onMouseDown);
+    cell.addEventListener('mouseenter', onMouseEnter);
+    cell.addEventListener('contextmenu', onRightClick);
+  });
+}
+
+function getRC(el) {
+  return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c) };
+}
+
+function setCell(r, c, char, color) {
+  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+  grid[r][c] = { char, color: color || '' };
+}
+
+function onMouseDown(e) {
+  e.preventDefault();
+  const rc = getRC(e.target);
+  if (!rc) return;
+  isDrawing = true;
+  lastR = rc.r; lastC = rc.c;
+  lineBuffer = [{ r:rc.r, c:rc.c }];
+  placeAt(rc.r, rc.c);
+}
+
+function onMouseEnter(e) {
+  if (!isDrawing) return;
+  const rc = getRC(e.target);
+  if (!rc) return;
+  lineBuffer.push({ r:rc.r, c:rc.c });
+  lastR = rc.r; lastC = rc.c;
+  placeAt(rc.r, rc.c);
+}
+
+function onRightClick(e) {
+  e.preventDefault();
+  const rc = getRC(e.target);
+  if (!rc) return;
+  setCell(rc.r, rc.c, ' ', '');
+  render();
+}
+
+window.addEventListener('mouseup', () => {
+  if (!isDrawing) return;
+  isDrawing = false;
+  // 画路模式下，重算所有路字符连接
+  if (mode === 'road') {
+    recalcRoads(lineBuffer);
+    render();
+  }
+  lineBuffer = [];
+});
+
+function placeAt(r, c) {
+  if (mode === 'erase') {
+    setCell(r, c, ' ', '');
+    render();
+    return;
+  }
+  if (mode === 'text') {
+    const t = prompt('输入文字（1-4个字符）:', '');
+    if (t) {
+      for (let i = 0; i < t.length && c + i < COLS; i++) {
+        setCell(r, c + i, t[i], curColor);
+      }
+    }
+    render();
+    return;
+  }
+  // road / wall: 先放基础字符
+  let ch = mode === 'road' ? '·' : '│';
+  setCell(r, c, ch, curColor);
+  render();
+}
+
+function recalcRoads(cells) {
+  for (const {r, c} of cells) {
+    if (grid[r][c].color !== 'c-r') continue;
+    const conn = getRoadConn(r, c);
+    grid[r][c].char = ROAD_MAP[conn] || '·';
+  }
+  // 也重算邻居
+  for (const {r, c} of cells) {
+    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      const nr = r+dr, nc = c+dc;
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && grid[nr][nc].color === 'c-r') {
+        grid[nr][nc].char = ROAD_MAP[getRoadConn(nr, nc)] || '·';
+      }
+    }
+  }
+}
+
+function getRoadConn(r, c) {
+  let conn = 0;
+  if (isRoad(r-1, c)) conn |= 1;  // up
+  if (isRoad(r+1, c)) conn |= 2;  // down
+  if (isRoad(r, c-1)) conn |= 4;  // left
+  if (isRoad(r, c+1)) conn |= 8;  // right
+  return conn;
+}
+
+function isRoad(r, c) {
+  return r >= 0 && r < ROWS && c >= 0 && c < COLS && grid[r][c].color === 'c-r';
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ===== 工具栏 =====
+document.getElementById('btnRoad').addEventListener('click', ()=>{ mode='road'; curColor='c-r'; updateToolbar(); });
+document.getElementById('btnWall').addEventListener('click', ()=>{ mode='wall'; curColor='c-w'; updateToolbar(); });
+document.getElementById('btnText').addEventListener('click', ()=>{ mode='text'; updateToolbar(); });
+document.getElementById('btnErase').addEventListener('click', ()=>{ mode='erase'; updateToolbar(); });
+document.getElementById('btnColor').addEventListener('click', () => {
+  const idx = colors.findIndex(c => c.id === curColor);
+  curColor = colors[(idx + 1) % colors.length].id;
+  updateToolbar();
+});
+
+function updateToolbar() {
+  document.querySelectorAll('.toolbar button').forEach(b => b.classList.remove('on'));
+  const modeMap = { road:'btnRoad', wall:'btnWall', text:'btnText', erase:'btnErase' };
+  document.getElementById(modeMap[mode])?.classList.add('on');
+  document.getElementById('curColor').textContent = colors.find(c => c.id === curColor)?.name || '';
+}
+
+// 键盘快捷键
+window.addEventListener('keydown', e => {
+  if (e.key === '1') { mode='road'; curColor='c-r'; updateToolbar(); }
+  if (e.key === '2') { mode='wall'; curColor='c-w'; updateToolbar(); }
+  if (e.key === '3') { mode='text'; updateToolbar(); }
+  if (e.key === '0') { mode='erase'; updateToolbar(); }
+});
+
+// ===== 初始化 =====
+init();
+updateToolbar();
+
+// 预画十字路口A + 合作社
+function preset() {
+  // 十字路口A: 中心 r=30, c=35
+  const cr=30, cc=35;
+
+  // 南北双车道 (c=34, c=36)
+  for (let r = 15; r <= 45; r++) {
+    setCell(r, 34, '│', 'c-r');
+    setCell(r, 36, '│', 'c-r');
+  }
+
+  // 东西双车道 (r=29, r=31)
+  for (let c = 10; c <= 60; c++) {
+    setCell(29, c, '─', 'c-r');
+    setCell(31, c, '─', 'c-r');
+  }
+
+  // 十字路口标记
+  setCell(cr-1, 34, '║', 'c-r');
+  setCell(cr-1, 36, '║', 'c-r');
+  setCell(cr+1, 34, '║', 'c-r');
+  setCell(cr+1, 36, '║', 'c-r');
+  setCell(29, 34, '╬', 'c-r');
+  setCell(29, 36, '╬', 'c-r');
+  setCell(31, 34, '╬', 'c-r');
+  setCell(31, 36, '╬', 'c-r');
+  // 十字中心符号
+  setCell(cr, 35, 'A', 'c-l');
+
+  // 重新计算所有路口
+  for (let r = 14; r <= 46; r++) {
+    for (let c_ = 33; c_ <= 37; c_++) {
+      if (grid[r][c_].color === 'c-r') {
+        grid[r][c_].char = ROAD_MAP[getRoadConn(r, c_)] || '·';
+      }
+    }
+  }
+  for (let r_ = 28; r_ <= 32; r_++) {
+    for (let c = 9; c <= 61; c++) {
+      if (grid[r_][c].color === 'c-r') {
+        grid[r_][c].char = ROAD_MAP[getRoadConn(r_, c)] || '·';
+      }
+    }
+  }
+
+  // 标签
+  setCell(cr-7, 34, '胡', 'c-l');
+  setCell(cr-7, 35, '庙', 'c-l');
+  setCell(cr-7, 31, '←', 'c-l');
+  setCell(cr+7, 36, '三', 'c-l');
+  setCell(cr+7, 37, '河', 'c-l');
+  setCell(cr+7, 38, '镇', 'c-l');
+  setCell(cr+7, 39, '→', 'c-l');
+  setCell(cr-16, 37, '北', 'c-l');
+  setCell(cr+16, 37, '南', 'c-l');
+
+  // 合作社大院 (路东侧, 十字路口往北5步)
+  const coopR = cr - 5; // 合作社中心行
+  // 围墙
+  for (let r_ = coopR - 6; r_ <= coopR + 6; r_++) {
+    setCell(r_, 40, '║', 'c-n'); // 东墙
+  }
+  setCell(coopR - 6, 40, '╔', 'c-n');
+  setCell(coopR + 6, 40, '╚', 'c-n');
+  // 北瓦房
+  for (let c_ = 41; c_ <= 48; c_++) { setCell(coopR - 5, c_, '─', 'c-w'); }
+  setCell(coopR - 5, 41, '┌', 'c-w'); setCell(coopR - 5, 48, '┐', 'c-w');
+  setCell(coopR - 4, 41, '│', 'c-w'); setCell(coopR - 4, 48, '│', 'c-w');
+  setCell(coopR - 3, 41, '│', 'c-w'); setCell(coopR - 3, 48, '│', 'c-w');
+  setCell(coopR - 4, 43, '瓦', 'c-l');
+  setCell(coopR - 4, 44, '房', 'c-l');
+  setCell(coopR - 4, 45, '(北)', 'c-d');
+  setCell(coopR - 3, 42, '︽', 'c-t'); setCell(coopR - 3, 43, '︽', 'c-t');
+  setCell(coopR - 3, 44, '︽', 'c-t'); setCell(coopR - 3, 45, '︽', 'c-t');
+  setCell(coopR - 3, 46, '︽', 'c-t'); setCell(coopR - 3, 47, '︽', 'c-t');
+  // 南戏台
+  for (let c_ = 41; c_ <= 48; c_++) { setCell(coopR + 5, c_, '─', 'c-w'); }
+  setCell(coopR + 5, 41, '└', 'c-w'); setCell(coopR + 5, 48, '┘', 'c-w');
+  setCell(coopR + 4, 41, '│', 'c-w'); setCell(coopR + 4, 48, '│', 'c-w');
+  setCell(coopR + 3, 41, '│', 'c-w'); setCell(coopR + 3, 48, '│', 'c-w');
+  setCell(coopR + 4, 43, '戏', 'c-l');
+  setCell(coopR + 4, 44, '台', 'c-l');
+  setCell(coopR + 4, 45, '(南)', 'c-d');
+  setCell(coopR + 3, 42, '︽', 'c-t'); setCell(coopR + 3, 43, '︽', 'c-t');
+  setCell(coopR + 3, 44, '︽', 'c-t'); setCell(coopR + 3, 45, '︽', 'c-t');
+  setCell(coopR + 3, 46, '︽', 'c-t'); setCell(coopR + 3, 47, '︽', 'c-t');
+  // 东平房
+  for (let r_ = coopR - 3; r_ <= coopR + 3; r_++) { setCell(r_, 49, '║', 'c-w'); }
+  setCell(coopR - 3, 49, '╔', 'c-w'); setCell(coopR + 3, 49, '╚', 'c-w');
+  setCell(coopR, 50, '平', 'c-l');
+  setCell(coopR, 51, '房', 'c-l');
+  setCell(coopR + 1, 50, '(东)', 'c-d');
+  setCell(coopR - 1, 50, '═', 'c-f'); setCell(coopR - 1, 51, '═', 'c-f');
+  // 西围墙+双门
+  for (let r_ = coopR - 4; r_ <= coopR + 4; r_++) {
+    if (r_ === coopR - 2 || r_ === coopR - 1) {
+      setCell(r_, 40, ' ', ''); // 门的位置
+    } else {
+      setCell(r_, 40, '║', 'c-n');
+    }
+  }
+  // 双门标记
+  setCell(coopR - 2, 39, '╔', 'c-g');
+  setCell(coopR - 2, 40, '门', 'c-g');
+  setCell(coopR - 1, 39, '╔', 'c-g');
+  setCell(coopR - 1, 40, '门', 'c-g');
+
+  // 广场标记
+  setCell(coopR, 44, '广', 'c-d');
+  setCell(coopR + 1, 44, '场', 'c-d');
+
+  render();
+  console.log('✅ 预画完成：十字路口A + 合作社大院');
+}
+preset();
+console.log('地图画板已就绪 | 1=路 2=墙 3=文字 0=擦除 | 点击拖拽画线 | 右键删除');
+</script>
+</body>
+</html>

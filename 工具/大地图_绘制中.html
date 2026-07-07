@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>南塘合作社 · 大地图</title>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --text: #c8c0b0;
+  --road: #5a6a50;
+  --wall: #8b7355;
+  --roof-tile: #c8956a;
+  --roof-flat: #9b8b7b;
+  --gate: #d4a040;
+  --label: #c8b890;
+  --ground: #2a2520;
+  --fence: #7b6b4b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Cascadia Code','Consolas','Courier New','SimSun','Noto Sans SC',monospace;
+  font-size: 15px; line-height: 1.05; letter-spacing: 0;
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 30px;
+}
+.map { white-space: pre; }
+/* 颜色 */
+.r { color: var(--road); }     /* 道路 */
+.w { color: var(--wall); }     /* 墙壁 */
+.t { color: var(--roof-tile); } /* 瓦顶 */
+.f { color: var(--roof-flat); } /* 平顶 */
+.g { color: var(--gate); }     /* 大门 */
+.l { color: var(--label); }    /* 标签 */
+.n { color: var(--fence); }    /* 围墙 */
+.d { color: #6b6658; }         /* 暗色 */
+</style>
+</head>
+<body>
+
+<pre class="map">
+<span class="l">                              北 ↑</span>
+<span class="r">                             ║   ║</span>
+<span class="r">                             ║   ║</span>
+<span class="r">                             ║   ║</span>   <span class="n">┌──────────────┐</span>
+<span class="r">                             ║   ║</span>   <span class="n">│</span>  <span class="t">︽︽︽︽ 瓦房(北)</span>  <span class="n">│</span>
+<span class="r">                             ║   ║</span>   <span class="n">│</span>              <span class="n">│</span>
+<span class="r">                             ║   ║</span>   <span class="n">│</span>     <span class="d">广</span>        <span class="n">│</span>  <span class="f">══平房(东)</span>
+<span class="r">                             ║   ║</span>  <span class="g">╔╗</span>  <span class="d">场</span>        <span class="n">│</span>
+<span class="r">                             ║   ║</span>  <span class="g">║门</span>         <span class="w">└──── 合作社大院</span>
+<span class="r">                             ║   ║</span>  <span class="g">║门</span>         <span class="l">西围墙+双门朝路</span>
+<span class="r">                             ║   ║</span>  <span class="g">╚╝</span>         <span class="n">│</span>
+<span class="r">                             ║   ║</span>   <span class="n">│</span>   <span class="t">戏台(南)</span>    <span class="n">│</span>
+<span class="r">                             ║   ║</span>   <span class="n">└──────────────┘</span>
+<span class="r">                             ║   ║</span>
+<span class="r">                             ║   ║</span>
+<span class="l">胡庙 ←═══════════════════════╬═══╬═══════════════════→ 三河镇</span>
+<span class="l">                      十字路口A</span>
+<span class="r">                             ║   ║</span>
+<span class="r">                             ║   ║</span>
+<span class="r">                             ║   ║</span>
+<span class="l">                             南 ↓</span>
+</pre>
+
+</body>
+</html>

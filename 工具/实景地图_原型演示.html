@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>南塘合作社 · 实景地图原型</title>
+<style>
+/* ============================================================
+   南塘合作社 · 实景地图原型 v2
+   改进：
+   - 可点击的交互热区（覆盖在 Unicode 地图上）
+   - 丰富的建筑信息面板（侧边栏）
+   - 状态指示器
+   - 更好的缩放/平移
+   - 数据模型驱动
+   - 坐标参考线
+   ============================================================ */
+:root {
+  --bg: #1a1815;
+  --surface: #24211c;
+  --surface2: #2d2a23;
+  --border: #3d3629;
+  --text: #d4c8b0;
+  --muted: #8b8068;
+  --accent: #c88740;
+  --accent2: #e0a050;
+  --green: #6b9b4a;
+  --red: #c05540;
+  --gold: #c8a440;
+  --water: #5a8a9a;
+
+  --cell: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Courier New', 'SimSun', 'Noto Sans SC', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+/* ===== Header ===== */
+header {
+  width: 100%;
+  max-width: 960px;
+  padding: 10px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+header h1 { font-size: .92rem; color: var(--accent); font-weight: 400; letter-spacing: 2px; }
+header .hint { font-size: .68rem; color: var(--muted); }
+.header-right { display: flex; gap: 10px; align-items: center; }
+
+/* ===== 建筑卡片切换栏 ===== */
+.building-tabs {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  gap: 5px;
+  padding: 8px 18px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.building-tabs::-webkit-scrollbar { height: 4px; }
+.building-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.building-tab {
+  padding: 7px 16px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: .76rem;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--muted);
+  white-space: nowrap;
+  transition: .15s;
+  text-align: center;
+  min-width: 64px;
+  position: relative;
+}
+.building-tab:hover { border-color: var(--accent); color: var(--text); background: var(--surface2); }
+.building-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.building-tab .icon { display: block; font-size: 1.4rem; margin-bottom: 2px; line-height: 1; }
+.building-tab .badge {
+  position: absolute; top: -5px; right: -5px;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  font-size: .6rem; line-height: 16px; text-align: center;
+  padding: 0 4px;
+}
+.building-tab .badge.warn { background: var(--gold); color: #000; }
+.building-tab .badge.info { background: var(--green); color: #fff; }
+
+/* ===== 主布局 ===== */
+.main-layout {
+  width: 100%;
+  max-width: 960px;
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  padding: 8px 18px;
+  min-height: 0;
+}
+
+/* ===== 地图容器 ===== */
+.map-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  min-height: 420px;
+}
+.map-stage {
+  position: relative;
+  cursor: grab;
+  user-select: none;
+  transform-origin: 0 0;
+}
+.map-stage:active { cursor: grabbing; }
+.map-stage.grabbing { cursor: grabbing; }
+
+/* ===== Unicode 地图画布 ===== */
+.map-canvas {
+  font-family: 'Courier New', 'SimSun', 'Noto Sans SC', monospace;
+  font-size: var(--cell);
+  line-height: 1.05;
+  letter-spacing: 0;
+  white-space: pre;
+  color: var(--text);
+  padding: 16px 20px;
+  pointer-events: none;
+}
+
+/* ===== 交互热区层 ===== */
+.hotspot-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.hotspot-layer .hs {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: .15s;
+}
+.hotspot-layer .hs:hover {
+  background: rgba(200,135,64,.18);
+  box-shadow: 0 0 0 2px rgba(200,135,64,.5);
+  z-index: 10;
+}
+.hotspot-layer .hs.selected {
+  background: rgba(200,135,64,.25);
+  box-shadow: 0 0 0 3px rgba(200,160,80,.7);
+  z-index: 11;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(200,160,80,.7); }
+  50% { box-shadow: 0 0 0 6px rgba(200,160,80,.2); }
+}
+
+/* ===== 坐标标尺 ===== */
+.ruler-h, .ruler-v {
+  position: absolute;
+  font-size: .58rem;
+  color: var(--muted);
+  pointer-events: none;
+  font-family: 'Courier New', monospace;
+  opacity: .5;
+}
+.ruler-h { top: 2px; left: 20px; letter-spacing: calc(var(--cell) - 7.5px); }
+.ruler-v { left: 2px; top: 16px; line-height: 1.05; }
+
+/* ===== 缩放控件 ===== */
+.zoom-controls {
+  position: absolute;
+  bottom: 12px; right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 20;
+}
+.zoom-btn {
+  width: 30px; height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+  transition: .1s;
+}
+.zoom-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.zoom-level {
+  font-size: .62rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 2px 0;
+}
+
+/* ===== 信息面板（侧边栏） ===== */
+.info-panel {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.info-panel-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.info-panel-header h3 { font-size: .82rem; color: var(--accent); font-weight: 400; }
+.info-panel-header .close-btn {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 1rem; font-family: inherit; padding: 2px 6px;
+}
+.info-panel-header .close-btn:hover { color: var(--text); }
+.info-panel-body {
+  padding: 10px 14px;
+  flex: 1;
+  overflow-y: auto;
+  font-size: .73rem;
+}
+.info-panel-body .section { margin-bottom: 12px; }
+.info-panel-body .section-title {
+  font-size: .68rem; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 4px; padding-bottom: 3px;
+  border-bottom: 1px solid var(--border);
+}
+.info-panel-body .kv { display: flex; justify-content: space-between; padding: 2px 0; }
+.info-panel-body .kv .k { color: var(--muted); }
+.info-panel-body .kv .v { color: var(--text); text-align: right; }
+.info-panel-body .tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.info-panel-body .tag {
+  padding: 2px 8px; border-radius: 3px; font-size: .65rem;
+  border: 1px solid var(--border);
+}
+.tag.good { color: var(--green); border-color: var(--green); }
+.tag.warn { color: var(--gold); border-color: var(--gold); }
+.tag.bad  { color: var(--red);  border-color: var(--red); }
+
+.info-panel-body .action-btn {
+  display: block; width: 100%; margin-top: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--border); border-radius: 4px;
+  background: var(--surface2); color: var(--text);
+  cursor: pointer; font-family: inherit; font-size: .73rem;
+  text-align: center; transition: .1s;
+}
+.info-panel-body .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+.info-panel-body .action-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.info-panel-body .action-btn.primary:hover { background: var(--accent2); }
+
+.info-panel-empty {
+  padding: 40px 14px;
+  text-align: center;
+  color: var(--muted);
+  font-size: .73rem;
+  line-height: 1.6;
+}
+
+/* ===== 图例 ===== */
+.legend {
+  width: 100%;
+  max-width: 960px;
+  padding: 6px 20px 12px;
+  display: flex;
+  gap: 14px;
+  font-size: .66rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.legend span { white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; }
+.legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; }
+.legend .dot.roof-tile { background: #c8956a; }
+.legend .dot.roof-flat { background: #9b8b7b; }
+.legend .dot.wall { background: #8b7b6b; }
+.legend .dot.field { background: #8a9a3a; }
+.legend .dot.path { background: #6b5b3b; }
+
+/* ===== 子视图的容器（格局图） ===== */
+.sub-view-wrapper {
+  width: 100%;
+  max-width: 960px;
+  flex: 1;
+  padding: 8px 18px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+.sub-view-wrapper.show { display: flex; }
+.sub-view-nav {
+  display: flex; gap: 6px; align-items: center;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.sub-view-nav .back-btn {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); cursor: pointer; font-family: inherit; font-size: .73rem;
+  padding: 4px 12px; transition: .1s;
+}
+.sub-view-nav .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sub-view-nav .floor-tab {
+  padding: 4px 14px; border: 1px solid var(--border); border-radius: 4px;
+  cursor: pointer; font-size: .73rem; font-family: inherit;
+  background: var(--surface); color: var(--muted); transition: .1s;
+}
+.sub-view-nav .floor-tab:hover { color: var(--text); border-color: var(--accent); }
+.sub-view-nav .floor-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sub-view-content {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  overflow: auto;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 720px) {
+  .main-layout { flex-direction: column; }
+  .info-panel { width: 100%; max-height: 200px; }
+  .map-wrapper { min-height: 320px; }
+  .building-tabs { gap: 3px; padding: 6px 10px; }
+  .building-tab { padding: 5px 10px; font-size: .7rem; min-width: 48px; }
+  .building-tab .icon { font-size: 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏘️ 南塘合作社 · 实景地图</h1>
+  <div class="header-right">
+    <span class="hint" id="coordDisplay">坐标: — , —</span>
+    <span class="hint">拖拽平移 · 滚轮缩放</span>
+  </div>
+</header>
+
+<!-- 建筑卡片切换栏 -->
+<div class="building-tabs" id="buildingTabs">
+  <div class="building-tab active" data-view="map">
+    <span class="icon">🗺️</span>总览地图
+  </div>
+  <div class="building-tab" data-view="coop">
+    <span class="icon">🏠</span>合作社大院
+    <span class="badge info">3F</span>
+  </div>
+  <div class="building-tab" data-view="dorm">
+    <span class="icon">🏘️</span>宿舍·民宿
+  </div>
+  <div class="building-tab" data-view="stage">
+    <span class="icon">🎭</span>戏台
+  </div>
+  <div class="building-tab" data-view="tilehouse">
+    <span class="icon">🏛️</span>西厢瓦房
+  </div>
+  <div class="building-tab" data-view="field">
+    <span class="icon">🥬</span>后院菜地
+    <span class="badge warn">2</span>
+  </div>
+</div>
+
+<!-- ===== 总览地图视图 ===== -->
+<div class="main-layout" id="mainLayout">
+  <div class="map-wrapper" id="mapWrapper">
+    <div class="map-stage" id="mapStage">
+      <pre class="map-canvas" id="view-map">
+<span class="label">                       🧭 南塘合作社 · 鸟瞰图（坐北朝南）</span>
+
+    <span class="fence">╔══════════════════════╗</span>              <span class="label">北 ↑</span>
+    <span class="fence">║</span>                      <span class="fence">║</span>
+    <span class="fence">║</span>   <span class="field-text">╭┄┄┄┄┄┄┄┄┄┄┄┄┄╮</span>   <span class="fence">║</span>    <span class="label">🥬 后院菜地</span>
+    <span class="fence">║</span>   <span class="field-text">┆  🥬A区  🥒B区  ┆</span>   <span class="fence">║</span>    <span class="field-text">与合作社同宽</span>
+    <span class="fence">║</span>   <span class="field-text">┆  🍅C区  🌽D区  ┆</span>   <span class="fence">║</span>
+    <span class="fence">║</span>   <span class="field-text">╰┄┄┄┄┄┄┄┄┄┄┄┄┄╯</span>   <span class="fence">║</span>
+    <span class="fence">║</span>                      <span class="fence">║</span>
+    <span class="fence">║</span>  <span class="roof-tile">╭──────────╮</span>  <span class="roof-flat">┌──────────┐</span>  <span class="fence">║</span>
+    <span class="fence">║</span>  <span class="roof-tile">│︽︽︽︽︽︽︽︽│</span>  <span class="roof-flat">│══════════│</span>  <span class="fence">║</span>    <span class="label">🏛️ 西厢瓦房 · 3层</span>
+    <span class="fence">║</span>  <span class="roof-tile">│  西厢瓦房 │</span>  <span class="roof-flat">│ 合作社大院│</span>  <span class="fence">║</span>    <span class="label">🏠 合作社大院 · 3层平房</span>
+    <span class="fence">║</span>  <span class="roof-tile">│   3层    │</span>  <span class="roof-flat">│  3层平房 │</span>  <span class="fence">║</span>
+    <span class="fence">║</span>  <span class="roof-tile">╰──────────╯</span>  <span class="roof-flat">└──────────┘</span>  <span class="fence">║</span>
+    <span class="fence">║</span>                      <span class="fence">║</span>
+    <span class="fence">║</span>     <span class="path">· · · · · · · · · ·</span>     <span class="fence">║</span>    <span class="label">🟫 中心广场</span>
+    <span class="fence">║</span>     <span class="path">·    🟫 广场     ·</span>     <span class="fence">║</span>
+    <span class="fence">║</span>     <span class="path">· · · · · · · · · ·</span>     <span class="fence">║</span>
+    <span class="fence">║</span>                      <span class="fence">║</span>
+    <span class="fence">║</span>        <span class="roof-tile">╭──────╮</span>  <span class="wall">╭──────╮</span>   <span class="fence">║</span>
+    <span class="fence">║</span>        <span class="roof-tile">│︽︽︽︽︽︽│</span>  <span class="wall">│ 🏘️   │</span>   <span class="fence">║</span>    <span class="label">🎭 戏台（瓦顶）</span>
+    <span class="fence">║</span>        <span class="roof-tile">│  戏台  │</span>  <span class="wall">│ 宿舍  │</span>   <span class="fence">║</span>    <span class="label">🏘️ 宿舍·民宿（两合院）</span>
+    <span class="fence">║</span>        <span class="roof-tile">│  1层   │</span>  <span class="wall">│ 2合院 │</span>   <span class="fence">║</span>
+    <span class="fence">║</span>        <span class="roof-tile">╰──────╯</span>  <span class="wall">╰──────╯</span>   <span class="fence">║</span>
+    <span class="fence">║</span>                      <span class="fence">║</span>
+    <span class="fence">║</span>  <span class="gate">══╗              ╔══</span>  <span class="fence">║</span>    <span class="label">🚪 大门（对称）</span>
+    <span class="fence">║</span>  <span class="gate">🚪 ║   围墙·南    ║ 🚪</span>  <span class="fence">║</span>
+    <span class="fence">╚══════════════════════╝</span>              <span class="label">南 ↓</span>
+
+                          <span class="muted">↕ 约60m（紧凑示意）  ·  1字符≈1.2m</span>
+      </pre>
+
+      <!-- 交互热区层 -->
+      <div class="hotspot-layer" id="hotspotLayer"></div>
+
+      <!-- 缩放控件 -->
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zoomIn" title="放大">+</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="zoom-btn" id="zoomOut" title="缩小">−</button>
+        <button class="zoom-btn" id="zoomReset" title="重置">⌂</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 信息侧边栏 -->
+  <div class="info-panel" id="infoPanel">
+    <div class="info-panel-header">
+      <h3 id="panelTitle">📍 总览</h3>
+      <button class="close-btn" id="panelClose" title="关闭">✕</button>
+    </div>
+    <div class="info-panel-body" id="panelBody">
+      <div class="info-panel-empty">
+        👆 点击地图上的<br>建筑或田地<br>查看详细信息
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 子视图容器（格局图） ===== -->
+<div class="sub-view-wrapper" id="subViewWrapper">
+  <div class="sub-view-nav">
+    <button class="back-btn" id="backToMap">← 🗺️ 返回总览地图</button>
+    <span style="color:var(--muted);margin:0 6px;">|</span>
+    <span style="font-size:.73rem;color:var(--accent);" id="subViewTitle">建筑名称</span>
+    <span style="flex:1;"></span>
+    <div id="floorTabs" style="display:flex;gap:4px;"></div>
+  </div>
+  <div class="sub-view-content" id="subViewContent"></div>
+</div>
+
+<!-- 图例 -->
+<div class="legend">
+  <span><span class="dot roof-tile"></span> 瓦片屋顶</span>
+  <span><span class="dot roof-flat"></span> 平房屋顶</span>
+  <span><span class="dot wall"></span> 墙壁</span>
+  <span><span class="dot field"></span> 菜地</span>
+  <span><span class="dot path"></span> 道路</span>
+  <span>🟢 已成熟</span>
+  <span>🔴 逾期</span>
+  <span>🌱 生长中</span>
+  <span>|</span>
+  <span>🖱️ 点击建筑 → 查看详情</span>
+  <span>🖱️ 双击 → 进入格局图</span>
+</div>
+
+<script>
+// ============================================================
+// 数据模型
+// ============================================================
+const SITE_DATA = {
+  buildings: {
+    coop: {
+      id: 'coop', name: '合作社大院', icon: '🏠',
+      floors: 3, roofType: 'flat',
+      area: '约 200㎡（每层 65㎡）',
+      rooms: { '1F': 6, '2F': 4, '3F': 3 },
+      facilities: ['大客厅/活动室', '厨房', '浴室', '卫生间', '储藏室', '图书角'],
+      status: 'active',
+      note: '主楼，日常活动和接待中心',
+      floorPlans: {
+        1: `<pre style="font-family:inherit;font-size:13px;color:var(--text);line-height:1.2;">
+<span style="color:#c8b890;">              🏠 合作社大院 · 1F 平面图</span>
+
+    <span style="color:#8b7b6b;">┌────────┬────────┬────────┐</span>
+    <span style="color:#8b7b6b;">│</span>  <span style="color:#c8b890;">📦 储藏室</span>  <span style="color:#8b7b6b;">│</span>  <span style="color:#c8b890;">🚿 浴室  </span>  <span style="color:#8b7b6b;">│</span>  <span style="color:#c8b890;">🚻 卫生间</span>  <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">│</span>  12㎡    <span style="color:#8b7b6b;">│</span>  8㎡     <span style="color:#8b7b6b;">│</span>  6㎡     <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">├────────┼────────┼────────┤</span>
+    <span style="color:#8b7b6b;">│</span>                            <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">│</span>       <span style="color:#c8b890;">🛋️ 大客厅 / 活动室</span>        <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">│</span>            约 25㎡             <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">├────────┼────────┼────────┤</span>
+    <span style="color:#8b7b6b;">│</span>  <span style="color:#c8b890;">🍳 厨房  </span>  <span style="color:#8b7b6b;">│</span>  <span style="color:#c8b890;">📚 图书角</span>  <span style="color:#8b7b6b;">│</span>  <span style="color:#c8b890;">🚪 入口  </span>  <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">│</span>  10㎡    <span style="color:#8b7b6b;">│</span>  8㎡     <span style="color:#8b7b6b;">│</span>          <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">└────────┴────────┴────────┘</span>
+
+     <span style="color:#6b6658;">[ 1F ]</span>   <span style="color:#6b6658;">[ 2F ]</span>   <span style="color:#6b6658;">[ 3F ]</span>
+</pre>`
+      }
+    },
+    dorm: {
+      id: 'dorm', name: '宿舍·民宿', icon: '🏘️',
+      floors: 1, roofType: 'flat',
+      area: '约 150㎡（两合院）',
+      rooms: { '东院': 3, '西院': 3 },
+      facilities: ['6间宿舍', '2个天井', '浴室', '厨房', '图书角'],
+      status: 'active',
+      note: '两合院改造，可作民宿或学员宿舍',
+      floorPlans: {
+        1: `<pre style="font-family:inherit;font-size:13px;color:var(--text);line-height:1.2;">
+<span style="color:#c8b890;">              🏘️ 宿舍·民宿（两合院改造）</span>
+
+    <span style="color:#8b7b6b;">┌────┬────┬────┐  ┌────┬────┬────┐</span>
+    <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">│</span> 1号 <span style="color:#8b7b6b;">│</span> 2号 <span style="color:#8b7b6b;">│</span> 3号 <span style="color:#8b7b6b;">│</span>  <span style="color:#8b7b6b;">│</span> 4号 <span style="color:#8b7b6b;">│</span> 5号 <span style="color:#8b7b6b;">│</span> 6号 <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">├────┼────┼────┤</span>  <span style="color:#8b7b6b;">├────┼────┼────┤</span>
+    <span style="color:#8b7b6b;">│</span>    <span style="color:#c8b890;">🌳      </span> <span style="color:#8b7b6b;">│</span>  <span style="color:#8b7b6b;">│</span>    <span style="color:#c8b890;">🌳      </span> <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">│</span>   <span style="color:#c8b890;"> 东院   </span> <span style="color:#8b7b6b;">│</span>  <span style="color:#8b7b6b;">│</span>   <span style="color:#c8b890;"> 西院   </span> <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">│</span>  <span style="color:#c8b890;">(天井)  </span> <span style="color:#8b7b6b;">│</span>  <span style="color:#8b7b6b;">│</span>  <span style="color:#c8b890;">(天井)  </span> <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">├────┼────┼────┤</span>  <span style="color:#8b7b6b;">├────┼────┼────┤</span>
+    <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🚿</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🍳</span>  <span style="color:#8b7b6b;">│</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🚿</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">📚</span>  <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">└────┴────┴────┘</span>  <span style="color:#8b7b6b;">└────┴────┴────┘</span>
+</pre>`
+      }
+    },
+    stage: {
+      id: 'stage', name: '戏台', icon: '🎭',
+      floors: 1, roofType: 'tile',
+      area: '约 40㎡（平台）+ 观众区',
+      facilities: ['表演平台', '观众区', '瓦片飞檐屋顶'],
+      status: 'active',
+      note: '活动演出、集会使用',
+      floorPlans: {
+        1: `<pre style="font-family:inherit;font-size:14px;color:var(--text);line-height:1.2;">
+<span style="color:#c8b890;">                   🎭 戏台</span>
+
+              <span style="color:#c8956a;">  ╭──────────╮</span>
+              <span style="color:#c8956a;">  │︽︽︽︽︽︽︽︽│</span>   <span style="color:#c8b890;">← 2F：瓦片屋顶（飞檐）</span>
+              <span style="color:#c8956a;">  │︽ 屋顶层 ︽│</span>
+              <span style="color:#c8956a;">  ╰──────────╯</span>
+
+         <span style="color:#8b7b6b;">┌────────────────┐</span>
+         <span style="color:#8b7b6b;">│                │</span>
+         <span style="color:#8b7b6b;">│    🎤 舞台     │</span>   <span style="color:#c8b890;">← 1F：表演平台</span>
+         <span style="color:#8b7b6b;">│                │</span>       <span style="color:#6b6658;">约 4m × 6m</span>
+         <span style="color:#8b7b6b;">│  ┌──────────┐  │</span>
+         <span style="color:#8b7b6b;">│  │ 🪑 观众区  │  │</span>   <span style="color:#c8b890;">← 可容纳约30人</span>
+         <span style="color:#8b7b6b;">│  └──────────┘  │</span>
+         <span style="color:#8b7b6b;">└────────────────┘</span>
+</pre>`
+      }
+    },
+    tilehouse: {
+      id: 'tilehouse', name: '西厢瓦房', icon: '🏛️',
+      floors: 3, roofType: 'tile',
+      area: '约 120㎡（每层 40㎡）',
+      rooms: { '1F': 8, '2F': 8, '3F': 8 },
+      facilities: ['8间宿舍/办公室', '走廊居中', '浴室'],
+      status: 'active',
+      note: '三层瓦房，西侧，每层 8 间',
+      floorPlans: {
+        1: `<pre style="font-family:inherit;font-size:13px;color:var(--text);line-height:1.2;">
+<span style="color:#c8b890;">              🏛️ 西厢瓦房 · 1F 平面图</span>
+
+    <span style="color:#8b7b6b;">┌────┬────┬────┬────┐</span>
+    <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">│</span> 1号 <span style="color:#8b7b6b;">│</span> 2号 <span style="color:#8b7b6b;">│</span> 3号 <span style="color:#8b7b6b;">│</span> 4号 <span style="color:#8b7b6b;">│</span>    <span style="color:#c8b890;">← 走廊居中</span>
+    <span style="color:#8b7b6b;">├────┼────┼────┼────┤</span>
+    <span style="color:#8b7b6b;">│</span>    <span style="color:#c8b890;">⬆ 走廊 ⬆</span>    <span style="color:#8b7b6b;">│</span>        <span style="color:#6b6658;">约 1.5m 宽</span>
+    <span style="color:#8b7b6b;">├────┼────┼────┼────┤</span>
+    <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🛏️</span>  <span style="color:#8b7b6b;">│</span> <span style="color:#c8b890;">🚿</span>  <span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">│</span> 5号 <span style="color:#8b7b6b;">│</span> 6号 <span style="color:#8b7b6b;">│</span> 7号 <span style="color:#8b7b6b;">│</span> 浴室<span style="color:#8b7b6b;">│</span>
+    <span style="color:#8b7b6b;">└────┴────┴────┴────┘</span>
+</pre>`
+      }
+    }
+  },
+  fields: {
+    field_backyard: {
+      id: 'field_backyard', name: '后院菜地', icon: '🥬',
+      location: '合作社大院北侧，与主楼同宽',
+      area: '约 80㎡（4区）',
+      zones: [
+        { id: 'A', crop: '番茄', emoji: '🍅', planted: '2026-07-01', harvestDays: 45, status: 'growing' },
+        { id: 'B', crop: '黄瓜', emoji: '🥒', planted: '2026-06-20', harvestDays: 30, status: 'ready' },
+        { id: 'C', crop: '玉米', emoji: '🌽', planted: '2026-07-03', harvestDays: 60, status: 'growing' },
+        { id: 'D', crop: '空心菜', emoji: '🥬', planted: '2026-06-15', harvestDays: 20, status: 'overdue' },
+      ]
+    }
+  },
+
+  // 热区定义：字符偏移 → 像素位置（基于 pre 文本，font-size=14px，line-height=1.05）
+  // 每行高度 ≈ 14.7px，每字符宽度 ≈ 8.4px（Courier New 中文等宽）
+  hotspots: {
+    // { row (0-based in pre), col (0-based in pre), width (chars), height (rows), target, targetId }
+    map: [
+      { r: 0, c: 23, w: 26, h: 1, target: 'label', targetId: null, label: '标题' },
+      { r: 7,  c: 6,  w: 16, h: 3, target: 'field',  targetId: 'field_backyard', label: '后院菜地' },
+      { r: 13, c: 5,  w: 12, h: 3, target: 'building', targetId: 'tilehouse', label: '西厢瓦房' },
+      { r: 13, c: 20, w: 12, h: 3, target: 'building', targetId: 'coop', label: '合作社大院' },
+      { r: 19, c: 8,  w: 18, h: 2, target: 'area', targetId: 'plaza', label: '中心广场' },
+      { r: 23, c: 11, w: 8,  h: 3, target: 'building', targetId: 'stage', label: '戏台' },
+      { r: 23, c: 22, w: 8,  h: 3, target: 'building', targetId: 'dorm', label: '宿舍·民宿' },
+      { r: 29, c: 5,  w: 16, h: 1, target: 'area', targetId: 'gate', label: '大门' },
+    ]
+  }
+};
+
+// ============================================================
+// 状态管理
+// ============================================================
+let state = {
+  currentView: 'map',       // 'map' | building id | field id
+  selectedTarget: null,     // { type, id }
+  scale: 1,
+  tx: 0, ty: 0,
+  isDragging: false,
+  startX: 0, startY: 0,
+  startTX: 0, startTY: 0,
+};
+
+// ============================================================
+// DOM 引用
+// ============================================================
+const mapWrapper = document.getElementById('mapWrapper');
+const mapStage = document.getElementById('mapStage');
+const hotspotLayer = document.getElementById('hotspotLayer');
+const infoPanel = document.getElementById('infoPanel');
+const panelTitle = document.getElementById('panelTitle');
+const panelBody = document.getElementById('panelBody');
+const panelClose = document.getElementById('panelClose');
+const coordDisplay = document.getElementById('coordDisplay');
+const zoomLevelEl = document.getElementById('zoomLevel');
+const mainLayout = document.getElementById('mainLayout');
+const subViewWrapper = document.getElementById('subViewWrapper');
+const subViewTitle = document.getElementById('subViewTitle');
+const subViewContent = document.getElementById('subViewContent');
+const floorTabs = document.getElementById('floorTabs');
+
+// ============================================================
+// 构建交互热区
+// ============================================================
+function buildHotspots() {
+  hotspotLayer.innerHTML = '';
+  const pre = document.getElementById('view-map');
+  if (!pre) return;
+
+  const cellW = 8.4;   // CouNew 14px 每字符宽
+  const cellH = 14.7;  // line-height 1.05 * 14px
+  const padX = 20;     // pre padding-left
+  const padY = 16;     // pre padding-top
+
+  SITE_DATA.hotspots.map.forEach(hs => {
+    const div = document.createElement('div');
+    div.className = 'hs';
+    div.style.left   = (padX + hs.c * cellW) + 'px';
+    div.style.top    = (padY + hs.r * cellH) + 'px';
+    div.style.width  = (hs.w * cellW) + 'px';
+    div.style.height = (hs.h * cellH) + 'px';
+    div.title = hs.label;
+    div.dataset.target = hs.target;
+    div.dataset.targetId = hs.targetId || '';
+
+    div.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectTarget(hs.target, hs.targetId);
+    });
+    div.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      if (hs.target === 'building' && hs.targetId) {
+        openFloorPlan(hs.targetId);
+      }
+      if (hs.target === 'field' && hs.targetId) {
+        openFieldDetail(hs.targetId);
+      }
+    });
+
+    hotspotLayer.appendChild(div);
+  });
+}
+
+// ============================================================
+// 选中目标 → 更新侧边栏
+// ============================================================
+function selectTarget(type, id) {
+  // 高亮
+  document.querySelectorAll('.hs.selected').forEach(el => el.classList.remove('selected'));
+  const hs = document.querySelector(`.hs[data-target="${type}"][data-target-id="${id}"]`);
+  if (hs) hs.classList.add('selected');
+
+  state.selectedTarget = { type, id };
+
+  // 更新面板
+  if (type === 'building' && SITE_DATA.buildings[id]) {
+    renderBuildingPanel(id);
+  } else if (type === 'field' && SITE_DATA.fields[id]) {
+    renderFieldPanel(id);
+  } else if (type === 'area') {
+    renderAreaPanel(id);
+  }
+}
+
+function renderBuildingPanel(id) {
+  const b = SITE_DATA.buildings[id];
+  const roomCount = typeof b.rooms === 'object' ? Object.values(b.rooms).reduce((a, c) => a + c, 0) : 0;
+
+  panelTitle.textContent = b.icon + ' ' + b.name;
+  panelBody.innerHTML = `
+    <div class="section">
+      <div class="section-title">基本信息</div>
+      <div class="kv"><span class="k">类型</span><span class="v">${b.roofType === 'tile' ? '🏛️ 瓦房' : '🏢 平房'}</span></div>
+      <div class="kv"><span class="k">层数</span><span class="v">${b.floors} 层</span></div>
+      <div class="kv"><span class="k">面积</span><span class="v">${b.area}</span></div>
+      <div class="kv"><span class="k">房间数</span><span class="v">约 ${roomCount} 间</span></div>
+    </div>
+    <div class="section">
+      <div class="section-title">设施</div>
+      <div class="tags">${b.facilities.map(f => `<span class="tag good">${f}</span>`).join('')}</div>
+    </div>
+    <div class="section">
+      <div class="section-title">备注</div>
+      <div style="color:var(--text);line-height:1.5;">${b.note}</div>
+    </div>
+    <button class="action-btn primary" onclick="openFloorPlan('${id}')">🏗️ 进入格局图</button>
+    <button class="action-btn" onclick="selectTarget(null, null)">✕ 取消选择</button>
+  `;
+}
+
+function renderFieldPanel(id) {
+  const f = SITE_DATA.fields[id];
+  const now = new Date('2026-07-06'); // 模拟今天
+  let alerts = [];
+
+  let zoneRows = f.zones.map(z => {
+    const planted = new Date(z.planted);
+    const harvest = new Date(planted.getTime() + z.harvestDays * 86400000);
+    const remaining = Math.ceil((harvest - now) / 86400000);
+    let statusText, statusClass;
+    if (z.status === 'ready') { statusText = '🟢 已成熟'; statusClass = 'good'; alerts.push(`${z.emoji}${z.crop}已成熟`); }
+    else if (z.status === 'overdue') { statusText = '🔴 逾期'; statusClass = 'bad'; alerts.push(`${z.emoji}${z.crop}已逾期`); }
+    else { statusText = `🌱 生长中（剩${remaining}天）`; statusClass = 'warn'; }
+    return `<tr>
+      <td>${z.emoji} ${z.id}区</td>
+      <td>${z.crop}</td>
+      <td>${z.planted}</td>
+      <td>${harvest.toISOString().slice(5,10)}</td>
+      <td><span class="tag ${statusClass}">${statusText}</span></td>
+    </tr>`;
+  }).join('');
+
+  panelTitle.textContent = f.icon + ' ' + f.name;
+  panelBody.innerHTML = `
+    <div class="section">
+      <div class="section-title">基本信息</div>
+      <div class="kv"><span class="k">位置</span><span class="v">${f.location}</span></div>
+      <div class="kv"><span class="k">面积</span><span class="v">${f.area}</span></div>
+      <div class="kv"><span class="k">分区数</span><span class="v">${f.zones.length} 区</span></div>
+    </div>
+    <div class="section">
+      <div class="section-title">田间状态</div>
+      <table style="width:100%;font-size:.68rem;border-collapse:collapse;">
+        <tr style="color:var(--muted);"><td>区域</td><td>作物</td><td>种下</td><td>预计熟</td><td>状态</td></tr>
+        ${zoneRows}
+      </table>
+    </div>
+    ${alerts.length ? `<div class="section">
+      <div class="section-title">🔔 提醒</div>
+      ${alerts.map(a => `<div style="color:var(--gold);padding:2px 0;">⚠️ ${a}，请处理！</div>`).join('')}
+    </div>` : ''}
+    <button class="action-btn primary" onclick="openFieldDetail('${id}')">✏️ 编辑田间数据</button>
+    <button class="action-btn" onclick="selectTarget(null, null)">✕ 取消选择</button>
+  `;
+}
+
+function renderAreaPanel(id) {
+  if (id === 'plaza') {
+    panelTitle.textContent = '🟫 中心广场';
+    panelBody.innerHTML = `
+      <div class="section">
+        <div class="section-title">公共区域</div>
+        <div style="color:var(--text);line-height:1.5;">中心广场连接各建筑，是日常集会和活动的公共空间。地面铺设石板，可容纳约 50 人。</div>
+      </div>
+      <button class="action-btn" onclick="selectTarget(null, null)">✕ 取消选择</button>
+    `;
+  } else if (id === 'gate') {
+    panelTitle.textContent = '🚪 大门';
+    panelBody.innerHTML = `
+      <div class="section">
+        <div class="section-title">出入口</div>
+        <div style="color:var(--text);line-height:1.5;">合作社南侧围墙设有一对对称大门，面向南侧道路。是进出合作社的主要通道。</div>
+      </div>
+      <button class="action-btn" onclick="selectTarget(null, null)">✕ 取消选择</button>
+    `;
+  }
+}
+
+function clearSelection() {
+  document.querySelectorAll('.hs.selected').forEach(el => el.classList.remove('selected'));
+  state.selectedTarget = null;
+  panelTitle.textContent = '📍 总览';
+  panelBody.innerHTML = `<div class="info-panel-empty">👆 点击地图上的<br>建筑或田地<br>查看详细信息</div>`;
+}
+
+// ============================================================
+// 格局图视图
+// ============================================================
+function openFloorPlan(buildingId) {
+  const b = SITE_DATA.buildings[buildingId];
+  if (!b || !b.floorPlans) return;
+
+  state.currentView = buildingId;
+  mainLayout.style.display = 'none';
+  subViewWrapper.classList.add('show');
+  subViewTitle.textContent = b.icon + ' ' + b.name;
+
+  // 楼层标签
+  floorTabs.innerHTML = '';
+  for (let f = 1; f <= b.floors; f++) {
+    const tab = document.createElement('span');
+    tab.className = 'floor-tab' + (f === 1 ? ' active' : '');
+    tab.textContent = f + 'F';
+    tab.addEventListener('click', () => {
+      floorTabs.querySelectorAll('.floor-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      subViewContent.innerHTML = b.floorPlans[f] || '<div style="color:var(--muted);padding:40px;">该楼层暂无平面图</div>';
+    });
+    floorTabs.appendChild(tab);
+  }
+  // 屋顶标签
+  if (b.roofType) {
+    const roofTab = document.createElement('span');
+    roofTab.className = 'floor-tab';
+    roofTab.textContent = b.roofType === 'tile' ? '🏛️ 屋顶' : '🏢 屋顶';
+    roofTab.addEventListener('click', () => {
+      floorTabs.querySelectorAll('.floor-tab').forEach(t => t.classList.remove('active'));
+      roofTab.classList.add('active');
+      subViewContent.innerHTML = `<div style="color:var(--muted);padding:40px;text-align:center;">
+        ${b.roofType === 'tile' ? '︽︽︽ 瓦片屋顶（飞檐）︽︽︽' : '════ 平房屋顶 ════'}<br><br>
+        <span style="font-size:.73rem;">${b.name} · 屋顶层</span>
+      </div>`;
+    });
+    floorTabs.appendChild(roofTab);
+  }
+
+  subViewContent.innerHTML = b.floorPlans[1] || '<div style="color:var(--muted);padding:40px;">该楼层暂无平面图</div>';
+}
+
+function openFieldDetail(fieldId) {
+  const f = SITE_DATA.fields[fieldId];
+  if (!f) return;
+
+  state.currentView = fieldId;
+  mainLayout.style.display = 'none';
+  subViewWrapper.classList.add('show');
+  subViewTitle.textContent = f.icon + ' ' + f.name;
+  floorTabs.innerHTML = '';
+
+  const now = new Date('2026-07-06');
+  let zoneCards = f.zones.map(z => {
+    const planted = new Date(z.planted);
+    const harvest = new Date(planted.getTime() + z.harvestDays * 86400000);
+    const remaining = Math.ceil((harvest - now) / 86400000);
+    let statusIcon, statusColor;
+    if (z.status === 'ready') { statusIcon = '🟢'; statusColor = 'var(--green)'; }
+    else if (z.status === 'overdue') { statusIcon = '🔴'; statusColor = 'var(--red)'; }
+    else { statusIcon = '🌱'; statusColor = 'var(--gold)'; }
+    return `<div style="border:1px solid var(--border);border-radius:5px;padding:10px;text-align:center;min-width:70px;">
+      <div style="font-size:2rem;">${z.emoji}</div>
+      <div style="font-size:.73rem;color:var(--text);">${z.id}区·${z.crop}</div>
+      <div style="font-size:.62rem;color:var(--muted);">${z.planted} → ${harvest.toISOString().slice(5,10)}</div>
+      <div style="font-size:.65rem;color:${statusColor};">${statusIcon} ${z.status === 'ready' ? '可收获' : z.status === 'overdue' ? '已逾期' : '剩'+remaining+'天'}</div>
+    </div>`;
+  }).join('');
+
+  subViewContent.innerHTML = `
+    <div style="padding:20px;width:100%;max-width:500px;">
+      <div style="font-size:.82rem;color:var(--accent);margin-bottom:14px;">🥬 后院菜地 · 田间管理</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">${zoneCards}</div>
+      <div style="font-size:.68rem;color:var(--muted);line-height:1.6;">
+        <div>📋 生长记录（模拟数据）</div>
+        <div style="margin-top:4px;">点击各区域可编辑种植信息</div>
+      </div>
+    </div>
+  `;
+}
+
+function backToMap() {
+  state.currentView = 'map';
+  subViewWrapper.classList.remove('show');
+  mainLayout.style.display = 'flex';
+}
+
+// ============================================================
+// 缩放平移
+// ============================================================
+function updateTransform() {
+  mapStage.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+  zoomLevelEl.textContent = Math.round(state.scale * 100) + '%';
+}
+
+mapStage.addEventListener('mousedown', e => {
+  if (e.target.classList.contains('hs')) return; // 热区不拖拽
+  state.isDragging = true;
+  state.startX = e.clientX; state.startY = e.clientY;
+  state.startTX = state.tx; state.startTY = state.ty;
+  mapStage.classList.add('grabbing');
+});
+window.addEventListener('mousemove', e => {
+  if (!state.isDragging) return;
+  state.tx = state.startTX + (e.clientX - state.startX);
+  state.ty = state.startTY + (e.clientY - state.startY);
+  updateTransform();
+
+  // 更新坐标显示
+  const rect = mapWrapper.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  coordDisplay.textContent = `坐标: ${Math.round(mx)}, ${Math.round(my)}`;
+});
+window.addEventListener('mouseup', () => {
+  state.isDragging = false;
+  mapStage.classList.remove('grabbing');
+});
+
+mapWrapper.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const newScale = Math.min(3, Math.max(0.3, state.scale * delta));
+  const rect = mapWrapper.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  state.tx = mx - (mx - state.tx) * (newScale / state.scale);
+  state.ty = my - (my - state.ty) * (newScale / state.scale);
+  state.scale = newScale;
+  updateTransform();
+});
+
+// 缩放控件
+document.getElementById('zoomIn').addEventListener('click', () => {
+  state.scale = Math.min(3, state.scale * 1.2);
+  updateTransform();
+});
+document.getElementById('zoomOut').addEventListener('click', () => {
+  state.scale = Math.max(0.3, state.scale * 0.8);
+  updateTransform();
+});
+document.getElementById('zoomReset').addEventListener('click', () => {
+  state.scale = 1; state.tx = 0; state.ty = 0;
+  updateTransform();
+});
+
+// 触摸支持
+let lastDist = 0;
+mapStage.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  } else if (e.touches.length === 1) {
+    state.isDragging = true;
+    state.startX = e.touches[0].clientX; state.startY = e.touches[0].clientY;
+    state.startTX = state.tx; state.startTY = state.ty;
+  }
+}, { passive: false });
+mapStage.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    state.scale = Math.min(3, Math.max(0.3, state.scale * (dist / lastDist)));
+    lastDist = dist;
+    updateTransform();
+  } else if (e.touches.length === 1 && state.isDragging) {
+    state.tx = state.startTX + (e.touches[0].clientX - state.startX);
+    state.ty = state.startTY + (e.touches[0].clientY - state.startY);
+    updateTransform();
+  }
+}, { passive: false });
+mapStage.addEventListener('touchend', () => { state.isDragging = false; });
+
+// ============================================================
+// 视图切换
+// ============================================================
+document.querySelectorAll('.building-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.building-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const view = tab.dataset.view;
+
+    if (view === 'map') {
+      backToMap();
+    } else if (view === 'field') {
+      openFieldDetail('field_backyard');
+    } else if (SITE_DATA.buildings[view]) {
+      openFloorPlan(view);
+    }
+  });
+});
+
+// ============================================================
+// 侧边栏关闭
+// ============================================================
+panelClose.addEventListener('click', clearSelection);
+
+// 返回按钮
+document.getElementById('backToMap').addEventListener('click', backToMap);
+
+// 点击地图空白取消选择
+mapWrapper.addEventListener('click', function(e) {
+  if (e.target === mapWrapper || e.target === mapStage) {
+    clearSelection();
+  }
+});
+
+// ============================================================
+// 初始化
+// ============================================================
+buildHotspots();
+updateTransform();
+
+// 窗口大小变化时重建热区
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(buildHotspots, 300);
+});
+
+console.log('🏘️ 南塘合作社实景地图原型 v2 已就绪');
+console.log('  点击建筑热区 → 查看详情面板');
+console.log('  双击建筑 → 进入格局图（楼层平面）');
+console.log('  双击菜地 → 进入田间管理');
+console.log('  拖拽平移 + 滚轮缩放');
+console.log('  所有图形由 Unicode 字符 + Emoji 生成，零依赖');
+
+// ============================================================
+// 键盘快捷键
+// ============================================================
+window.addEventListener('keydown', e => {
+  switch (e.key) {
+    case 'Escape':
+      if (state.currentView !== 'map') backToMap();
+      else clearSelection();
+      break;
+    case '0':
+      state.scale = 1; state.tx = 0; state.ty = 0;
+      updateTransform();
+      break;
+    case '=': case '+':
+      state.scale = Math.min(3, state.scale * 1.2);
+      updateTransform();
+      break;
+    case '-':
+      state.scale = Math.max(0.3, state.scale * 0.8);
+      updateTransform();
+      break;
+  }
+});
+</script>
+
+</body>
+</html>
