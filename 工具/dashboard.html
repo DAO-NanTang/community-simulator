@@ -1967,6 +1967,32 @@ function toggleVillageDone(el, cnt) {
 }
 function toggleWSDone(el, cnt) { var list=document.getElementById('wsDoneList'); var show=!list||list.style.display==='none'; if(list)list.style.display=show?'':'none'; el.textContent=show?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
 function toggleMemDone(el, cnt) { var list=document.getElementById('memDoneList'); var show=!list||list.style.display==='none'; if(list)list.style.display=show?'':'none'; el.textContent=show?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
+function showWsAvatarPicker() {
+  if (!currentUser) return;
+  var el = document.getElementById('wsAvatarPicker');
+  if (el) { el.remove(); return; }
+  var seed = (data.members&&data.members[currentUser.name]) ? (data.members[currentUser.name].avatar_seed||0) : 0;
+  var h = '<div id="wsAvatarPicker" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:300;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.3);max-width:460px;width:90%">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0;font-size:.9rem">🎨 选择头像</h3><button class="btn" onclick="document.getElementById(\'wsAvatarPicker\').remove()" style="font-size:.7rem;padding:2px 8px">✕</button></div>';
+  h += '<div style="display:flex;gap:4px;flex-wrap:wrap;max-height:280px;overflow-y:auto">';
+  CHARACTER_SEEDS.forEach(function(name, i) {
+    var url = 'https://api.dicebear.com/7.x/' + AVATAR_STYLE + '/svg?seed=' + encodeURIComponent(name) + '&size=48&radius=50';
+    var sel = i === seed ? 'border:3px solid var(--accent);background:#fdf5e0' : 'border:1px solid var(--border)';
+    h += '<div onclick="wsSelectAvatar('+i+')" style="cursor:pointer;padding:3px;border-radius:8px;'+sel+'" title="'+esc(name)+'"><img src="'+url+'" width="40" height="40" style="border-radius:50%"></div>';
+  });
+  h += '</div></div>';
+  var div = document.createElement('div'); div.innerHTML = h; document.body.appendChild(div.firstElementChild);
+}
+function wsSelectAvatar(seed) {
+  if (!currentUser) return;
+  var m = data.members || {}; if (!m[currentUser.name]) m[currentUser.name] = {};
+  m[currentUser.name].avatar_seed = seed;
+  var users = getUsers(); var u = users[currentUser.name];
+  if (u) u.avatar_seed = seed; saveUsers(users);
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  var el = document.getElementById('wsAvatarPicker'); if (el) el.remove();
+  renderWorkspace();
+}
 function showVillageSquare() {
   if (!currentUser) return;
   showPlazaPlaceholder(currentUser);
@@ -2719,7 +2745,8 @@ function renderWorkspace() {
 
   // ═══ LEFT: Avatar Card (always visible) ═══
   html += '<div class="card" style="flex:0 0 220px;text-align:center;padding:20px 16px;position:sticky;top:80px">';
-  html += '<div style="margin-bottom:12px">' + avatarCircle(avatarSi, 88, 0) + '</div>';
+  html += '<div style="margin-bottom:4px;cursor:pointer" onclick="showWsAvatarPicker()">' + avatarCircle(avatarSi, 72, 0) + '</div>';
+  html += '<button class="btn" onclick="showWsAvatarPicker()" style="font-size:.65rem;padding:2px 10px;margin-bottom:10px">🎨 换头像</button>';
   html += '<div style="font-size:1.05rem;font-weight:700;margin-bottom:2px">' + esc(name) + '</div>';
   html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px">' + getUserTitle(user) + '</div>';
   if (achievements.length > 0) {
