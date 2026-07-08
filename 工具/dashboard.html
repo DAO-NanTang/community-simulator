@@ -1965,6 +1965,8 @@ function toggleVillageDone(el, cnt) {
   if (list) list.style.display = isHide ? '' : 'none';
   el.textContent = isHide ? '📦 已完成/已领满（'+cnt+'项）▴' : '📦 已完成/已领满（'+cnt+'项）▾';
 }
+function toggleWSDone(el, cnt) { var list=document.getElementById('wsDoneList'); var show=!list||list.style.display==='none'; if(list)list.style.display=show?'':'none'; el.textContent=show?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
+function toggleMemDone(el, cnt) { var list=document.getElementById('memDoneList'); var show=!list||list.style.display==='none'; if(list)list.style.display=show?'':'none'; el.textContent=show?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
 function showVillageSquare() {
   if (!currentUser) return;
   showPlazaPlaceholder(currentUser);
@@ -2814,7 +2816,7 @@ function renderWorkspace() {
         submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
       }
       if (doneTasks.length>0) {
-        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"wsDoneList\");el.style.display=el.style.display===\"none\"?\"\":\"none\";this.textContent=el.style.display===\"none\"?\"📦 已完成（'+doneTasks.length+'项）▴\":\"📦 已完成（'+doneTasks.length+'项）▾\"">📦 已完成（'+doneTasks.length+'项）▾</div>';
+        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="toggleWSDone(this,'+doneTasks.length+')">📦 已完成（'+doneTasks.length+'项）▾</div>';
         html += '<div id="wsDoneList" style="display:none">';
         doneTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
         html += '</div>';
