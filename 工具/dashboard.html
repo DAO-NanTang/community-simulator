@@ -123,8 +123,10 @@ select.inline-input { cursor: pointer; }
 #plazaPlaceholder:not(.hidden)::before { content: ''; position: fixed; inset: 0; background: url(ai_expand_image1783014990973.png) center/cover no-repeat; filter: blur(3px) brightness(.55); z-index: -1; }
 #plazaPlaceholder:not(.hidden)::after { content: ''; position: fixed; inset: 0; background: linear-gradient(0deg,rgba(0,0,0,.25),rgba(0,0,0,.05) 40%,rgba(0,0,0,.15) 100%); z-index: -1; pointer-events: none; }
 .village-modal { z-index: 130; }
-.village-card { background: rgba(255,252,245,.9); border: 1px solid #d0c8b0; border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; backdrop-filter: blur(6px); }
-.village-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+.village-card { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25); border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; backdrop-filter: blur(8px); color: #fff; }
+.village-card h3 { color: #fff; }
+.village-card p { color: rgba(255,255,255,.8); }
+.village-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.3); background: rgba(255,255,255,.22); }
 .village-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,25,20,.5); z-index: 120; display: flex; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
 .village-modal .vm-inner { background: rgba(255,252,245,.97); border-radius: 16px; padding: 24px; max-width: 700px; width: 92%; margin-bottom: 60px; box-shadow: 0 12px 48px rgba(0,0,0,.25); position: relative; }
 .npc-bubble { display: flex; align-items: flex-start; gap: 12px; background: #f8f5ec; border: 2px solid #d8cdb0; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; }
@@ -1003,8 +1005,10 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <!-- Village header bar — same style as login header -->
     <div id="villageSquare" style="max-width:700px;margin:60px auto;padding:20px">
       <div style="text-align:center;margin-bottom:30px">
-        <div style="font-size:3.5rem;margin-bottom:4px">🏕️</div>
-        <h2 style="margin:4px 0;font-size:1.4rem">南塘村口</h2>
+        <img src="92e279b22d04d4c831aec15aa09213df (1).png" style="width:120px;margin-bottom:8px;opacity:.85" alt="">
+        <div style="font-size:2rem;margin-bottom:2px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))">⚔️</div>
+        <h2 style="margin:0;font-size:1.2rem;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)">实景游戏 · 南塘云村</h2>
+        <p style="margin:2px 0 0;font-size:.82rem;color:rgba(255,255,255,.7);text-shadow:0 1px 2px rgba(0,0,0,.3)">欢迎你，寻找人生副本</p>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
         <!-- 卡片1: 活动信息站 -->
@@ -1029,9 +1033,9 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <button class="btn" style="font-size:.78rem;margin-top:8px">🔒 建设中</button>
         </div>
       </div>
-      <div style="text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid rgba(0,0,0,.08)">
-        <div style="font-size:.82rem;color:var(--muted)" id="villageUserInfo">—</div>
-        <button class="btn" onclick="logoutUser()" style="margin-top:8px;font-size:.8rem">🚪 退出</button>
+      <div style="text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15)">
+        <div style="font-size:.82rem;color:rgba(255,255,255,.7);text-shadow:0 1px 2px rgba(0,0,0,.3)" id="villageUserInfo">—</div>
+        <button class="btn" onclick="logoutUser()" style="margin-top:8px;font-size:.8rem;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">🚪 退出</button>
       </div>
     </div>
   </div>
@@ -1876,13 +1880,17 @@ function renderVillageQuestHall() {
 }
 
 function renderVillageActivityList() {
+  var isMember = currentUser && (currentUser.role==='admin'||currentUser.role==='builder'||currentUser.role==='adventurer');
   var html = '';
   html += '<div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:#fdfcf6">'+
     '<div style="font-size:1.2rem;font-weight:700">🏕️ 南塘艺术共创营 · 第四期</div>'+
     '<div style="font-size:.8rem;color:var(--muted);margin:4px 0">2026年7月 · 进行中 · 12人活跃</div>'+
     '<div style="font-size:.82rem">工笔画创作、在地生活、展览布置…</div>'+
-    '<div style="margin-top:8px"><input id="villageInviteCode" placeholder="输入邀请码" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:.82rem;width:180px"> '+
-    '<button class="btn pri" onclick="var c=document.getElementById(\'villageInviteCode\').value;if(c){var r=doUpgradeWithCode(c);if(r&&r.ok){closeVillageModal(\'activity\');switchTab(\'workspace\');}}" style="font-size:.78rem">→ 成为冒险者</button></div></div>';
+    (isMember ?
+      '<div style="margin-top:10px"><button class="btn pri" onclick="closeVillageModal(\'activity\');hidePlazaPlaceholder();switchTab(\'workspace\')" style="font-size:.82rem;padding:8px 20px">→ 进入营队</button></div>' :
+      '<div style="margin-top:8px"><input id="villageInviteCode" placeholder="输入邀请码" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:.82rem;width:180px"> '+
+      '<button class="btn pri" onclick="var c=document.getElementById(\'villageInviteCode\').value;if(c){var r=doUpgradeWithCode(c);if(r&&r.ok){closeVillageModal(\'activity\');hidePlazaPlaceholder();switchTab(\'workspace\');}}" style="font-size:.78rem">→ 成为冒险者</button></div>')+
+    '</div>';
   html += '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:10px;opacity:.6">'+
     '<div style="font-size:1rem;font-weight:700">🎋 南塘端午文化节</div>'+
     '<div style="font-size:.78rem;color:var(--muted)">2026年6月 · 已完结 · <span style="cursor:pointer;color:var(--accent)">📷 查看回顾</span></div></div>';
