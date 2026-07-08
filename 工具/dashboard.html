@@ -1959,37 +1959,109 @@ function renderVillageQuestHall() {
 
   document.getElementById('villageQuickBar').innerHTML = barHTML + bannerHTML;
 
-  // ── Task cards with three-layer logic ──
-  var cardHTML = '';
-  if (filtered.length===0) {
-    cardHTML += '<div style="color:var(--muted);text-align:center;padding:30px">暂无公开委托</div>';
-  } else {
-    filtered.slice(0,30).forEach(function(t) {
-      var isCamp = (t.scope||'camp')==='camp';
-      var locked = isCamp && !isMember; // village: camp tasks greyed for outsiders
-      var activeC = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
-      var slots = t.max_slots>0 ? activeC.length+'/'+t.max_slots : '不限';
-      var typeBadge = ({'主线':'M','支线':'S','共创':'C','隐藏':'H'}[t.type]||'M');
-      var doneCount = activeC.filter(function(c){return c.status==='completed'||c.status==='submitted';}).length;
+  // ── Task cards: 3 groups, expandable ──
+  if (!window._villageExpanded) window._villageExpanded = {};
+  var villageExpanded = window._villageExpanded;
+  function renderVillageCard(t, isMine, isDone) {
+    var idx = tasks.indexOf(t); var isCoCreate = t.type==='共创';
+    var activeC = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
+    var slots = t.max_slots>0 ? activeC.length+'/'+t.max_slots : '不限';
+    var typeBadge = ({'主线':'M','支线':'S','共创':'C','隐藏':'H','身份':'ID'}[t.type]||'M');
+    var doneCount = activeC.filter(function(c){return c.status==='completed';}).length;
+    var subCount = activeC.filter(function(c){return c.status==='submitted';}).length;
+    var expanded = villageExpanded[t.name];
+    var grey = isDone;
+    var locked = (t.scope||'camp')==='camp' && !isMember;
+    var myClaim = isMember ? (t.claimants||[]).find(function(c){return c.name===name&&c.status!=='dropped';}) : null;
+    var scopeTag = (t.scope||'camp')==='personal' ? '✏️私人' : '🏕️营地';
+    var scopeColor = (t.scope||'camp')==='personal' ? '#f0e0f0;color:#8b5e9e' : '#e0f0e0;color:#5a8a3c';
+    var coopWarn = isCoCreate && activeC.length>0 && !isDone ?
+      '<span style="font-size:.65rem;background:#fde8c8;color:#b8781e;padding:1px 5px;border-radius:3px;margin-left:4px">🤝共创'+(t.max_slots>0?' · 需'+t.max_slots+'人':'')+'</span>' : '';
 
-      cardHTML += '<div style="border:1px solid '+(locked?'#e0d8c8':'var(--border)')+';border-radius:10px;padding:12px 14px;margin-bottom:8px;'+(locked?'opacity:.55;background:#fafaf5':'')+'">'+
-        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
-        '<span style="font-size:.6rem;font-weight:700;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px">'+typeBadge+'</span>'+
-        '<span style="font-weight:600;flex:1;'+(locked?'color:var(--muted)':'')+'">'+esc(t.name)+'</span>'+
-        (isCamp?'<span style="font-size:.6rem;background:#e0f0e0;color:#5a8a3c;padding:1px 5px;border-radius:3px">🏕️营地</span>':
-         '<span style="font-size:.6rem;background:#f0e0f0;color:#8b5e9e;padding:1px 5px;border-radius:3px">✏️私人</span>')+
-        '</div>'+
-        '<div style="display:flex;gap:10px;font-size:.73rem;color:var(--muted);flex-wrap:wrap">'+
-        '<span>🧙 '+esc(t.poster||'?')+'</span><span>📅 '+esc(t.deadline||'—')+'</span><span>👥 '+slots+'</span>'+
-        '<span style="color:var(--accent);font-weight:600">💎 '+(t.points||0)+' NT</span>'+
-        '<span>'+esc(t.category||'')+'</span></div>'+
-        (doneCount>0?'<div style="font-size:.7rem;color:var(--green);margin-top:2px">📋 '+doneCount+'人已提交</div>':'')+
-        (locked ?
-          '<div style="margin-top:6px;font-size:.75rem;color:var(--red)">🔒 需加入营队才能领取</div>' :
-          '<div style="margin-top:6px"><button class="btn pri" onclick="closeVillageModal(\'questhall\');switchTab(\'questboard\')" style="font-size:.7rem;padding:3px 10px">查看 & 领取 →</button></div>')+
-        '</div>';
-    });
-    if (filtered.length>30) cardHTML += '<div style="text-align:center;color:var(--muted);font-size:.78rem;padding:6px">还有 '+(filtered.length-30)+' 条...</div>';
+    var h = '<div style="border:1px solid '+(grey?'#e0d8c8':'var(--border)')+';border-radius:10px;padding:10px 14px;margin-bottom:6px;'+(grey?'opacity:.5;background:#fafaf5':'')+(locked?'opacity:.55;background:#fafaf5':'')+'">';
+    // Header row
+    h += '<div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="window._villageExpanded[\''+escAttr(t.name)+'\']=!window._villageExpanded[\''+escAttr(t.name)+'\'];renderVillageQuestHall()">';
+    h += '<span style="font-size:.6rem;font-weight:700;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px">'+typeBadge+'</span>';
+    h += '<span style="font-weight:600;flex:1;'+(grey||locked?'color:var(--muted)':'')+'">'+esc(t.name)+'</span>';
+    h += '<span style="font-size:.6rem;background:'+(scopeColor.split(';')[0])+';color:'+(scopeColor.split(';')[1].replace('color:',''))+';padding:1px 5px;border-radius:3px">'+scopeTag+'</span>'+coopWarn;
+    h += '<span style="font-size:.6rem;color:var(--muted);margin-left:4px">'+(expanded?'收起 ▴':'展开 ▾')+'</span>';
+    h += '</div>';
+    // Meta row
+    h += '<div style="display:flex;gap:8px;font-size:.72rem;color:var(--muted);flex-wrap:wrap;margin-top:3px">';
+    h += '<span>🧙 '+esc(t.poster||'?')+'</span><span>📅 '+(t.deadline||'—')+'</span><span>👥 '+slots+'</span>';
+    h += '<span style="color:var(--accent);font-weight:600">💎 '+(t.points||0)+' NT</span></div>';
+    // Progress
+    if (subCount>0) h += '<div style="font-size:.68rem;color:var(--green);margin-top:2px">📋 '+subCount+'人已提交'+(doneCount>0?' · '+doneCount+'人已确认':'')+'</div>';
+    if (isCoCreate && activeC.length>0 && !isDone) {
+      var needMore = (t.max_slots||activeC.length) - subCount;
+      if (needMore>0) h += '<div style="font-size:.68rem;color:#b8781e;margin-top:1px">⚠️ 还需 '+needMore+' 人提交后才能结算</div>';
+    }
+    // Expanded content
+    if (expanded) {
+      h += '<div style="border-top:1px dotted var(--border);margin-top:6px;padding-top:6px;font-size:.72rem">';
+      if (t.note) h += '<div style="color:var(--text);margin-bottom:4px">📝 '+esc(t.note)+'</div>';
+      if (activeC.length>0) {
+        h += '<div style="color:var(--muted);margin-bottom:4px">👤 已领取：';
+        h += activeC.map(function(c){var icon=c.status==='completed'?'✅':c.status==='submitted'?'📤':'🔄';return esc(c.name)+' '+icon;}).join(' · ');
+        h += '</div>';
+      }
+      if (t.max_slots>0 && !isDone && !locked) {
+        var remain = t.max_slots - activeC.length;
+        if (remain>0) h += '<div style="color:var(--accent)">⚠️ 还剩 '+remain+' 个名额</div>';
+      }
+      h += '</div>';
+    }
+    // Actions
+    h += '<div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">';
+    if (locked) {
+      h += '<span style="font-size:.7rem;color:var(--red)">🔒 需加入营队</span>';
+    } else if (grey) {
+      h += '<span style="font-size:.7rem;color:var(--muted)">✅ 已完成</span>';
+    } else if (myClaim) {
+      if (myClaim.status==='in_progress'||myClaim.status==='triggered') {
+        h += '<button class="btn green" onclick="showSubmitModal('+idx+');renderVillageQuestHall()" style="font-size:.68rem;padding:2px 8px">📤 提交</button>';
+        h += '<button class="btn" onclick="dropTask('+idx+');renderVillageQuestHall()" style="font-size:.68rem;padding:2px 8px">🏳️ 放弃</button>';
+      } else if (myClaim.status==='submitted') {
+        h += '<span style="font-size:.7rem;color:var(--accent)">⏳ 审核中</span>';
+      } else if (myClaim.status==='rejected') {
+        h += '<button class="btn green" onclick="showSubmitModal('+idx+');renderVillageQuestHall()" style="font-size:.68rem;padding:2px 8px">🔄 重新提交</button>';
+      }
+    } else if (!isDone) {
+      h += '<button class="btn pri" onclick="claimTask('+idx+');renderVillageQuestHall()" style="font-size:.68rem;padding:2px 10px">⚔️ 领取</button>';
+    }
+    h += '</div></div>';
+    return h;
+  }
+
+  // ── Group tasks ──
+  var canClaim = [], myTasks = [], doneTasks = [];
+  filtered.slice(0,50).forEach(function(t) {
+    var activeC = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
+    var myClaim = isMember ? (t.claimants||[]).find(function(c){return c.name===name&&c.status!=='dropped';}) : null;
+    var isFull = t.max_slots>0 && activeC.length>=t.max_slots;
+    if (myClaim && (myClaim.status==='completed')) { doneTasks.push(t); }
+    else if (myClaim) { myTasks.push(t); }
+    else if (isFull || (t.scope||'camp')==='camp'&&!isMember) { doneTasks.push(t); }
+    else { canClaim.push(t); }
+  });
+
+  var cardHTML = '';
+  if (canClaim.length+myTasks.length+doneTasks.length===0) {
+    cardHTML += '<div style="color:var(--muted);text-align:center;padding:30px">暂无公开委托</div>';
+  }
+  if (canClaim.length>0) {
+    cardHTML += '<div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--accent)">📋 可领取（'+canClaim.length+'项）</div>';
+    canClaim.forEach(function(t){ cardHTML += renderVillageCard(t, false, false); });
+  }
+  if (myTasks.length>0) {
+    cardHTML += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--text)">📋 我已领取（'+myTasks.length+'项）</div>';
+    myTasks.forEach(function(t){ cardHTML += renderVillageCard(t, true, false); });
+  }
+  if (doneTasks.length>0) {
+    cardHTML += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"villageDoneList\");el.style.display=el.style.display===\"none\"?\"\":\"none\";this.textContent=el.style.display===\"none\"?\"📦 已完成/已领满（'+doneTasks.length+'项）▾\":\"📦 已完成/已领满（'+doneTasks.length+'项）▴\"">📦 已完成/已领满（'+doneTasks.length+'项）▾</div>';
+    cardHTML += '<div id="villageDoneList" style="display:none">';
+    doneTasks.forEach(function(t){ cardHTML += renderVillageCard(t, false, true); });
+    cardHTML += '</div>';
   }
 
   // ── Publish area ──
