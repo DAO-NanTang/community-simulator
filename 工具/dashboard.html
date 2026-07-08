@@ -2645,6 +2645,9 @@ function renderWorkspace() {
     if (wsTabFilter === 'personal') return e.scope === 'personal';
     return e.claim.status === wsTabFilter;
   });
+  // Sort: 进行中 → 已提交 → 已完成
+  var wsStatusOrder = { 'in_progress':0, 'triggered':0, 'submitted':1, 'rejected':1, 'completed':2 };
+  filtered.sort(function(a, b) { return (wsStatusOrder[a.claim.status]||3) - (wsStatusOrder[b.claim.status]||3); });
 
   // ── Counts for filter badges ──
   var counts = { all: allMyTasks.length, camp: 0, personal: 0, in_progress: 0, submitted: 0, completed: 0 };
@@ -2661,8 +2664,38 @@ function renderWorkspace() {
 
   // ═══ RENDER ═══
   var html = '';
+  // Always: flex container with avatar + right panel
+  html += '<div style="display:flex;gap:16px;align-items:flex-start">';
 
-  // ── Flow panel ──
+  // ═══ LEFT: Avatar Card (always visible) ═══
+  html += '<div class="card" style="flex:0 0 220px;text-align:center;padding:20px 16px;position:sticky;top:80px">';
+  html += '<div style="margin-bottom:12px">' + avatarCircle(avatarSi, 88, 0) + '</div>';
+  html += '<div style="font-size:1.05rem;font-weight:700;margin-bottom:2px">' + esc(name) + '</div>';
+  html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px">' + getUserTitle(user) + '</div>';
+  if (achievements.length > 0) {
+    html += '<div style="margin-bottom:10px">' + achievements.map(function(a) { return '<div style="font-size:.7rem;margin:2px 0" title="' + escAttr(a.desc) + '">' + a.icon + ' ' + esc(a.name) + '</div>'; }).join('') + '</div>';
+  }
+  var badges = getUserBadges(user);
+  if (badges.length > 0) {
+    html += '<div style="margin-bottom:10px;border-top:1px dotted var(--border);padding-top:8px"><div style="font-size:.62rem;color:var(--muted);margin-bottom:4px">📜 历史勋章</div>';
+    badges.forEach(function(b) { html += '<div style="font-size:.65rem;margin:2px 0;color:var(--muted)">' + (ROLE_BADGE_ICONS[b.role]||'⭐') + ' ' + esc(b.season) + ' ' + (ROLE_TITLES[b.role]||b.role) + '</div>'; });
+    html += '</div>';
+  }
+  html += '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px">';
+  html += '<div style="font-size:.9rem;font-weight:700;color:var(--accent)">💎 ' + totalNT.toLocaleString() + ' NT</div>';
+  html += '<div style="font-size:.7rem;color:var(--muted);margin-top:2px">🏕️ 活动 ' + campNT.toLocaleString() + '</div>';
+  html += '<div style="font-size:.7rem;color:var(--muted)">✏️ 个人 ' + personalNT.toLocaleString() + '</div>';
+  html += '<div style="font-size:.7rem;color:var(--muted)">📅 ' + daysSince + ' 天</div>';
+  html += '</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:4px">';
+  html += '<button class="btn'+(workspacePanel==='tasks'?' pri':'')+'" onclick="workspacePanel=\'tasks\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">📋 任务</button>';
+  html += '<button class="btn'+(workspacePanel==='flow'?' pri':'')+'" onclick="workspacePanel=\'flow\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">💰 流水</button>';
+  html += '<button class="btn'+(workspacePanel==='settings'?' pri':'')+'" onclick="workspacePanel=\'settings\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">⚙️ 设置</button>';
+  html += '</div></div>';
+
+  // ═══ RIGHT: switches by workspacePanel ═══
+  html += '<div style="flex:1;min-width:0">';
+
   if (workspacePanel === 'flow') {
     var myFlow = finance.filter(function(tx) { return tx.to === name || tx.from === name; }).slice(-30).reverse();
     html += '<div class="card"><h3>💰 近期流水</h3>';
@@ -2670,51 +2703,16 @@ function renderWorkspace() {
     var fFiltered = myFlow.filter(function(tx) { return flowFilter==='all'||(tx.scope||'camp')===flowFilter; });
     if (fFiltered.length === 0) { html += '<div style="color:var(--muted);padding:20px;text-align:center">暂无流水</div>'; }
     else { fFiltered.forEach(function(tx) { var isIn = tx.to === name; html += '<div style="font-size:.78rem;padding:3px 0;border-bottom:1px dotted var(--border)">' + esc(tx.date||'') + ' ' + (isIn?'<span style="color:var(--green)">+'+tx.amount+' NT</span>':'<span style="color:var(--red)">-'+tx.amount+' NT</span>') + ' · ' + esc(tx.task_name||tx.type||'') + '</div>'; }); }
-    html += '<button class="btn" onclick="workspacePanel=\'tasks\';renderWorkspace()" style="font-size:.75rem;margin-top:10px">← 返回任务列表</button></div>';
-  }
-
-  // ── Settings panel ──
-  else if (workspacePanel === 'settings') {
+    html += '</div>';
+  } else if (workspacePanel === 'settings') {
     html += '<div class="card"><h3>⚙️ 设置</h3>';
     html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" disabled style="width:100%"><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
-    html += '<button class="btn" onclick="workspacePanel=\'tasks\';renderWorkspace()" style="font-size:.75rem;margin-top:10px">← 返回任务列表</button></div>';
-  }
-
-  // ── Tasks panel (default): left avatar card + right task area ──
-  else {
-    html += '<div style="display:flex;gap:16px;align-items:flex-start">';
-
-    // ═══ LEFT: Avatar Card (220px) ═══
-    html += '<div class="card" style="flex:0 0 220px;text-align:center;padding:20px 16px;position:sticky;top:80px">';
-    html += '<div style="margin-bottom:12px">' + avatarCircle(avatarSi, 88, 0) + '</div>';
-    html += '<div style="font-size:1.05rem;font-weight:700;margin-bottom:2px">' + esc(name) + '</div>';
-    html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px">' + getUserTitle(user) + '</div>';
-    if (achievements.length > 0) {
-      html += '<div style="margin-bottom:10px">' + achievements.map(function(a) { return '<div style="font-size:.7rem;margin:2px 0" title="' + escAttr(a.desc) + '">' + a.icon + ' ' + esc(a.name) + '</div>'; }).join('') + '</div>';
-    }
-    var badges = getUserBadges(user);
-    if (badges.length > 0) {
-      html += '<div style="margin-bottom:10px;border-top:1px dotted var(--border);padding-top:8px"><div style="font-size:.62rem;color:var(--muted);margin-bottom:4px">📜 历史勋章</div>';
-      badges.forEach(function(b) { html += '<div style="font-size:.65rem;margin:2px 0;color:var(--muted)">' + (ROLE_BADGE_ICONS[b.role]||'⭐') + ' ' + esc(b.season) + ' ' + (ROLE_TITLES[b.role]||b.role) + '</div>'; });
-      html += '</div>';
-    }
-    html += '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px">';
-    html += '<div style="font-size:.9rem;font-weight:700;color:var(--accent)">💎 ' + totalNT.toLocaleString() + ' NT</div>';
-    html += '<div style="font-size:.7rem;color:var(--muted);margin-top:2px">🏕️ 活动 ' + campNT.toLocaleString() + '</div>';
-    html += '<div style="font-size:.7rem;color:var(--muted)">✏️ 个人 ' + personalNT.toLocaleString() + '</div>';
-    html += '<div style="font-size:.7rem;color:var(--muted)">📅 ' + daysSince + ' 天</div>';
     html += '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:4px">';
-    html += '<button class="btn" onclick="workspacePanel=\'flow\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">💰 流水</button>';
-    html += '<button class="btn" onclick="workspacePanel=\'settings\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">⚙️ 设置</button>';
-    html += '</div></div>';
-
-    // ═══ RIGHT: Task Area ═══
-    html += '<div style="flex:1;min-width:0">';
-
+  } else {
+    // ── Tasks (default) ──
     // Pending reviews on top
     if (myPosted.length > 0) {
       html += '<div class="card" style="background:#fef9ee;border-color:#e8c840;margin-bottom:12px"><h3>⏳ 待审核（' + myPosted.reduce(function(s,p){return s+p.pending.length;},0) + '项）</h3>';
@@ -2777,9 +2775,10 @@ function renderWorkspace() {
       html += '</div></div>';
     }
 
-    html += '</div>'; // close right
-    html += '</div>'; // close flex container
-  }
+  } // end if/else (flow/settings/tasks)
+
+  html += '</div>'; // close right
+  html += '</div>'; // close flex container
 
   container.innerHTML = html;
 }
@@ -2919,24 +2918,16 @@ function renderQuestBoard() {
   scopeBtns.forEach(function(s) { fhtml += '<button class="btn'+(questScopeFilter===s.v?' pri':'')+'" onclick="questScopeFilter='+escAttr("'"+s.v+"'")+';renderQuestBoard()" style="font-size:.82rem;padding:4px 14px">'+s.l+'</button>'; });
   fhtml += '<span style="color:var(--border);margin:0 4px;align-self:center">|</span>';
   quickBtns.forEach(function(q) { fhtml += '<button class="btn'+(questQuickFilter===q.v?' pri':'')+'" onclick="questQuickFilter=questQuickFilter==='+escAttr("'"+q.v+"'")+'?'+escAttr("'")+':'+escAttr("'"+q.v+"'")+';renderQuestBoard()" style="font-size:.82rem;padding:4px 14px">'+q.l+'</button>'; });
-  fhtml += '<span style="flex:1"></span>';
-  fhtml += '<button class="btn pri" onclick="showPostTask()" style="font-size:.78rem;padding:5px 14px">＋ 发布委托</button>';
-  fhtml += '</div>';
-
-  // ── Row 2: Type filter (simplified) ──
-  fhtml += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;align-items:center">';
-  [{v:'all',l:'全部'},{v:'主线',l:'主线'},{v:'支线',l:'支线'},{v:'共创',l:'共创'},{v:'隐藏',l:'隐藏'}].forEach(function(c){
-    fhtml += '<button class="btn'+(questFilter===c.v||(!questFilter&&c.v==='all')?' pri':'')+'" onclick="questFilter=questFilter===c.v||(c.v==='+escAttr('all')+'&&!questFilter)?'+escAttr('')+':c.v;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+c.l+'</button>';
-  });
-  // Inline tag input
+  // Inline tag chips (admin/npc only)
   if (currentUser && (currentUser.role==='admin'||currentUser.role==='npc')) {
-    fhtml += '<span style="color:var(--border);margin:0 3px;font-size:.7rem">|</span>';
     var customTags = (data.custom_tags || []);
     customTags.forEach(function(ct){
-      fhtml += '<span style="display:inline-flex;align-items:center;gap:2px;font-size:.7rem;background:'+(questLocFilter===ct?'var(--accent);color:#fff':'var(--bg)')+';border:1px solid var(--border);border-radius:4px;padding:2px 6px;cursor:pointer" onclick="questLocFilter=questLocFilter===ct?\'\':ct;renderQuestBoard()">'+esc(ct)+'<button onclick="event.stopPropagation();var t=data.custom_tags||[];t.splice(t.indexOf(\''+escAttr(ct)+'\'),1);localStorage.setItem(\'camp_data\',JSON.stringify(data));renderQuestBoard()" style="cursor:pointer;opacity:.4;font-size:.6rem;border:none;background:none;margin-left:2px">×</button></span>';
+      fhtml += '<button class="btn'+(questLocFilter===ct?' pri':'')+'" onclick="questLocFilter=questLocFilter===ct?\'\':ct;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+esc(ct)+'<span onclick="event.stopPropagation();var t=data.custom_tags||[];t.splice(t.indexOf(\''+escAttr(ct)+'\'),1);localStorage.setItem(\'camp_data\',JSON.stringify(data));renderQuestBoard()" style="cursor:pointer;opacity:.4;font-size:.6rem;margin-left:3px" title="删除标签">×</span></button>';
     });
-    fhtml += '<input id="questNewTag" placeholder="+标签" style="width:56px;font-size:.68rem;padding:2px 6px;border:1px dashed var(--border);border-radius:4px;background:transparent" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v&&(!data.custom_tags||data.custom_tags.indexOf(v)<0)){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(v);localStorage.setItem(\'camp_data\',JSON.stringify(data));this.value=\'\';renderQuestBoard()}}">';
+    fhtml += '<input id="questNewTag" placeholder="+标签" style="width:48px;font-size:.68rem;padding:2px 4px;border:1px dashed var(--border);border-radius:4px;background:transparent" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v&&(!data.custom_tags||data.custom_tags.indexOf(v)<0)){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(v);localStorage.setItem(\'camp_data\',JSON.stringify(data));this.value=\'\';renderQuestBoard()}}">';
   }
+  fhtml += '<span style="flex:1"></span>';
+  fhtml += '<button class="btn pri" onclick="showPostTask()" style="font-size:.78rem;padding:5px 14px">＋ 发布委托</button>';
   fhtml += '</div>';
 
   // ── Unclaimed reminder ──
@@ -2978,6 +2969,9 @@ function renderQuestBoard() {
   });
   var claimable = filtered.filter(function(t) { var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var isFull = t.max_slots > 0 && activeClaimants.length >= t.max_slots; return !myClaim && !isFull; });
   var claimed = filtered.filter(function(t) { var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); return myClaim && myClaim.status !== 'dropped'; });
+  // Sort: 进行中 → 已提交 → 已完成
+  var statusOrder = { 'in_progress':0, 'triggered':0, 'submitted':1, 'rejected':1, 'completed':2 };
+  claimed.sort(function(a, b) { var ca = (a.claimants||[]).find(function(c){return c.name===name;}), cb = (b.claimants||[]).find(function(c){return c.name===name;}); return (statusOrder[(ca?ca.status:'')]||3) - (statusOrder[(cb?cb.status:'')]||3); });
   var cardOpts = { context:'questboard', userName:name, isMember:true };
   var html = '<div class="card"><h3>🟢 可领取（' + claimable.length + '项）</h3>';
   if (claimable.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">暂无可用委托</div>'; }
