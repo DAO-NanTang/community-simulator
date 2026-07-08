@@ -1334,6 +1334,14 @@ document.addEventListener('DOMContentLoaded', function() {
   migrateExistingMembers();
   // 1b. Seed initial codes and admin account
   seedInitialInviteCode();
+  // 1c. Backward compat: add UID to existing users
+  var allUsers = getUsers();
+  var needSave = false;
+  Object.keys(allUsers).forEach(function(n) {
+    if (!allUsers[n].uid) { allUsers[n].uid = generateUID(); needSave = true; }
+  });
+  if (needSave) saveUsers(allUsers);
+
   seedAdminAccount();
 
   // 2. Check active session
@@ -1462,12 +1470,12 @@ function migrateExistingMembers() {
   var users = getUsers();
   var staffNames = getStaffNames();
   (data.staff_cards || []).forEach(function(c) {
-    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10) };
+    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10), uid: generateUID() };
   });
   Object.values(data.members || {}).forEach(function(m) {
     if (users[m.name]) return;
     var isStaff = staffNames.some(function(s) { return m.name === s; });
-    users[m.name] = { name: m.name, role: isStaff ? 'builder' : 'adventurer', password: null, avatar_seed: m.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10) };
+    users[m.name] = { name: m.name, role: isStaff ? 'builder' : 'adventurer', password: null, avatar_seed: m.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10), uid: generateUID() };
   });
   saveUsers(users);
 }
@@ -1515,6 +1523,8 @@ function doRegister() {
   if (!result.ok) { errEl.textContent = result.error; return; }
   loginUser(name, password, false);
 }
+function generateUID() { return 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
 function registerUser(name, password, role, avatarSeed, inviteCode) {
   var users = getUsers();
   if (users[name]) return { ok: false, error: '这个名字已经被注册了' };
@@ -1523,7 +1533,7 @@ function registerUser(name, password, role, avatarSeed, inviteCode) {
     if (!inviteCode) return { ok: false, error: '需要世界码' };
     if (!codes.includes(inviteCode)) return { ok: false, error: '世界码无效' };
   }
-  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, season: '', created: new Date().toISOString().slice(0, 10), world_id: (role === 'adventurer') ? inviteCode : null };
+  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, season: '', created: new Date().toISOString().slice(0, 10), world_id: (role === 'adventurer') ? inviteCode : null, uid: generateUID() };
   saveUsers(users);
   if (!data.members) data.members = {};
   if (!data.members[name]) { data.members[name] = { name: name, role: '', avatar_seed: avatarSeed, gender: '' }; localStorage.setItem('camp_data', JSON.stringify(data)); }
