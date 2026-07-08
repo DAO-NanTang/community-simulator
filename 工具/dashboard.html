@@ -496,12 +496,12 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="budget" onclick="switchTab('budget')">💰 资源金库</button>
     <button class="tab" data-tab="settlement" onclick="switchTab('settlement')">🧾 通关结算</button>
+    <span style="flex:1"></span>
     <span class="dropdown" style="position:relative;align-self:center">
       <button class="tab" onclick="toggleDropdown('hubMenu');renderHubDropdown()" style="cursor:pointer">🗺️ 南塘云村</button>
-      <div id="hubMenu" class="dropdown-menu hidden" style="position:absolute;left:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px"></div>
+      <div id="hubMenu" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px"></div>
     </span>
-    <span style="flex:1"></span>
-    <span class="dropdown" style="position:relative;align-self:center;margin-left:8px">
+    <span class="dropdown" style="position:relative;align-self:center;margin-left:12px">
       <button class="btn" onclick="toggleDropdown('gearMenu')" title="工具" style="font-size:.8rem;padding:4px 8px"><i class="ph-duotone ph-gear"></i></button>
       <div id="gearMenu" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:170px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
         <button class="btn" onclick="loadData();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-folder-open"></i> 加载数据</button>
@@ -522,12 +522,12 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务大厅</button>
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
+    <span style="flex:1"></span>
     <span class="dropdown" style="position:relative;align-self:center">
       <button class="tab" onclick="toggleDropdown('hubMenu2');renderHubDropdown()" style="cursor:pointer">🗺️ 南塘云村</button>
-      <div id="hubMenu2" class="dropdown-menu hidden" style="position:absolute;left:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px"></div>
+      <div id="hubMenu2" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px"></div>
     </span>
-    <span style="flex:1"></span>
-    <span class="dropdown" style="position:relative;align-self:center;margin-left:4px">
+    <span class="dropdown" style="position:relative;align-self:center;margin-left:12px">
       <button class="btn" onclick="toggleDropdown('gearMenuAdventure')" title="工具" style="font-size:.8rem;padding:4px 8px"><i class="ph-duotone ph-gear"></i></button>
       <div id="gearMenuAdventure" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:140px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
         <button class="btn" onclick="showVillageSquare();toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-house"></i> 回南塘村口</button>
@@ -3298,7 +3298,7 @@ function openHubSlide(page) {
   var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
   // Position like invite sidebar - relative to hub dropdown
-  var hubBtn = document.getElementById('hubMenu') || document.getElementById('hubMenu2');
+  var hubBtn = document.getElementById('hubMenu'); if (!hubBtn || hubBtn.classList.contains('hidden')) hubBtn = document.getElementById('hubMenu2');
   if (hubBtn && panel) {
     var br = hubBtn.parentElement.getBoundingClientRect();
     panel.style.top = Math.min(br.bottom + 4, window.innerHeight - 400) + 'px';
