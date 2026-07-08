@@ -1058,8 +1058,12 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <div class="npc-bubble">
       <div class="npc-avatar">🤖</div>
       <div style="flex:1">
-        <div style="font-weight:700;margin-bottom:4px">小云 · 任务大厅接待员</div>
-        <div style="font-size:.85rem;color:var(--text)" id="npcDialogue">你好！我是小云，任务大厅的接待员～ 今天有什么可以帮你的？想找任务还是发布委托？</div>
+        <div style="font-weight:700;margin-bottom:2px">小云 · 任务大厅接待员</div>
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px" id="npcDialogue">你好！我是小云～ 想找什么任务？</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <input type="text" id="villageSearchInput" placeholder="🔍 搜索任务名称…" oninput="renderVillageQuestHall()" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;background:var(--bg);color:var(--text)">
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:.7rem;color:var(--muted);flex-wrap:wrap" id="npcTimelineBar"></div>
       </div>
     </div>
     <div style="margin-bottom:14px;display:flex;gap:6px;flex-wrap:wrap" id="villageQuickBar"></div>
@@ -1839,12 +1843,24 @@ function closeVillageModal(type) {
   if (el) el.classList.add('hidden');
 }
 
-var villageScopeFilter = 'all', villageQuickFilter = '', villageCatFilter = '';
+var villageScopeFilter = 'all', villageQuickFilter = '', villageCatFilter = '', villageSearchText = '';
 function renderVillageQuestHall() {
   var tasks = data.tasks || []; var name = currentUser ? currentUser.name : ''; var today = new Date().toISOString().slice(0,10);
   var isMember = currentUser && (currentUser.role==='admin'||currentUser.role==='builder'||currentUser.role==='adventurer');
 
-  // ── NPC + Search bar ──
+  // ── Timeline bar in NPC area ──
+  var dates = {}; tasks.forEach(function(t){ if(t.deadline) dates[t.deadline]=true; });
+  var sortedDates = Object.keys(dates).sort();
+  var tlHTML = '<span style="margin-right:4px">📅</span>';
+  sortedDates.slice(0,14).forEach(function(d){ tlHTML += '<span style="cursor:pointer;padding:1px 5px;border-radius:3px;'+(d===today?'background:var(--accent);color:#fff;font-weight:600':'')+'" onclick="villageSearchText=\''+d+'\';document.getElementById(\'villageSearchInput\').value=\''+d+'\';renderVillageQuestHall()">'+d.slice(5)+'</span>'; });
+  tlHTML += ' <span style="cursor:pointer;color:var(--accent);margin-left:4px" onclick="alert(\'📦 往期档案功能即将开放\')">📦 往期档案</span>';
+  var el = document.getElementById('npcTimelineBar'); if (el) el.innerHTML = tlHTML;
+
+  // ── Search text ──
+  var si = document.getElementById('villageSearchInput');
+  if (si && si.value !== villageSearchText) villageSearchText = si.value.trim().toLowerCase();
+
+  // ── Filter bar ──
   var barHTML = '';
   // Scope + Quick filters
   barHTML += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">';
@@ -1869,6 +1885,7 @@ function renderVillageQuestHall() {
   var urgent = active.filter(function(t){ if(!t.deadline)return false; var d=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); return (d-td)/86400000<=2&&(d-td)/86400000>=0; }).length;
 
   var filtered = active.filter(function(t) {
+    if (villageSearchText && t.name.toLowerCase().indexOf(villageSearchText)===-1 && t.deadline.indexOf(villageSearchText)===-1) return false;
     if (villageScopeFilter!=='all' && (t.scope||'camp')!==villageScopeFilter) return false;
     if (villageCatFilter && villageCatFilter!=='全部' && t.category!==villageCatFilter) return false;
     if (villageQuickFilter==='today' && t.deadline!==today) return false;
