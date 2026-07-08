@@ -1071,6 +1071,24 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   </div>
 </div>
 
+<!-- Submit Task Modal -->
+<div class="modal-overlay hidden" id="submitTaskModal">
+  <div class="modal" style="max-width:480px">
+    <h2>📤 提交任务</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px" id="submitTaskName">—</p>
+    <label>📝 完成说明（必填）</label>
+    <textarea id="submitNote" rows="4" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;background:var(--bg);color:var(--text);resize:vertical" placeholder="描述你完成的内容…"></textarea>
+    <label style="margin-top:10px">🖼️ 图片链接（可选，一行一个）</label>
+    <textarea id="submitImages" rows="2" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;background:var(--bg);color:var(--text);resize:vertical" placeholder="https://..."></textarea>
+    <label style="margin-top:10px">🔗 参考链接（可选，一行一个）</label>
+    <textarea id="submitLinks" rows="2" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;background:var(--bg);color:var(--text);resize:vertical" placeholder="https://..."></textarea>
+    <div class="actions" style="margin-top:14px">
+      <button class="btn" onclick="closeSubmitModal()">取消</button>
+      <button class="btn pri" onclick="confirmSubmit()">✅ 确认提交</button>
+    </div>
+  </div>
+</div>
+
 
 
 <!-- Member Edit Modal -->
@@ -2342,7 +2360,7 @@ function renderQuestBoard() {
   else { html += '<div class="quest-grid">'; claimable.forEach(function(t) { var idx = tasks.indexOf(t); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var slots = t.max_slots > 0 ? activeClaimants.length + '/' + t.max_slots : '不限'; html += '<div class="quest-card"><div class="quest-card-header"><span class="quest-card-badge">' + ({'主线':'M','支线':'S','共创':'C','隐藏':'H'}[t.type]||'M') + '</span><span class="quest-card-type">' + esc(t.type||'') + ' · ' + esc(t.category||'') + '</span></div><div class="quest-card-title">' + esc(t.name) + '</div><div class="quest-card-meta"><span>🧙 ' + esc(t.poster||'?') + '</span><span>📅 ' + esc(t.deadline||'—') + '</span><span>👥 ' + slots + '</span></div>' + (t.note ? '<div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">📝 ' + esc(t.note) + '</div>' : '') + '<div style="display:flex;justify-content:space-between;align-items:center"><div class="quest-card-reward">💎 ' + (t.points||0) + ' NT</div><button class="btn pri" onclick="claimTask(' + idx + ')" style="font-size:.75rem;padding:4px 12px">⚔️ 领取委托</button></div></div>'; }); html += '</div>'; }
   html += '</div><div class="card"><h3>📋 已领取（' + claimed.length + '项）</h3>';
   if (claimed.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">还没有领取任何委托</div>'; }
-  else { claimed.forEach(function(t) { var idx = tasks.indexOf(t); var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); var statusLabel = { 'in_progress': '🔄进行中', 'triggered': '🔓待领取', 'submitted': '⏳审核中', 'rejected': '❌已退回' }; html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:.82rem"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><span><b>' + esc(t.name) + '</b> · NT ' + (t.points||0) + ' · <span style="font-size:.75rem">' + (statusLabel[myClaim.status]||myClaim.status) + '</span></span><span style="display:flex;gap:4px">' + (myClaim.status === 'in_progress' || myClaim.status === 'triggered' || myClaim.status === 'rejected' ? '<button class="btn green" onclick="submitTask(' + idx + ')" style="font-size:.7rem;padding:3px 8px">提交完成</button>' : '') + (myClaim.status === 'in_progress' || myClaim.status === 'triggered' ? '<button class="btn" onclick="dropTask(' + idx + ')" style="font-size:.7rem;padding:3px 8px">🏳️ 放弃</button>' : '') + '</span></div>' + (myClaim.submit_note ? '<div style="font-size:.72rem;color:var(--muted);margin-top:4px">📝 ' + esc(myClaim.submit_note) + '</div>' : '') + (myClaim.review_note ? '<div style="font-size:.72rem;color:var(--red);margin-top:2px">💬 退回原因：' + esc(myClaim.review_note) + '</div>' : '') + '</div>'; }); }
+  else { claimed.forEach(function(t) { var idx = tasks.indexOf(t); var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); var statusLabel = { 'in_progress': '🔄进行中', 'triggered': '🔓待领取', 'submitted': '⏳审核中', 'rejected': '❌已退回' }; html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:.82rem"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><span><b>' + esc(t.name) + '</b> · NT ' + (t.points||0) + ' · <span style="font-size:.75rem">' + (statusLabel[myClaim.status]||myClaim.status) + '</span></span><span style="display:flex;gap:4px">' + (myClaim.status === 'in_progress' || myClaim.status === 'triggered' || myClaim.status === 'rejected' ? '<button class="btn green" onclick="submitTask(' + idx + ')" style="font-size:.7rem;padding:3px 8px">提交完成</button>' : '') + (myClaim.status === 'in_progress' || myClaim.status === 'triggered' ? '<button class="btn" onclick="dropTask(' + idx + ')" style="font-size:.7rem;padding:3px 8px">🏳️ 放弃</button>' : '') + '</span></div>' + (myClaim.submission ? '<div style="font-size:.72rem;color:var(--muted);margin-top:4px">📝 ' + esc(myClaim.submission.note||myClaim.submit_note||'') + (myClaim.submission.images||[]).filter(Boolean).map(function(u){return ' <a href="'+escAttr(u)+'" target="_blank" style="font-size:.7rem">🖼️</a>';}).join('') + (myClaim.submission.links||[]).filter(Boolean).map(function(u){return ' <a href="'+escAttr(u)+'" target="_blank" style="font-size:.7rem">🔗</a>';}).join('') + '</div>' : (myClaim.submit_note ? '<div style="font-size:.72rem;color:var(--muted);margin-top:4px">📝 ' + esc(myClaim.submit_note) + '</div>' : '')) + (myClaim.review_note ? '<div style="font-size:.72rem;color:var(--red);margin-top:2px">💬 退回原因：' + esc(myClaim.review_note) + '</div>' : '') + '</div>'; }); }
   html += '</div>'; container.innerHTML = html;
 }
 
@@ -2393,7 +2411,34 @@ function renderNTAdmin() {
 
 // ── Task Actions ──
 function claimTask(idx) { if (!currentUser) { alert('请先登录'); return; } var t = data.tasks[idx]; if (!t || !t.claimants) return; var alreadyClaimed = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (alreadyClaimed) { alert('你已经领取过该委托'); return; } var activeCount = t.claimants.filter(function(c) { return c.status !== 'dropped'; }).length; if (t.max_slots > 0 && activeCount >= t.max_slots) { alert('名额已满'); return; } t.claimants.push({ name: currentUser.name, claimed_at: new Date().toISOString().slice(0,10), status: 'in_progress' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace(); setStatus('已领取：' + t.name); }
-function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; var note = prompt('描述你完成的内容（可选）：'); myClaim.status = 'submitted'; myClaim.submitted_at = new Date().toISOString().slice(0,10); myClaim.submit_note = note || ''; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace(); setStatus('已提交：' + t.name); }
+var submitIdx = -1;
+function showSubmitModal(idx) {
+  submitIdx = idx;
+  var t = data.tasks[idx];
+  document.getElementById('submitTaskName').textContent = t.name;
+  document.getElementById('submitNote').value = '';
+  document.getElementById('submitImages').value = '';
+  document.getElementById('submitLinks').value = '';
+  document.getElementById('submitTaskModal').classList.remove('hidden');
+}
+function closeSubmitModal() { document.getElementById('submitTaskModal').classList.add('hidden'); submitIdx = -1; }
+function confirmSubmit() {
+  var idx = submitIdx; if (idx < 0) return;
+  var note = document.getElementById('submitNote').value.trim();
+  if (!note) { alert('请填写完成说明'); return; }
+  var images = document.getElementById('submitImages').value.trim().split('\n').filter(function(l){return l;});
+  var links = document.getElementById('submitLinks').value.trim().split('\n').filter(function(l){return l;});
+  var t = data.tasks[idx]; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; });
+  myClaim.status = 'submitted'; myClaim.submitted_at = new Date().toISOString().slice(0,10);
+  myClaim.submit_note = note;
+  myClaim.submission = { note: note, images: images, links: links, submitted_at: myClaim.submitted_at };
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  renderQuestBoard(); renderMyProfile();
+  if (!document.getElementById('tab-workspace').classList.contains('hidden')) renderWorkspace();
+  setStatus('已提交：' + t.name);
+  closeSubmitModal();
+}
+function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; showSubmitModal(idx); }
 function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace(); setStatus('已放弃：' + t.name); }
 function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var targetName = prompt('输入要触发的冒险者姓名：'); if (!targetName) return; if (!t.claimants) t.claimants = []; var alreadyThere = t.claimants.find(function(c) { return c.name === targetName; }); if (alreadyThere) { alert('该冒险者已被触发'); return; } t.claimants.push({ name: targetName, claimed_at: new Date().toISOString().slice(0,10), status: 'triggered' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已触发隐藏任务给：' + targetName); }
 function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; if (action === 'approve') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); if (!data.finance) data.finance = []; data.finance.push({ type: 'task_reward', from: '系统', to: claimantName, amount: t.points || 0, task_name: t.name, date: new Date().toISOString().slice(0,10), confirmed_by: currentUser.name, scope: t.scope || 'camp' }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
