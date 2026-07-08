@@ -2053,15 +2053,7 @@ function renderVillageQuestHall() {
   });
 
   // ── Unclaimed banner ──
-  var bannerHTML = '';
-  if (unclaimed>0||urgent>0) {
-    bannerHTML += '<div style="background:#fef9c3;border:1px solid #e5d980;border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:.8rem">';
-    if (unclaimed>0) bannerHTML += '⚠️ 还有 <b>'+unclaimed+'</b> 个委托无人认领 ';
-    if (urgent>0) bannerHTML += '⏰ <b>'+urgent+'</b> 个即将截止';
-    bannerHTML += '</div>';
-  }
-
-  document.getElementById('villageQuickBar').innerHTML = barHTML + bannerHTML;
+  document.getElementById('villageQuickBar').innerHTML = barHTML; // banner added after grouping
 
   // ── Group then render with shared card function ──
   var canClaim = [], myTasks = [], doneTasks = [];
@@ -2086,6 +2078,18 @@ function renderVillageQuestHall() {
   urgentClaim.sort(sortByDeadline); normalClaim.sort(sortByPosted);
   myTasks.sort(function(a,b){ var ca=a.claimants?a.claimants.find(function(c){return c.name===name;}):null; var cb=b.claimants?b.claimants.find(function(c){return c.name===name;}):null; var sa=ca&&ca.status==='in_progress'?0:1; var sb=cb&&cb.status==='in_progress'?0:1; if(sa!==sb)return sa-sb; return sortByDeadline(a,b); });
   doneTasks.sort(sortByPosted);
+
+  // Banner: real counts from grouped results
+  var bannerHTML = '';
+  var realUnclaimed = normalClaim.length;
+  var realUrgent = urgentClaim.length;
+  if (realUnclaimed>0||realUrgent>0) {
+    bannerHTML += '<div style="background:#fef9c3;border:1px solid #e5d980;border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:.8rem">';
+    if (realUnclaimed>0) bannerHTML += '⚠️ 还有 <b>'+realUnclaimed+'</b> 个委托无人认领 ';
+    if (realUrgent>0) bannerHTML += '⏰ <b>'+realUrgent+'</b> 个即将截止';
+    bannerHTML += '</div>';
+  }
+  document.getElementById('villageQuickBar').innerHTML = (document.getElementById('villageQuickBar').innerHTML || '') + bannerHTML;
 
   var cardOpts = { context:'village', userName:name, isMember:isMember };
   var cardHTML = '';
