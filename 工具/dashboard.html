@@ -2445,6 +2445,12 @@ function renderQuestBoard() {
   quickBtns.forEach(function(q) { fhtml += '<button class="btn'+(questQuickFilter===q.v?' pri':'')+'" onclick="questQuickFilter=questQuickFilter===\''+q.v+'\'?\'\':\''+q.v+'\';renderQuestBoard()" style="font-size:.75rem;padding:3px 10px">'+q.l+'</button>'; });
   fhtml += '</div>';
 
+  // ── Category filter bar ──
+  var cats = ['全部','课程','宣传','生活','财务','管理','其他'];
+  fhtml += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px" id="questCatBar">';
+  cats.forEach(function(c) { fhtml += '<button class="btn'+(questCatFilter===c||(!questCatFilter&&c==='全部')?' pri':'')+'" onclick="questCatFilter=questCatFilter===c||(c===\"全部\"&&!questCatFilter)?\"\":c;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+c+'</button>'; });
+  fhtml += '</div>';
+
   // ── Unclaimed reminder ──
   var unclaimedCount = tasks.filter(function(t) { return t.status==='active'&&t.claimants&&(t.claimants||[]).filter(function(c){return c.status!=='dropped';}).length===0; }).length;
   var urgentCount = tasks.filter(function(t) { if (t.status!=='active'||!t.deadline) return false; var dl=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); return (dl-td)/86400000 <= 1 && (dl-td)/86400000 >= 0; }).length;
@@ -2472,6 +2478,8 @@ function renderQuestBoard() {
     if (questQuickFilter === 'urgent') { var dl = t.deadline ? new Date(t.deadline+'T00:00:00') : null; var td = new Date(today+'T00:00:00'); if (!dl || (dl-td)/86400000 > 2) return false; }
     if (questQuickFilter === 'need_people' && (t.max_slots <= 0 || activeClaimants.length >= t.max_slots)) return false;
     if (questQuickFilter === 'submitted_all') { var allSub = activeClaimants.length > 0 && activeClaimants.every(function(c){return c.status==='submitted'||c.status==='completed';}); if (!allSub) return false; }
+    // category filter
+    if (questCatFilter && questCatFilter !== '全部' && t.category !== questCatFilter) return false;
     // type filter
     if (questFilter === 'claimable') return isClaimable; if (questFilter === 'claimed') return isClaimed; if (questFilter !== 'all') return t.type === questFilter;
     return true;
@@ -2480,13 +2488,45 @@ function renderQuestBoard() {
   var claimed = filtered.filter(function(t) { var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); return myClaim && myClaim.status !== 'dropped'; });
   var html = '<div class="card"><h3>🟢 可领取（' + claimable.length + '项）</h3>';
   if (claimable.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">暂无可用委托</div>'; }
-  else { html += '<div class="quest-grid">'; claimable.forEach(function(t) { var idx = tasks.indexOf(t); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var slots = t.max_slots > 0 ? activeClaimants.length + '/' + t.max_slots : '不限'; html += '<div class="quest-card"><div class="quest-card-header"><span class="quest-card-badge">' + ({'主线':'M','支线':'S','共创':'C','隐藏':'H'}[t.type]||'M') + '</span><span class="quest-card-type">' + esc(t.type||'') + ' · ' + esc(t.category||'') + '</span></div><div class="quest-card-title">' + esc(t.name) + '</div><div class="quest-card-meta"><span>🧙 ' + esc(t.poster||'?') + '</span><span>📅 ' + esc(t.deadline||'—') + '</span><span>👥 ' + slots + '</span></div>' + (t.note ? '<div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">📝 ' + esc(t.note) + '</div>' : '') + '<div style="display:flex;justify-content:space-between;align-items:center"><div class="quest-card-reward">💎 ' + (t.points||0) + ' NT</div><button class="btn pri" onclick="claimTask(' + idx + ')" style="font-size:.75rem;padding:4px 12px">⚔️ 领取委托</button></div></div>'; }); html += '</div>'; }
+  else { html += '<div class="quest-grid">'; claimable.forEach(function(t) { var idx = tasks.indexOf(t); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var slots = t.max_slots > 0 ? activeClaimants.length + '/' + t.max_slots : '不限'; html += '<div class="quest-card"><div class="quest-card-header"><span class="quest-card-badge">' + ({'主线':'M','支线':'S','共创':'C','隐藏':'H'}[t.type]||'M') + '</span><span class="quest-card-type">' + esc(t.type||'') + ' · ' + esc(t.category||'') + '</span><span style="font-size:.6rem;margin-left:4px;padding:1px 4px;border-radius:3px;background:'+((t.scope||'camp')==='personal'?'#f0e0f0':'#e0f0e0')+';color:'+((t.scope||'camp')==='personal'?'#8b5e9e':'#5a8a3c')+'">'+((t.scope||'camp')==='personal'?'✏️私人':'🏕️营地')+'</span></div><div class="quest-card-title">' + esc(t.name) + '</div><div class="quest-card-meta"><span>🧙 ' + esc(t.poster||'?') + '</span><span>📅 ' + esc(t.deadline||'—') + '</span><span>👥 ' + slots + '</span></div>' + (t.note ? '<div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">📝 ' + esc(t.note) + '</div>' : '') + '<div style="display:flex;justify-content:space-between;align-items:center"><div class="quest-card-reward">💎 ' + (t.points||0) + ' NT</div><button class="btn pri" onclick="claimTask(' + idx + ')" style="font-size:.75rem;padding:4px 12px">⚔️ 领取委托</button></div></div>'; }); html += '</div>'; }
   html += '</div><div class="card"><h3>📋 已领取（' + claimed.length + '项）</h3>';
   if (claimed.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">还没有领取任何委托</div>'; }
   else { claimed.forEach(function(t) { var idx = tasks.indexOf(t); var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); var statusLabel = { 'in_progress': '🔄进行中', 'triggered': '🔓待领取', 'submitted': '⏳审核中', 'rejected': '❌已退回' }; html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:.82rem"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px"><span><b>' + esc(t.name) + '</b> · NT ' + (t.points||0) + ' · <span style="font-size:.75rem">' + (statusLabel[myClaim.status]||myClaim.status) + '</span></span><span style="display:flex;gap:4px">' + (myClaim.status === 'in_progress' || myClaim.status === 'triggered' || myClaim.status === 'rejected' ? '<button class="btn green" onclick="submitTask(' + idx + ')" style="font-size:.7rem;padding:3px 8px">提交完成</button>' : '') + (myClaim.status === 'in_progress' || myClaim.status === 'triggered' ? '<button class="btn" onclick="dropTask(' + idx + ')" style="font-size:.7rem;padding:3px 8px">🏳️ 放弃</button>' : '') + '</span></div>' + (myClaim.submission ? '<div style="font-size:.72rem;color:var(--muted);margin-top:4px">📝 ' + esc(myClaim.submission.note||myClaim.submit_note||'') + (myClaim.submission.images||[]).filter(Boolean).map(function(u){return ' <a href="'+escAttr(u)+'" target="_blank" style="font-size:.7rem">🖼️</a>';}).join('') + (myClaim.submission.links||[]).filter(Boolean).map(function(u){return ' <a href="'+escAttr(u)+'" target="_blank" style="font-size:.7rem">🔗</a>';}).join('') + '</div>' : (myClaim.submit_note ? '<div style="font-size:.72rem;color:var(--muted);margin-top:4px">📝 ' + esc(myClaim.submit_note) + '</div>' : '')) + (myClaim.review_note ? '<div style="font-size:.72rem;color:var(--red);margin-top:2px">💬 退回原因：' + esc(myClaim.review_note) + '</div>' : '') + '</div>'; }); }
-  html += '</div>'; container.innerHTML = fhtml + html;
+  html += '</div>';
+
+  // ── Archive: completed/confirmed tasks ──
+  var archiveTasks = tasks.filter(function(t) { return t.status==='已完成'||t.status==='已确认'; });
+  if (archiveTasks.length > 0) {
+    html += '<div class="card"><h3 style="cursor:pointer" onclick="var el=document.getElementById(\"questArchive\");el.style.display=el.style.display===\"none\"?\"\":\"none\";this.textContent=el.style.display===\"none\"?\"📦 已归档（'+archiveTasks.length+'项）▾\":\"📦 已归档（'+archiveTasks.length+'项）▴\"">📦 已归档（'+archiveTasks.length+'项）▾</h3>';
+    html += '<div id="questArchive" style="display:none;font-size:.78rem">';
+    archiveTasks.slice(0,20).forEach(function(t) {
+      html += '<div style="padding:3px 0;border-bottom:1px dotted var(--border)">✅ '+esc(t.name)+' · '+esc(t.assignee||'')+' · NT'+(t.points||0)+'</div>';
+    });
+    if (archiveTasks.length > 20) html += '<div style="color:var(--muted);text-align:center;padding:4px">还有 '+(archiveTasks.length-20)+' 条...</div>';
+    html += '</div></div>';
+  }
+
+  // ── Recent submissions feed ──
+  var recentSubs = [];
+  tasks.forEach(function(t) {
+    (t.claimants||[]).forEach(function(c) {
+      if (c.status==='submitted' && c.submitted_at) recentSubs.push({person:c.name, task:t.name, date:c.submitted_at});
+      if (c.status==='completed' && c.reviewed_at) recentSubs.push({person:c.name, task:t.name, date:c.reviewed_at, done:true});
+    });
+  });
+  recentSubs.sort(function(a,b){ return b.date.localeCompare(a.date); });
+  if (recentSubs.length > 0) {
+    html += '<div class="card"><h3>🔥 最近提交</h3>';
+    recentSubs.slice(0,5).forEach(function(s) {
+      html += '<div style="font-size:.75rem;padding:2px 0;color:var(--muted)">'+esc(s.person)+' '+(s.done?'✅ 完成了':'📤 提交了')+'「'+esc(s.task)+'」· '+esc(s.date)+'</div>';
+    });
+    html += '</div>';
+  }
+
+  container.innerHTML = fhtml + html;
 }
 var questQuickFilter = '';
+var questCatFilter = '';
 
 // ── Adventurer: Leaderboard ──
 function renderLeaderboard() {
