@@ -2921,7 +2921,7 @@ function renderQuestCard(t, opts) {
 
   var h = '<div style="border:1px solid '+(grey||locked?'#e0d8c8':'var(--border)')+';border-radius:10px;padding:10px 14px;margin-bottom:6px;'+(grey||locked?'opacity:.55;background:#fafaf5':'')+'">';
   // Header row (click to expand)
-  h += '<div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="event.stopPropagation();window._cardExpanded[\''+escAttr(t.name)+'_'+ctx+'\']=!window._cardExpanded[\''+escAttr(t.name)+'_'+ctx+'\'];'+(_refreshFn[ctx]||'')+'">';
+  h += '<div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="event.stopPropagation();toggleCardExpand(\''+escAttr(t.name)+'\',\''+ctx+'\')">';
   h += '<span style="font-size:.6rem;font-weight:700;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px">'+typeBadge+'</span>';
   h += '<span style="font-weight:600;flex:1;'+(grey||locked?'color:var(--muted)':'')+'">'+esc(t.name)+'</span>';
   h += '<span style="font-size:.6rem;background:'+scopeColorBg+';color:'+scopeColorTxt+';padding:1px 5px;border-radius:3px">'+scopeTag+'</span>'+coopWarn;
@@ -2983,6 +2983,13 @@ function renderQuestCard(t, opts) {
   return h;
 }
 
+function toggleCardExpand(name, ctx) {
+  if (!window._cardExpanded) window._cardExpanded = {};
+  window._cardExpanded[name+'_'+ctx] = !window._cardExpanded[name+'_'+ctx];
+  var refreshMap = { village:'renderVillageQuestHall', questboard:'renderQuestBoard', workspace:'renderWorkspace', member:null, taskhall:null };
+  var fn = refreshMap[ctx];
+  if (fn && typeof window[fn] === 'function') window[fn]();
+}
 var questScopeFilter = 'all'; // 'all' | 'camp' | 'personal'
 function renderQuestBoard() {
   var container = document.getElementById('questBoardContent'); if (!container) return; var tasks = data.tasks || []; var name = currentUser ? currentUser.name : '';
