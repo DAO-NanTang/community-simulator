@@ -440,6 +440,8 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <button class="btn" onclick="exportData();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-download"></i> 导出数据</button>
         <button class="btn" onclick="showInviteManager();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-keyhole"></i> 邀请码</button>
         <hr style="border-color:var(--border);margin:2px 0">
+        <button class="btn" onclick="showVillageSquare();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-house"></i> 回南塘村口</button>
+        <button class="btn" onclick="alert('🗺️ 实景地图建设中，敬请期待');toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-map-trifold"></i> 实景地图</button>
         <hr style="border-color:var(--border);margin:2px 0">
         <button class="btn" onclick="logoutUser();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-sign-out"></i> 退出</button>
       </div>
@@ -987,20 +989,42 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 
   <!-- 村口占位页（NPC/游客） -->
   <div id="plazaPlaceholder" class="hidden">
-    <div class="card" style="text-align:center;max-width:500px;margin:40px auto">
-      <div style="font-size:4rem;margin-bottom:8px">🏕️</div><h2>南塘村口</h2>
-      <p style="color:var(--muted);margin:8px 0">即将开放——这里是所有人的公共空间</p>
-      <div style="background:var(--bg);border-radius:8px;padding:14px;margin:16px 0;text-align:left;font-size:.85rem">
-        <div style="margin:4px 0">👤 <b id="ppName">—</b></div><div style="margin:4px 0">🏷️ <span id="ppRole">—</span></div><div style="margin:4px 0">📅 注册于 <span id="ppCreated">—</span></div>
+    <div id="villageSquare" style="max-width:700px;margin:30px auto">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:3rem">🏕️</div>
+        <h2 style="margin:4px 0">南塘村口</h2>
+        <p style="color:var(--muted);font-size:.82rem">👤 <b id="ppName">—</b> · <span id="ppRole">—</span> · 注册于 <span id="ppCreated">—</span></p>
       </div>
-      <p style="font-size:.78rem;color:var(--muted)">等村口开放后，你可以在这里接日常委托、</p><p style="font-size:.78rem;color:var(--muted)">看实景地图、和在地伙伴交流。</p><p style="font-size:.78rem;color:var(--muted)">你的账号和记录都会保留。</p>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+        <!-- 卡片1: 活动信息站 -->
+        <div class="card" style="flex:1;min-width:180px;max-width:220px;text-align:center;cursor:pointer" onclick="alert('🔒 活动列表功能即将开放')">
+          <div style="font-size:2.5rem;margin-bottom:8px">📋</div>
+          <h3 style="margin:4px 0">活动信息站</h3>
+          <p style="font-size:.75rem;color:var(--muted);margin:6px 0">浏览全部活动<br>选择加入活动</p>
+          <button class="btn" style="font-size:.78rem;margin-top:8px">查看活动</button>
+        </div>
+        <!-- 卡片2: 任务大厅 -->
+        <div class="card" style="flex:1;min-width:180px;max-width:220px;text-align:center;cursor:pointer" onclick="switchTab('questboard')">
+          <div style="font-size:2.5rem;margin-bottom:8px">🏛️</div>
+          <h3 style="margin:4px 0">任务大厅</h3>
+          <p style="font-size:.75rem;color:var(--muted);margin:6px 0">在地任务<br>发布与认领</p>
+          <button class="btn pri" style="font-size:.78rem;margin-top:8px">进入大厅</button>
+        </div>
+        <!-- 卡片3: 实景地图 -->
+        <div class="card" style="flex:1;min-width:180px;max-width:220px;text-align:center;cursor:pointer" onclick="alert('🗺️ 实景地图建设中，敬请期待')">
+          <div style="font-size:2.5rem;margin-bottom:8px">🗺️</div>
+          <h3 style="margin:4px 0">实景地图</h3>
+          <p style="font-size:.75rem;color:var(--muted);margin:6px 0">成为在地伙伴<br>或浏览地图</p>
+          <button class="btn" style="font-size:.78rem;margin-top:8px">🔒 建设中</button>
+        </div>
+      </div>
+      <!-- 升级区 -->
+      <div class="card" style="text-align:center;margin-top:16px;max-width:400px;margin-left:auto;margin-right:auto">
         <div style="font-size:.78rem;font-weight:600;margin-bottom:6px">🔓 升级身份</div>
         <input id="upgradeCode" placeholder="输入邀请码" style="width:200px;padding:8px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;text-align:center;background:var(--card);color:var(--text);margin-bottom:6px"><br>
         <button class="btn pri" onclick="doUpgrade()" style="font-size:.8rem">确认升级</button>
-        <div style="font-size:.7rem;color:var(--muted);margin-top:4px">NPC邀请码 → 升级为南塘NPC · 世界码 → 加入该期</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:4px">冒险者邀请码 → 加入营队 · NPC邀请码 → 成为在地伙伴</div>
       </div>
-      <button class="btn" onclick="logoutUser()" style="margin-top:12px">🚪 退出</button>
     </div>
   </div>
 </main>
@@ -1664,12 +1688,17 @@ var workspacePanel = 'overview'; // 'overview' | 'camp' | 'personal' | 'flow' | 
 function showPlazaPlaceholder(user) {
   hideAllTabs();
   var pp = document.getElementById('plazaPlaceholder');
-  var roleNames = { npc: '南塘在地伙伴', visitor: '来访游客' };
+  var roleNames = { npc: '在地伙伴', visitor: '云村民', adventurer: '冒险者', builder: '共建者', admin: '管理员' };
   document.getElementById('ppName').textContent = user.name;
   document.getElementById('ppRole').textContent = roleNames[user.role] || user.role;
   var users = getUsers(), u = users[user.name];
   document.getElementById('ppCreated').textContent = (u && u.created) || '—';
   pp.classList.remove('hidden');
+}
+
+function showVillageSquare() {
+  if (!currentUser) return;
+  showPlazaPlaceholder(currentUser);
 }
 
 function updateWorldHUD() {
