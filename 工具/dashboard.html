@@ -1901,7 +1901,8 @@ function renderVillageQuestHall() {
   var si = document.getElementById('villageSearchInput');
   if (si && si.value !== villageSearchText) villageSearchText = si.value.trim().toLowerCase();
 
-  // ── Filter bar (3 rows, clearly separated) ──
+  // ── Filter bar (2 rows) ──
+  var barHTML = '';
   // Row 1: Scope + Quick (bigger text)
   barHTML += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">';
   [{v:'all',l:'全部'},{v:'camp',l:'🏕️ 营地'},{v:'personal',l:'👤 私人'}].forEach(function(s){
@@ -3082,7 +3083,15 @@ function autoSaveToFeishu() {
   if (!FEISHU_ENABLED) return;
   clearTimeout(feishuSaveTimer);
   feishuSaveTimer = setTimeout(function() {
-    try { fetch('http://localhost:8765/api/save', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(function(){}); } catch(e) {}
+    try {
+      var payload = JSON.parse(JSON.stringify(data)); // 深拷贝
+      // 附上 localStorage 中的账号和邀请码数据
+      payload._nt_users = {};
+      try { payload._nt_users = JSON.parse(localStorage.getItem('nt_users')) || {}; } catch(e) {}
+      try { payload._nt_invite_codes = JSON.parse(localStorage.getItem('nt_invite_codes')) || []; } catch(e) {}
+      try { payload._nt_world_codes = JSON.parse(localStorage.getItem('nt_world_codes')) || []; } catch(e) {}
+      fetch('http://localhost:8765/api/save', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){});
+    } catch(e) {}
   }, 2000);
 }
 (function tryFeishuLoad() {
@@ -3091,15 +3100,31 @@ function autoSaveToFeishu() {
     fetch('http://localhost:8765/api/load-all').then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
       if (!d || !d.tasks) return;
       // ── 合并模式：只更新飞书返回的字段，保留本地独有的字段 ──
-      // 飞书管理的字段（覆盖）
       if (d.tasks !== undefined) data.tasks = d.tasks;
       if (d.members !== undefined) data.members = d.members;
       if (d.finance !== undefined) data.finance = d.finance;
       if (d.finance_cny !== undefined) data.finance_cny = d.finance_cny;
       if (d.decisions !== undefined) data.decisions = d.decisions;
       if (d.camp_dates !== undefined) data.camp_dates = d.camp_dates;
-      // 本地独家保留的字段（飞书不管，不覆盖）
-      // data.budget, data.budget_items, data.schedule, data.staff_cards,
+      if (d.budget !== undefined && Object.keys(d.budget).length > 0) data.budget = d.budget;
+      if (d.budget_items !== undefined && d.budget_items.length > 0) data.budget_items = d.budget_items;
+      if (d.staff_cards !== undefined && d.staff_cards.length > 0) data.staff_cards = d.staff_cards;
+      if (d.schedule !== undefined && Object.keys(d.schedule).length > 0) data.schedule = d.schedule;
+      // 恢复 localStorage 中的账号和邀请码
+      if (d._nt_users && Object.keys(d._nt_users).length > 0) {
+        var local_users = {};
+        try { local_users = JSON.parse(localStorage.getItem('nt_users')) || {}; } catch(e) {}
+        // 合并：飞书里的密码覆盖本地（云端优先），但保留本地新增的
+        Object.keys(d._nt_users).forEach(function(k) { local_users[k] = d._nt_users[k]; });
+        localStorage.setItem('nt_users', JSON.stringify(local_users));
+      }
+      if (d._nt_invite_codes && d._nt_invite_codes.length > 0) {
+        localStorage.setItem('nt_invite_codes', JSON.stringify(d._nt_invite_codes));
+      }
+      if (d._nt_world_codes && d._nt_world_codes.length > 0) {
+        localStorage.setItem('nt_world_codes', JSON.stringify(d._nt_world_codes));
+      }
+      // 本地独家保留（飞书不管，不覆盖）
       // data.camp_progress, data._initialized, data.mapMilestones
       localStorage.setItem('camp_data', JSON.stringify(data));
       updateAll();
