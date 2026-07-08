@@ -1121,7 +1121,7 @@ const CHARACTER_SEEDS = [
 const AVATAR_STYLE = 'avataaars'; // single consistent style for all avatars
 
 // ── State (ALL shared variables declared here first) ──
-let data = { tasks: [], decisions: [], members: {}, budget: {}, budget_items: [], finance_cny: {}, finance: [], schedule: {}, camp_progress: { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} }, camp_dates: { start: '', end: '', duration_days: 15, milestones: [] }, staff_cards: [] };
+let data = { tasks: [], decisions: [], members: {}, budget: {}, budget_items: [], finance_cny: {}, finance: [], schedule: {}, camp_progress: { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} }, camp_dates: { start: '', end: '', duration_days: 15, milestones: [] }, staff_cards: [], _initialized: false };
 let settleSelected = null;
 let staffData = {}, playerData = {}, selectedStaff = null, selectedPlayer = null;
 let selectedMember = null;
@@ -1416,6 +1416,7 @@ function seedInitialInviteCode() {
 function generateInviteCode() { var arr = new Uint8Array(4); crypto.getRandomValues(arr); return 'NT-' + Array.from(arr).map(function(b) { return b.toString(36).toUpperCase().padStart(2, '0'); }).join(''); }
 
 function migrateExistingMembers() {
+  if (!data._initialized) return; // 首次启动时跳过自动迁移
   var users = getUsers();
   var staffNames = getStaffNames();
   (data.staff_cards || []).forEach(function(c) {
@@ -4189,7 +4190,7 @@ function unlockStep(n) {
 function renderStep1() {
   var cd = data.camp_dates || {};
   document.getElementById('wizStartDate').value = cd.start || '';
-  document.getElementById('wizDuration').value = cd.duration_days || 15;
+  document.getElementById('wizDuration').value = cd.duration_days || (data._initialized === false ? '' : 15);
   // Sync from schedule if calendar exists
   if (data.schedule && data.schedule.dates && data.schedule.dates.length > 1) {
     document.getElementById('wizDuration').value = data.schedule.dates.length - 1;
@@ -4199,15 +4200,16 @@ function renderStep1() {
   renderDailySchedule();
   // Budget parameters（仅恢复仍存在的 UI 元素）
   var b = data.budget || {};
+  var useDefaults = data._initialized !== false; // 首次启动时不预填默认值
   var el;
-  el = document.getElementById('wizParticipantBudget'); if (el) el.value = b.participant_budget || 10;
-  el = document.getElementById('wizEarlyBird'); if (el) el.value = b.early_bird_price || 499;
-  el = document.getElementById('wizEarlyBirdPct'); if (el) el.value = b.early_bird_pct || 60;
-  el = document.getElementById('wizFullPrice'); if (el) el.value = b.full_price || 599;
-  el = document.getElementById('wizLodgingRMB'); if (el) el.value = b.lodging_rmb || 30;
-  el = document.getElementById('wizLodgingNT'); if (el) el.value = b.lodging_nt || 40;
-  el = document.getElementById('wizMealRMB'); if (el) el.value = b.meal_rmb || 8;
-  el = document.getElementById('wizMealNT'); if (el) el.value = b.meal_nt || 10;
+  el = document.getElementById('wizParticipantBudget'); if (el) el.value = b.participant_budget || (useDefaults ? 10 : '');
+  el = document.getElementById('wizEarlyBird'); if (el) el.value = b.early_bird_price || (useDefaults ? 499 : '');
+  el = document.getElementById('wizEarlyBirdPct'); if (el) el.value = b.early_bird_pct || (useDefaults ? 60 : '');
+  el = document.getElementById('wizFullPrice'); if (el) el.value = b.full_price || (useDefaults ? 599 : '');
+  el = document.getElementById('wizLodgingRMB'); if (el) el.value = b.lodging_rmb || (useDefaults ? 30 : '');
+  el = document.getElementById('wizLodgingNT'); if (el) el.value = b.lodging_nt || (useDefaults ? 40 : '');
+  el = document.getElementById('wizMealRMB'); if (el) el.value = b.meal_rmb || (useDefaults ? 8 : '');
+  el = document.getElementById('wizMealNT'); if (el) el.value = b.meal_nt || (useDefaults ? 10 : '');
   updateWizBudgetCalc();
   // Team
   var members = data.members || {};
@@ -4736,6 +4738,7 @@ var BUDGET_ITEM_ID = 0;
 function nextBudgetId() { var id = ++BUDGET_ITEM_ID; localStorage.setItem('budget_item_counter', BUDGET_ITEM_ID); return id; }
 
 function initDefaultBudgetItems() {
+  if (!data._initialized && data.budget_items && data.budget_items.length > 0) return; // 首次启动时跳过自动填充
   // 迁移：检测旧格式（含 amt 对象或 category 字段）
   if (data.budget_items && data.budget_items.length > 0) {
     var first = data.budget_items[0];
@@ -4998,6 +5001,7 @@ function saveStep1() {
   data.camp_progress.steps['1'] = 'done';
   data.camp_progress.steps['2'] = 'active';
   data.camp_progress.step = 2;
+  data._initialized = true; // 标记系统已初始化
   localStorage.setItem('camp_data', JSON.stringify(data));
   updateAll();
   switchStep(2);
