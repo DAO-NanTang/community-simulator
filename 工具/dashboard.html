@@ -3426,32 +3426,28 @@ function updateHubSubPanel() {
 
 function openHubSub(page, el) {
   window._hubSubPage = page;
-  // Build sub content
   var sp = document.getElementById('hubSubPanel');
   var title = document.getElementById('hubSlideTitle');
   var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
 
-  // Position sub-panel: to the LEFT of the dropdown menu
+  // Position sub-panel: anchored to dropdown, sliding from the left
   var menu = document.getElementById('hubMenu');
   if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
   if (menu && sp) {
     var mr = menu.getBoundingClientRect();
     sp.style.top = mr.top + 'px';
-    sp.style.left = Math.max(8, mr.left - 340) + 'px';
-    sp.style.minHeight = mr.height + 'px';
+    sp.style.left = Math.max(8, mr.left - 336) + 'px'; // 320px width + 16px gap
+    sp.style.maxHeight = Math.max(300, mr.height) + 'px';
   }
 
-  // Render sub content
+  // hubSlideBody is inside hubSubPanel, renderHubSlideContent populates it directly
   renderHubSlideContent(page);
-  var body = document.getElementById('hubSlideBody');
-  if (sp && body) sp.innerHTML = body.innerHTML;
 
-  // Show sub panel
+  // Show sub panel with backdrop
   if (sp) sp.classList.add('show');
   document.getElementById('hubSlideBackdrop').classList.add('show');
-
-  // Hide main dropdown
+  // Hide dropdown
   if (menu) menu.classList.add('hidden');
 }
 
