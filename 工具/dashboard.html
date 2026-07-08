@@ -1633,8 +1633,7 @@ function doRegister() {
   if (!password || password.length < 6) { errEl.textContent = '密码至少 6 位'; return; }
   var result = registerUser(name, password, regRole, regAvatarSeed, inviteCode);
   if (!result.ok) { errEl.textContent = result.error; return; }
-  // Show profile completion card for first-time registration
-  showProfileSetup(name, password);
+  loginUser(name, password, false);
 }
 function generateUID() { return 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
