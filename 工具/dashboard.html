@@ -2071,14 +2071,31 @@ function renderVillageQuestHall() {
     else if (isFull || (t.scope||'camp')==='camp'&&!isMember) { doneTasks.push(t); }
     else { canClaim.push(t); }
   });
+  // ── Sorting ──
+  function sortByDeadline(a,b){ var da=a.deadline?new Date(a.deadline+'T00:00:00'):new Date('2099'); var db=b.deadline?new Date(b.deadline+'T00:00:00'):new Date('2099'); return da-db; }
+  function sortByPosted(a,b){ var pa=a.posted_at||''; var pb=b.posted_at||''; return pb.localeCompare(pa); }
+  // Split canClaim into urgent (48h) and normal
+  var urgentClaim = [], normalClaim = [];
+  canClaim.forEach(function(t){
+    if (t.deadline) { var dl=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); if ((dl-td)/86400000<=2&&(dl-td)/86400000>=0) { urgentClaim.push(t); return; } }
+    normalClaim.push(t);
+  });
+  urgentClaim.sort(sortByDeadline); normalClaim.sort(sortByPosted);
+  myTasks.sort(function(a,b){ var ca=a.claimants?a.claimants.find(function(c){return c.name===name;}):null; var cb=b.claimants?b.claimants.find(function(c){return c.name===name;}):null; var sa=ca&&ca.status==='in_progress'?0:1; var sb=cb&&cb.status==='in_progress'?0:1; if(sa!==sb)return sa-sb; return sortByDeadline(a,b); });
+  doneTasks.sort(sortByPosted);
+
   var cardOpts = { context:'village', userName:name, isMember:isMember };
   var cardHTML = '';
-  if (canClaim.length+myTasks.length+doneTasks.length===0) {
+  if (urgentClaim.length+normalClaim.length+myTasks.length+doneTasks.length===0) {
     cardHTML += '<div style="color:var(--muted);text-align:center;padding:30px">暂无公开委托</div>';
   }
-  if (canClaim.length>0) {
-    cardHTML += '<div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--accent)">📋 可领取（'+canClaim.length+'项）</div>';
-    canClaim.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); });
+  if (urgentClaim.length>0) {
+    cardHTML += '<div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--red)">⚠️ 即将截止（'+urgentClaim.length+'项）</div>';
+    urgentClaim.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); });
+  }
+  if (normalClaim.length>0) {
+    cardHTML += '<div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--accent)">📋 可领取（'+normalClaim.length+'项）</div>';
+    normalClaim.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); });
   }
   if (myTasks.length>0) {
     cardHTML += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--text)">📋 我已领取（'+myTasks.length+'项）</div>';
@@ -2993,13 +3010,26 @@ function renderQuestBoard() {
   });
   var claimable = filtered.filter(function(t) { var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var isFull = t.max_slots > 0 && activeClaimants.length >= t.max_slots; return !myClaim && !isFull; });
   var claimed = filtered.filter(function(t) { var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); return myClaim && myClaim.status !== 'dropped'; });
+  // Sort: urgent first, then by posted_at
+  var qSortDL = function(a,b){ var da=a.deadline?new Date(a.deadline+'T00:00:00'):new Date('2099'); var db=b.deadline?new Date(b.deadline+'T00:00:00'):new Date('2099'); return da-db; };
+  var qSortPosted = function(a,b){ return (b.posted_at||'').localeCompare(a.posted_at||''); };
+  var urgentC = claimable.filter(function(t){ if(!t.deadline)return false; var d=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); return (d-td)/86400000<=2&&(d-td)/86400000>=0; });
+  var normalC = claimable.filter(function(t){ return urgentC.indexOf(t)===-1; });
+  urgentC.sort(qSortDL); normalC.sort(qSortPosted);
+  claimed.sort(function(a,b){ var ca=(a.claimants||[]).find(function(c){return c.name===name;}); var cb=(b.claimants||[]).find(function(c){return c.name===name;}); var sa=ca&&ca.status==='in_progress'?0:1; var sb=cb&&cb.status==='in_progress'?0:1; if(sa!==sb)return sa-sb; return qSortDL(a,b); });
   // Sort: 进行中 → 已提交 → 已完成
   var statusOrder = { 'in_progress':0, 'triggered':0, 'submitted':1, 'rejected':1, 'completed':2 };
   claimed.sort(function(a, b) { var ca = (a.claimants||[]).find(function(c){return c.name===name;}), cb = (b.claimants||[]).find(function(c){return c.name===name;}); return (statusOrder[(ca?ca.status:'')]||3) - (statusOrder[(cb?cb.status:'')]||3); });
   var cardOpts = { context:'questboard', userName:name, isMember:true };
-  var html = '<div class="card"><h3>🟢 可领取（' + claimable.length + '项）</h3>';
-  if (claimable.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">暂无可用委托</div>'; }
-  else { claimable.forEach(function(t) { html += renderQuestCard(t, cardOpts); }); }
+  var html = '';
+  if (urgentC.length>0) {
+    html += '<div class="card"><h3 style="color:var(--red)">⚠️ 即将截止（'+urgentC.length+'项）</h3>';
+    urgentC.forEach(function(t) { html += renderQuestCard(t, cardOpts); });
+    html += '</div>';
+  }
+  html += '<div class="card"><h3>🟢 可领取（' + normalC.length + '项）</h3>';
+  if (normalC.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">暂无可用委托</div>'; }
+  else { normalC.forEach(function(t) { html += renderQuestCard(t, cardOpts); }); }
   html += '</div><div class="card"><h3>📋 已领取（' + claimed.length + '项）</h3>';
   if (claimed.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">还没有领取任何委托</div>'; }
   else { claimed.forEach(function(t) { html += renderQuestCard(t, cardOpts); }); }
