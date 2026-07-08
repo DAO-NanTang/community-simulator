@@ -1019,7 +1019,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <button class="btn" style="font-size:.78rem;margin-top:8px">查看活动</button>
         </div>
         <!-- 卡片2: 任务大厅 -->
-        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="if(currentUser&&(currentUser.role==='admin'||currentUser.role==='builder')){hidePlazaPlaceholder();switchTab('questboard')}else{openVillageModal('questhall')}">
+        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('questhall')">
           <div style="font-size:2.5rem;margin-bottom:8px">🏛️</div>
           <h3 style="margin:4px 0">任务大厅</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">在地任务<br>发布与认领</p>
