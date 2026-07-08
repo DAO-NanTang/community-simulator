@@ -118,11 +118,7 @@ select.inline-input { cursor: pointer; }
 /* Modal */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.3); z-index: 100; justify-content: center; align-items: center; }
 .modal-overlay.show { display: flex; }
-/* Village Square full-page watercolor background */
-#plazaPlaceholder:not(.hidden) { position: relative; display: block; }
-#plazaPlaceholder { background: url(ai_expand_image1783014990973.png) center/cover fixed no-repeat; min-height: 100vh; margin: -8px; }
-#plazaPlaceholder::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,.2); pointer-events: none; z-index: 0; }
-#villageSquare { position: relative; z-index: 1; }
+/* Village Square — clean card style, same as login page */
 .village-card { background: rgba(255,252,245,.9); border: 1px solid #d0c8b0; border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; backdrop-filter: blur(6px); }
 .village-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 .village-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,25,20,.5); z-index: 120; display: flex; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
