@@ -4221,7 +4221,7 @@ function renderMemberDetailFor(type, name, m) {
     </div>
     <div class="ms-right">` +
       (view === 'materials' ? renderMaterialSheet(name, memInfo) :
-      (tasks.length > 0 ? (function(){
+      (function(){
         var activeT = tasks.filter(function(t){ return t.status!=='已完成'&&t.status!=='已确认'; });
         var doneT = tasks.filter(function(t){ return t.status==='已完成'||t.status==='已确认'; });
         activeT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
@@ -4236,8 +4236,7 @@ function renderMemberDetailFor(type, name, m) {
         else { h += '<div style="color:var(--muted);font-size:.72rem;padding:6px 0">暂无已完成的任务</div>'; }
         h += '</div>';
         return h + '</div>';
-      })() : '') +
-      (tasks.length === 0 ? '<div style="color:var(--muted);text-align:center;padding:20px">' + (type==='player' ? '🎨 冒险者 · 暂无分配任务<br><span style="font-size:.8rem">NT 收入来自活动奖励、拍卖分成等</span>' : '暂无任务') + '</div>' : '')) +
+      })() ) +
     `</div>
   </div>`;
 }
