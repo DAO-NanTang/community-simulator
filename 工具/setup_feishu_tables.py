@@ -45,11 +45,11 @@ def setup():
     app_token = cfg['app_token']
 
     for table_name, fields in TABLE_DEFS.items():
-        print(f"\n📋 Creating table: {table_name}")
+        print(f"\n[TABLE] Creating table: {table_name}")
         try:
             table_id = client.create_table(table_name, fields)
             cfg['tables'][table_name]['table_id'] = table_id
-            print(f"   ✅ table_id: {table_id}")
+            print(f"   [OK] table_id: {table_id}")
 
             # 拉取已创建的字段以获取 field_id
             resp = client._request('GET',
@@ -63,14 +63,14 @@ def setup():
             print(f"   Fields: {len(created_fields)} created")
 
         except Exception as e:
-            print(f"   ❌ Failed: {e}")
+            print(f"   [FAIL] Failed: {e}")
             # 尝试查找已存在的表
             try:
                 existing = client.list_tables()
                 for t in existing:
                     if t['name'] == table_name:
                         cfg['tables'][table_name]['table_id'] = t['table_id']
-                        print(f"   🔄 Found existing: {t['table_id']}")
+                        print(f"   [EXISTS] Found existing: {t['table_id']}")
                         break
             except:
                 pass
@@ -79,7 +79,7 @@ def setup():
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(cfg, f, ensure_ascii=False, indent=2)
 
-    print("\n✅ Setup complete. config saved to feishu_config.json")
+    print("\n[OK] Setup complete. config saved to feishu_config.json")
 
 
 if __name__ == '__main__':

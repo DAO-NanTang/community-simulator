@@ -169,12 +169,12 @@ class FeishuHandler(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     port = 8765
     server = HTTPServer(('127.0.0.1', port), FeishuHandler)
-    print(f"🚀 Feishu proxy running at http://localhost:{port}")
+    print(f"FS Feishu proxy running at http://localhost:{port}")
     print(f"   GET  /api/load-all  → load data from Feishu")
     print(f"   POST /api/save      → save data to Feishu")
     print(f"   GET  /api/health    → health check")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n👋 Server stopped")
+        print("\nBYE Server stopped")
         server.server_close()
