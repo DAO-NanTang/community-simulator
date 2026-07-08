@@ -1641,7 +1641,9 @@ function getUsers() { try { return JSON.parse(localStorage.getItem(NT_USERS_KEY)
 function saveUsers(users) { localStorage.setItem(NT_USERS_KEY, JSON.stringify(users)); }
 // ═══ 称号系统 ═══
 var ROLE_TITLES = { admin:'🧙管理员',builder:'🧱共建者',adventurer:'⚔️冒险者',npc:'👥在地伙伴',visitor:'🏕️云村民' };
+var ROLE_BADGE_ICONS = { builder:'🏅',adventurer:'🎖️',npc:'🌟',visitor:'🏕️' };
 function getUserTitle(u){ return u?ROLE_TITLES[u.role]||u.role:''; }
+function getUserBadges(u){ if(!u||!u.season_history)return[];return u.season_history.slice().reverse(); }
 function refreshUserHUD(){ if(!currentUser)return;var el=document.getElementById('hudCurrentUser');if(el)el.textContent=currentUser.name+' · '+getUserTitle(currentUser);updateWorldHUD(); }
 function getWorldCodes() { try { return JSON.parse(localStorage.getItem('nt_world_codes')) || []; } catch(e) { return []; } }
 function saveWorldCodes(codes) { localStorage.setItem('nt_world_codes', JSON.stringify(codes)); }
@@ -1921,7 +1923,7 @@ function enterWorld(user) {
 }
 
 function hideAllTabs() { ['members','players','timeline','budget','settlement','map','taskhall','settings','profile','questboard','leaderboard','ntadmin','workspace'].forEach(function(n) { var el = document.getElementById('tab-' + n); if (el) el.classList.add('hidden'); }); }
-var workspacePanel = 'overview'; // 'overview' | 'camp' | 'personal' | 'flow' | 'settings'
+var workspacePanel = 'tasks'; // 'tasks' | 'flow' | 'settings'
 
 function showPlazaPlaceholder(user) {
   hideAllTabs();
@@ -2663,38 +2665,22 @@ function renderWorkspace() {
   // ═══ RENDER ═══
   var html = '';
 
-  // ── Flow panel ──
-  if (workspacePanel === 'flow') {
-    var myFlow = finance.filter(function(tx) { return tx.to === name || tx.from === name; }).slice(-30).reverse();
-    html += '<div class="card"><h3>💰 近期流水</h3>';
-    html += '<div style="margin-bottom:8px;display:flex;gap:8px"><button class="btn '+(flowFilter==='all'?'pri':'')+'" onclick="flowFilter=\'all\';renderWorkspace()" style="font-size:.72rem;padding:3px 10px">全部</button><button class="btn '+(flowFilter==='camp'?'pri':'')+'" onclick="flowFilter=\'camp\';renderWorkspace()" style="font-size:.72rem;padding:3px 10px">🏕️ 活动</button><button class="btn '+(flowFilter==='personal'?'pri':'')+'" onclick="flowFilter=\'personal\';renderWorkspace()" style="font-size:.72rem;padding:3px 10px">✏️ 私人</button></div>';
-    var fFiltered = myFlow.filter(function(tx) { return flowFilter==='all'||(tx.scope||'camp')===flowFilter; });
-    if (fFiltered.length === 0) { html += '<div style="color:var(--muted);padding:20px;text-align:center">暂无流水</div>'; }
-    else { fFiltered.forEach(function(tx) { var isIn = tx.to === name; html += '<div style="font-size:.78rem;padding:3px 0;border-bottom:1px dotted var(--border)">' + esc(tx.date||'') + ' ' + (isIn?'<span style="color:var(--green)">+'+tx.amount+' NT</span>':'<span style="color:var(--red)">-'+tx.amount+' NT</span>') + ' · ' + esc(tx.task_name||tx.type||'') + '</div>'; }); }
-    html += '<button class="btn" onclick="workspacePanel=\'tasks\';renderWorkspace()" style="font-size:.75rem;margin-top:10px">← 返回任务列表</button></div>';
-  }
+  // ═══ Always: left avatar card + right panel ═══
+  html += '<div style="display:flex;gap:16px;align-items:flex-start">';
 
-  // ── Settings panel ──
-  else if (workspacePanel === 'settings') {
-    html += '<div class="card"><h3>⚙️ 设置</h3>';
-    html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" disabled style="width:100%"><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
-    html += '<button class="btn" onclick="workspacePanel=\'tasks\';renderWorkspace()" style="font-size:.75rem;margin-top:10px">← 返回任务列表</button></div>';
-  }
-
-  // ── Tasks panel (default): left avatar card + right task area ──
-  else {
-    html += '<div style="display:flex;gap:16px;align-items:flex-start">';
-
-    // ═══ LEFT: Avatar Card (220px) ═══
-    html += '<div class="card" style="flex:0 0 220px;text-align:center;padding:20px 16px;position:sticky;top:80px">';
+  // ═══ LEFT: Avatar Card (220px) — always visible ═══
+  html += '<div class="card" style="flex:0 0 220px;text-align:center;padding:20px 16px;position:sticky;top:80px">';
     html += '<div style="margin-bottom:12px">' + avatarCircle(avatarSi, 88, 0) + '</div>';
     html += '<div style="font-size:1.05rem;font-weight:700;margin-bottom:2px">' + esc(name) + '</div>';
     html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px">' + getUserTitle(user) + '</div>';
     if (achievements.length > 0) {
       html += '<div style="margin-bottom:10px">' + achievements.map(function(a) { return '<div style="font-size:.7rem;margin:2px 0" title="' + escAttr(a.desc) + '">' + a.icon + ' ' + esc(a.name) + '</div>'; }).join('') + '</div>';
+    }
+    var badges = getUserBadges(user);
+    if (badges.length > 0) {
+      html += '<div style="margin-bottom:10px;border-top:1px dotted var(--border);padding-top:8px"><div style="font-size:.62rem;color:var(--muted);margin-bottom:4px">📜 历史勋章</div>';
+      badges.forEach(function(b) { html += '<div style="font-size:.65rem;margin:2px 0;color:var(--muted)">' + (ROLE_BADGE_ICONS[b.role]||'⭐') + ' ' + esc(b.season) + ' ' + (ROLE_TITLES[b.role]||b.role) + '</div>'; });
+      html += '</div>';
     }
     html += '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:8px">';
     html += '<div style="font-size:.9rem;font-weight:700;color:var(--accent)">💎 ' + totalNT.toLocaleString() + ' NT</div>';
@@ -2703,14 +2689,38 @@ function renderWorkspace() {
     html += '<div style="font-size:.7rem;color:var(--muted)">📅 ' + daysSince + ' 天</div>';
     html += '</div>';
     html += '<div style="display:flex;flex-direction:column;gap:4px">';
-    html += '<button class="btn" onclick="workspacePanel=\'flow\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">💰 流水</button>';
-    html += '<button class="btn" onclick="workspacePanel=\'settings\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">⚙️ 设置</button>';
+    html += '<button class="btn'+(workspacePanel==='tasks'?' pri':'')+'" onclick="workspacePanel=\'tasks\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">📋 任务</button>';
+    html += '<button class="btn'+(workspacePanel==='flow'?' pri':'')+'" onclick="workspacePanel=\'flow\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">💰 流水</button>';
+    html += '<button class="btn'+(workspacePanel==='settings'?' pri':'')+'" onclick="workspacePanel=\'settings\';renderWorkspace()" style="font-size:.72rem;padding:5px 0;width:100%">⚙️ 设置</button>';
     html += '</div></div>';
 
-    // ═══ RIGHT: Task Area ═══
+    // ═══ RIGHT: Content Area (switches by workspacePanel) ═══
     html += '<div style="flex:1;min-width:0">';
 
-    // Pending reviews on top
+    // ── Flow ──
+    if (workspacePanel === 'flow') {
+      var myFlow = finance.filter(function(tx) { return tx.to === name || tx.from === name; }).slice(-30).reverse();
+      html += '<div class="card"><h3>💰 近期流水</h3>';
+      html += '<div style="margin-bottom:8px;display:flex;gap:8px"><button class="btn '+(flowFilter==='all'?'pri':'')+'" onclick="flowFilter=\'all\';renderWorkspace()" style="font-size:.72rem;padding:3px 10px">全部</button><button class="btn '+(flowFilter==='camp'?'pri':'')+'" onclick="flowFilter=\'camp\';renderWorkspace()" style="font-size:.72rem;padding:3px 10px">🏕️ 活动</button><button class="btn '+(flowFilter==='personal'?'pri':'')+'" onclick="flowFilter=\'personal\';renderWorkspace()" style="font-size:.72rem;padding:3px 10px">✏️ 私人</button></div>';
+      var fFiltered = myFlow.filter(function(tx) { return flowFilter==='all'||(tx.scope||'camp')===flowFilter; });
+      if (fFiltered.length === 0) { html += '<div style="color:var(--muted);padding:20px;text-align:center">暂无流水</div>'; }
+      else { fFiltered.forEach(function(tx) { var isIn = tx.to === name; html += '<div style="font-size:.78rem;padding:3px 0;border-bottom:1px dotted var(--border)">' + esc(tx.date||'') + ' ' + (isIn?'<span style="color:var(--green)">+'+tx.amount+' NT</span>':'<span style="color:var(--red)">-'+tx.amount+' NT</span>') + ' · ' + esc(tx.task_name||tx.type||'') + '</div>'; }); }
+      html += '</div>';
+    }
+
+    // ── Settings ──
+    else if (workspacePanel === 'settings') {
+      html += '<div class="card"><h3>⚙️ 设置</h3>';
+      html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" disabled style="width:100%"><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
+      html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
+      html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
+      html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
+      html += '</div>';
+    }
+
+    // ── Tasks (default) ──
+    else {
+      // Pending reviews on top
     if (myPosted.length > 0) {
       html += '<div class="card" style="background:#fef9ee;border-color:#e8c840;margin-bottom:12px"><h3>⏳ 待审核（' + myPosted.reduce(function(s,p){return s+p.pending.length;},0) + '项）</h3>';
       myPosted.forEach(function(p) {
@@ -2772,13 +2782,14 @@ function renderWorkspace() {
       html += '</div></div>';
     }
 
+    } // end tasks panel
+
     html += '</div>'; // close right
     html += '</div>'; // close flex container
-  }
 
-  container.innerHTML = html;
-}
-var flowFilter = 'all';
+    container.innerHTML = html;
+  }
+  var flowFilter = 'all';
 var wsSourceFilter = 'all';
 
 function renderMyProfile() {
@@ -3103,7 +3114,7 @@ function confirmSubmit() {
 function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; showSubmitModal(idx); }
 function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace(); setStatus('已放弃：' + t.name); }
 function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var targetName = prompt('输入要触发的冒险者姓名：'); if (!targetName) return; if (!t.claimants) t.claimants = []; var alreadyThere = t.claimants.find(function(c) { return c.name === targetName; }); if (alreadyThere) { alert('该冒险者已被触发'); return; } t.claimants.push({ name: targetName, claimed_at: new Date().toISOString().slice(0,10), status: 'triggered' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已触发隐藏任务给：' + targetName); }
-function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); if (!data.finance) data.finance = []; data.finance.push({ type: 'task_reward', from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, date: new Date().toISOString().slice(0,10), confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
+function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; // 检查审核权限：如果任务指定了审核人，只有审核人或发布者（自审）可以操作 if (t.reviewer && currentUser.name !== t.reviewer && currentUser.name !== t.poster) { alert('该任务指定由 ' + t.reviewer + ' 审核'); return; } if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); if (!data.finance) data.finance = []; data.finance.push({ type: 'task_reward', from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, date: new Date().toISOString().slice(0,10), confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
 function showPostTask() {
   if (!currentUser) { alert('请先登录'); return; }
   document.getElementById('postTaskName').value = '';
@@ -3215,7 +3226,7 @@ function deleteInviteCode(code) { var isA = inviteSidebarTab === 'adventurer'; i
 
 // ═══ Reviewer Picker ═══
 var reviewerPickTarget = '';
-function showReviewerPicker(targetId) { reviewerPickTarget = targetId; document.getElementById('pickerBackdrop').classList.add('show'); document.getElementById('pickerSidebar').classList.add('show'); document.getElementById('pickerSearch').value = ''; renderReviewerList(); setTimeout(function() { document.getElementById('pickerSearch').focus(); }, 150); }
+function showReviewerPicker(targetId) { reviewerPickTarget = targetId; var sb = document.getElementById('pickerSidebar'); var btn = document.getElementById(targetId); if (btn) { var br = btn.getBoundingClientRect(); sb.style.top = Math.min(br.bottom + 4, window.innerHeight - 400) + 'px'; sb.style.right = (window.innerWidth - br.right) + 'px'; } document.getElementById('pickerBackdrop').classList.add('show'); sb.classList.add('show'); document.getElementById('pickerSearch').value = ''; renderReviewerList(); setTimeout(function() { document.getElementById('pickerSearch').focus(); }, 150); }
 function closeReviewerPicker() { document.getElementById('pickerBackdrop').classList.remove('show'); document.getElementById('pickerSidebar').classList.remove('show'); }
 function renderReviewerList() { var q = (document.getElementById('pickerSearch').value || '').trim().toLowerCase(); var users = getUsers(); var names = Object.keys(users).filter(function(n) { return !q || n.toLowerCase().indexOf(q) !== -1; }).sort(function(a, b) { if (a === (currentUser && currentUser.name)) return -1; if (b === (currentUser && currentUser.name)) return 1; return a.localeCompare(b); }); var h = ''; if (names.length === 0) { h = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:.78rem">无匹配用户</div>'; } else { names.forEach(function(n) { var u = users[n]; var si = u.avatar_seed || 0; var isSelf = currentUser && n === currentUser.name; h += '<div class="pk-row" onclick="selectReviewer(\'' + escAttr(n) + '\')" style="' + (isSelf ? 'background:var(--bg)' : '') + '"><div class="pk-avatar">' + avatarCircle(si, 32, 0) + '</div><span class="pk-name">' + esc(n) + '</span><span class="pk-role">' + (ROLE_TITLES[u.role] || u.role) + '</span></div>'; }); } document.getElementById('pickerList').innerHTML = h; }
 function selectReviewer(name) { if (reviewerPickTarget) { var el = document.getElementById(reviewerPickTarget); if (el) el.value = name; } closeReviewerPicker(); }
