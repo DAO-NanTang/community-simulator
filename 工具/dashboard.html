@@ -3819,7 +3819,9 @@ function renderMemberDetailFor(type, name, m) {
   var users = getUsers(); var u = users[name] || {};
   const ntInfo = m.nt || memInfo.nt_actual || memInfo.nt_earned || 0;
   const rmbInfo = m.rmb || 0;
-  const role = memInfo.role || (total >= 10 ? '核心成员' : total >= 5 ? '活跃成员' : '冒险者');
+  var roleLabels = { admin:'管理员', builder:'共建者', adventurer:'冒险者', npc:'在地伙伴', visitor:'云村民' };
+  var userRole = u.role || '';
+  const role = memInfo.role || roleLabels[userRole] || (total >= 10 ? '核心成员' : total >= 5 ? '活跃成员' : '云村民');
   const bio = memInfo.bio || '';
   const genderIcon = memInfo.gender === 'male' ? '♂️' : memInfo.gender === 'female' ? '♀️' : '';
   const avatarSi = memInfo.avatar_seed !== undefined ? memInfo.avatar_seed : 0;
