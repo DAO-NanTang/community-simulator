@@ -1882,9 +1882,16 @@ function renderVillageQuestHall() {
   barHTML += '</div>';
   // Location + custom row (village only)
   barHTML += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">';
-  ['在地任务','非在地任务','日常任务','自定义'].forEach(function(c){
+  ['在地任务','非在地任务','日常任务'].forEach(function(c){
     barHTML += '<button class="btn'+(villageLocFilter===c?' pri':'')+'" onclick="villageLocFilter=villageLocFilter===c?\"\":c;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
   });
+  // Custom tags
+  var customTags = (data.custom_tags || []);
+  customTags.forEach(function(ct){
+    barHTML += '<button class="btn'+(villageLocFilter===ct?' pri':'')+'" onclick="villageLocFilter=villageLocFilter===ct?\"\":ct;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+ct+'</button>';
+  });
+  var canAddTag = currentUser && (currentUser.role==='admin'||currentUser.role==='npc');
+  barHTML += '<button class="btn" onclick="'+(canAddTag?'var t=prompt(\"新标签名：\");if(t){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(t);localStorage.setItem(\"camp_data\",JSON.stringify(data));renderVillageQuestHall()}':'alert(\"仅管理员和在地伙伴可添加标签\")')+'" style="font-size:.65rem;padding:2px 7px;color:var(--accent)" title="'+(canAddTag?'添加自定义标签':'仅管理员/在地伙伴可添加')+'">＋ 标签</button>';
   barHTML += '</div>';
 
   // ── Filter + three-layer logic ──
@@ -1954,7 +1961,7 @@ function renderVillageQuestHall() {
   var publishHTML = '';
   if (isMember) {
     publishHTML += '<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:10px;text-align:center">'+
-      '<button class="btn" onclick="closeVillageModal(\'questhall\');showPostTask()" style="font-size:.78rem">📝 发布私人任务（需要 ≥1 NT）</button></div>';
+      '<button class="btn" onclick="showPostTask()" style="font-size:.78rem">📝 发布私人任务（需要 ≥1 NT）</button></div>';
   }
 
   // ── Recent submissions ──
@@ -2698,6 +2705,19 @@ function renderQuestBoard() {
   cats.forEach(function(c) { fhtml += '<button class="btn'+(questCatFilter===c||(!questCatFilter&&c==='全部')?' pri':'')+'" onclick="questCatFilter=questCatFilter===c||(c===\"全部\"&&!questCatFilter)?\"\":c;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+c+'</button>'; });
   fhtml += '</div>';
 
+  // ── Location + custom row ──
+  fhtml += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:8px" id="questLocBar">';
+  ['在地任务','非在地任务','日常任务'].forEach(function(c){
+    fhtml += '<button class="btn'+(questLocFilter===c?' pri':'')+'" onclick="questLocFilter=questLocFilter===c?\"\":c;renderQuestBoard()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
+  });
+  var customTags = (data.custom_tags || []);
+  customTags.forEach(function(ct){
+    fhtml += '<button class="btn'+(questLocFilter===ct?' pri':'')+'" onclick="questLocFilter=questLocFilter===ct?\"\":ct;renderQuestBoard()" style="font-size:.65rem;padding:2px 7px">'+ct+'</button>';
+  });
+  var canAddTag = currentUser && (currentUser.role==='admin'||currentUser.role==='npc');
+  fhtml += '<button class="btn" onclick="'+(canAddTag?'var t=prompt(\"新标签名：\");if(t){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(t);localStorage.setItem(\"camp_data\",JSON.stringify(data));renderQuestBoard()}':'alert(\"仅管理员和在地伙伴可添加标签\")')+'" style="font-size:.65rem;padding:2px 7px;color:var(--accent)">＋ 标签</button>';
+  fhtml += '</div>';
+
   // ── Unclaimed reminder ──
   var unclaimedCount = tasks.filter(function(t) { return t.status==='active'&&t.claimants&&(t.claimants||[]).filter(function(c){return c.status!=='dropped';}).length===0; }).length;
   var urgentCount = tasks.filter(function(t) { if (t.status!=='active'||!t.deadline) return false; var dl=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); return (dl-td)/86400000 <= 1 && (dl-td)/86400000 >= 0; }).length;
@@ -2727,6 +2747,11 @@ function renderQuestBoard() {
     if (questQuickFilter === 'submitted_all') { var allSub = activeClaimants.length > 0 && activeClaimants.every(function(c){return c.status==='submitted'||c.status==='completed';}); if (!allSub) return false; }
     // category filter
     if (questCatFilter && questCatFilter !== '全部' && t.category !== questCatFilter) return false;
+    // location filter
+    if (questLocFilter==='在地任务' && t.location!=='local') return false;
+    if (questLocFilter==='非在地任务' && t.location==='local') return false;
+    if (questLocFilter==='日常任务' && t.type!=='日常') return false;
+    if (questLocFilter && questLocFilter!=='在地任务'&&questLocFilter!=='非在地任务'&&questLocFilter!=='日常任务' && t.type!==questLocFilter) return false;
     // type filter
     if (questFilter === 'claimable') return isClaimable; if (questFilter === 'claimed') return isClaimed; if (questFilter !== 'all') return t.type === questFilter;
     return true;
@@ -2774,6 +2799,7 @@ function renderQuestBoard() {
 }
 var questQuickFilter = '';
 var questCatFilter = '';
+var questLocFilter = '';
 
 // ── Adventurer: Leaderboard ──
 function renderLeaderboard() {
@@ -2855,14 +2881,23 @@ function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var t
 function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; if (action === 'approve') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); if (!data.finance) data.finance = []; data.finance.push({ type: 'task_reward', from: '系统', to: claimantName, amount: t.points || 0, task_name: t.name, date: new Date().toISOString().slice(0,10), confirmed_by: currentUser.name, scope: t.scope || 'camp' }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
 function showPostTask() {
   if (!currentUser) { alert('请先登录'); return; }
+  var isBuilder = currentUser && (currentUser.role==='admin'||currentUser.role==='builder');
   document.getElementById('postTaskName').value = '';
-  document.getElementById('postTaskScope').value = 'camp';
-  document.getElementById('postTaskType').value = '支线';
-  document.getElementById('postTaskPoints').value = '15';
+  document.getElementById('postTaskScope').value = isBuilder ? 'camp' : 'personal';
+  document.getElementById('postTaskType').value = isBuilder ? '支线' : '日常';
+  document.getElementById('postTaskPoints').value = isBuilder ? '15' : '5';
   document.getElementById('postTaskSlots').value = '0';
   document.getElementById('postTaskStart').value = '';
   document.getElementById('postTaskDeadline').value = '';
   document.getElementById('postTaskCategory').value = '其他';
+  // Show/hide camp-type options based on role
+  var typeSel = document.getElementById('postTaskType');
+  var campTypes = ['主线','支线','共创','隐藏','身份'];
+  var allTypes = campTypes.concat(['日常','在地','非在地']);
+  typeSel.innerHTML = '';
+  (isBuilder ? allTypes : ['日常','在地','非在地']).forEach(function(v){
+    typeSel.innerHTML += '<option value="'+v+'">'+v+'</option>';
+  });
   document.getElementById('postTaskNote').value = '';
   document.getElementById('postTaskModal').classList.add('show');
 }
@@ -3022,7 +3057,20 @@ function autoSaveToFeishu() {
   if (!FEISHU_ENABLED) return;
   try {
     fetch('http://localhost:8765/api/load-all').then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
-      if (d && d.tasks) { data = d; localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); }
+      if (!d || !d.tasks) return;
+      // ── 合并模式：只更新飞书返回的字段，保留本地独有的字段 ──
+      // 飞书管理的字段（覆盖）
+      if (d.tasks !== undefined) data.tasks = d.tasks;
+      if (d.members !== undefined) data.members = d.members;
+      if (d.finance !== undefined) data.finance = d.finance;
+      if (d.finance_cny !== undefined) data.finance_cny = d.finance_cny;
+      if (d.decisions !== undefined) data.decisions = d.decisions;
+      if (d.camp_dates !== undefined) data.camp_dates = d.camp_dates;
+      // 本地独家保留的字段（飞书不管，不覆盖）
+      // data.budget, data.budget_items, data.schedule, data.staff_cards,
+      // data.camp_progress, data._initialized, data.mapMilestones
+      localStorage.setItem('camp_data', JSON.stringify(data));
+      updateAll();
     }).catch(function(){});
   } catch(e) {}
 })();
