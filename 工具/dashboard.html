@@ -118,9 +118,11 @@ select.inline-input { cursor: pointer; }
 /* Modal */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.3); z-index: 100; justify-content: center; align-items: center; }
 .modal-overlay.show { display: flex; }
-/* Village Square watercolor background */
-#villageSquare { min-height: 100vh; background: linear-gradient(180deg, #e8f0e0 0%, #d4e8d0 15%, #f0ead8 30%, #e8dcc8 50%, #f5e8d0 70%, #dce8e8 85%, #e0dce4 100%); position: relative; padding: 30px 20px 60px; }
-#villageSquare::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 20% 30%, rgba(140,180,120,.15) 0%, transparent 60%), radial-gradient(ellipse at 75% 60%, rgba(180,160,120,.12) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(160,180,200,.1) 0%, transparent 40%); pointer-events: none; }
+/* Village Square — same cover image as login header */
+#villageSquare { min-height: 100vh; position: relative; padding: 30px 20px 60px; }
+#villageSquare::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url(ai_expand_image1783014990973.png) center/cover no-repeat; z-index: 0; filter: brightness(1.05) saturate(.9); }
+#villageSquare::after { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(0deg,rgba(0,0,0,.25),rgba(0,0,0,.05) 40%,rgba(0,0,0,.15) 100%); z-index: 1; pointer-events: none; }
+#villageSquare > * { position: relative; z-index: 2; }
 .village-card { background: rgba(255,252,245,.9); border: 1px solid #d0c8b0; border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; backdrop-filter: blur(6px); }
 .village-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 .village-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,25,20,.5); z-index: 120; display: flex; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
@@ -370,7 +372,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <p style="margin:0 0 4px;font-size:.9rem">欢迎你，寻找人生副本</p>
       <p id="loginDateRange" style="font-size:.75rem;color:var(--muted);margin:0 0 20px">1998 — 2026</p>
       <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-        <button class="btn pri" onclick="showIdentityPicker()" style="font-size:.9rem;padding:12px 24px">✨ 我是新来的</button>
+        <button class="btn pri" onclick="showRegister('visitor')" style="font-size:.9rem;padding:12px 24px">✨ 我是新来的</button>
         <button class="btn" onclick="showUserList()" style="font-size:.9rem;padding:12px 24px">📋 我有账号</button>
       </div>
       <div style="margin-top:28px;opacity:.35">
@@ -391,7 +393,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <div style="margin:4px 0;cursor:pointer" id="regAvatarPreview"></div>
       <button class="btn" onclick="cycleRegAvatar()" style="font-size:.65rem;padding:2px 8px">🎨 换头像</button>
       <input type="text" id="regName" placeholder="你的名字" style="margin:6px 0;padding:8px">
-      <input type="password" id="regPassword" placeholder="设置密码（至少2位）" style="margin:6px 0;padding:8px">
+      <input type="password" id="regPassword" placeholder="设置密码（至少6位）" style="margin:6px 0;padding:8px">
       <div id="regInviteRow" class="hidden"><div id="regInviteLabel" style="font-size:.72rem;color:var(--muted);margin-bottom:2px"></div><input type="text" id="regInviteCode" placeholder="" style="margin:4px 0;padding:8px"></div>
       <div id="regError" style="color:var(--red);font-size:.75rem;margin:4px 0"></div>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="btn" onclick="showLoginEntry()" style="font-size:.8rem">← 返回</button><button class="btn pri" onclick="doRegister()" style="font-size:.8rem">确认注册 →</button></div>
@@ -1590,7 +1592,7 @@ function showRegister(role) {
   document.getElementById('userListPanel').classList.add('hidden');
   document.getElementById('identityPicker').classList.add('hidden');
   document.getElementById('registerForm').classList.remove('hidden');
-  var titles = { 'adventurer': '⚔️ 注册为冒险者', 'npc': '👥 注册为南塘在地伙伴', 'visitor': '🏕️ 注册为来访游客' };
+  var titles = { 'adventurer': '⚔️ 注册为冒险者', 'npc': '👥 注册为在地伙伴', 'visitor': '🏕️ 加入南塘云村' };
   document.getElementById('registerTitle').textContent = titles[role] || '';
   var needsCode = (role === 'adventurer');
   document.getElementById('regInviteRow').classList.toggle('hidden', !needsCode);
@@ -1610,7 +1612,7 @@ function doRegister() {
   var inviteCode = document.getElementById('regInviteCode').value.trim();
   var errEl = document.getElementById('regError');
   if (!name) { errEl.textContent = '请输入名字'; return; }
-  if (!password || password.length < 2) { errEl.textContent = '密码至少 2 位'; return; }
+  if (!password || password.length < 6) { errEl.textContent = '密码至少 6 位'; return; }
   var result = registerUser(name, password, regRole, regAvatarSeed, inviteCode);
   if (!result.ok) { errEl.textContent = result.error; return; }
   loginUser(name, password, false);
