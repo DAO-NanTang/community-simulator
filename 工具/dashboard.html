@@ -1020,13 +1020,8 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     </div>
   </div>
 
-  <!-- Tab: Realm Map (coming soon) -->
-  <div id="tab-realmMap" class="hidden">
-    <div class="card" style="text-align:center;padding:80px 20px">
-      <div style="font-size:4rem;margin-bottom:16px">🗺️</div>
-      <h2 style="margin:0 0 8px">南塘云村 · 即将开放</h2>
-      <p style="color:var(--muted);font-size:.9rem;max-width:400px;margin:0 auto">实景地图、客栈、素社、集市、茶馆、桌游室。<br>社区空间正在建设中，敬请期待。</p>
-    </div>
+  <!-- Tab: Realm Map / Hub -->
+  <div id="tab-realmMap" class="hidden"><div id="hubContent"></div></div>
   </div>
 
   <!-- Tab: Bazaar -->
@@ -3160,6 +3155,155 @@ function renderMyProfile() {
   container.innerHTML = html;
 }
 
+// ═══ 素社食堂 ═══
+function getFoodIcon(name) {
+  var map = { '饭':'🍚', '米':'🍚', '面':'🍜', '汤':'🍲', '豆腐':'🫘', '豆':'🫘', '菜':'🥬', '蔬':'🥬', '瓜':'🥒', '茄':'🍆', '薯':'🍠', '花生':'🥜', '茶':'🍵', '蛋':'🥚', '菇':'🍄', '饺子':'🥟', '包':'🥟', '沙拉':'🥗', '果':'🍎' };
+  for (var k in map) { if (name.indexOf(k) !== -1) return map[k]; }
+  return '🍽️';
+}
+
+function getVendorPanels(user) {
+  if (!user || !user.world_id) return [];
+  var panels = [];
+  if (user.world_id.indexOf('高琳姐') !== -1) { panels.push({ id: 'inn', label: '🏨 客栈管理' }); panels.push({ id: 'canteen', label: '🥬 食堂管理' }); }
+  if (user.world_id.indexOf('文峰') !== -1) { panels.push({ id: 'teahouse', label: '🍵 茶馆管理' }); }
+  return panels;
+}
+
+function renderCanteen() {
+  var container = document.getElementById('canteenContent'); if (!container) return;
+  var today = new Date().toISOString().slice(0,10);
+  var hour = new Date().getHours();
+  var menu = data.canteen_menus && data.canteen_menus[today] ? data.canteen_menus[today] : { lunch: [], dinner: [] };
+  var myOrders = (data.canteen_orders || []).filter(function(o) { return o.person === (currentUser?currentUser.name:'') && o.date === today; });
+  var lunchOpen = hour < 10 || (hour === 10 && new Date().getMinutes() < 30);
+  var dinnerOpen = hour < 16 || (hour === 16 && new Date().getMinutes() < 30);
+  var lunchTime = hour >= 11 && hour < 13;
+  var dinnerTime = hour >= 17 && hour < 19;
+
+  var html = '';
+  html += '<div class="card"><h3>🥬 午餐 11:30-13:00 '+(lunchOpen?'<span style="font-size:.7rem;color:var(--green)">预定开放中</span>':'<span style="font-size:.7rem;color:var(--muted)">预定已截止</span>')+'</h3>';
+  if (menu.lunch.length > 0) {
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
+    menu.lunch.forEach(function(item) { html += '<span style="font-size:.82rem;background:#f8f4ec;padding:6px 12px;border-radius:8px">'+getFoodIcon(item)+' '+esc(item)+'</span>'; });
+    html += '</div>';
+  } else { html += '<div style="color:var(--muted);margin-bottom:10px">今日菜单待更新</div>'; }
+  html += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">💰 预定 10 NT · 现场 15 NT</div>';
+  var lunchOrdered = myOrders.filter(function(o) { return o.meal === 'lunch'; });
+  if (lunchOrdered.length > 0) {
+    lunchOrdered.forEach(function(o) { html += '<div style="font-size:.78rem;color:var(--green)">✅ 已预定 · '+(o.status==='paid'?'已支付':'待支付')+'</div>'; });
+    if (lunchOrdered.some(function(o) { return o.status === 'ordered'; }) && lunchTime) {
+      html += '<button class="btn green" onclick="confirmCanteenPayment(\''+escAttr(lunchOrdered[0].id)+'\')" style="font-size:.75rem;padding:4px 10px">✅ 确认用餐 · 支付 10 NT</button>';
+    }
+  } else if (lunchOpen) {
+    html += '<button class="btn pri" onclick="preorderCanteen(\'lunch\')" style="font-size:.78rem;padding:5px 14px">🔔 预定今日午餐</button>';
+  }
+  html += '</div>';
+
+  html += '<div class="card"><h3>🥬 晚餐 17:30-19:00 '+(dinnerOpen?'<span style="font-size:.7rem;color:var(--green)">预定开放中</span>':'<span style="font-size:.7rem;color:var(--muted)">预定已截止</span>')+'</h3>';
+  if (menu.dinner.length > 0) {
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
+    menu.dinner.forEach(function(item) { html += '<span style="font-size:.82rem;background:#f8f4ec;padding:6px 12px;border-radius:8px">'+getFoodIcon(item)+' '+esc(item)+'</span>'; });
+    html += '</div>';
+  } else { html += '<div style="color:var(--muted);margin-bottom:10px">今日菜单待更新</div>'; }
+  html += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">💰 预定 10 NT · 现场 15 NT</div>';
+  var dinnerOrdered = myOrders.filter(function(o) { return o.meal === 'dinner'; });
+  if (dinnerOrdered.length > 0) {
+    dinnerOrdered.forEach(function(o) { html += '<div style="font-size:.78rem;color:var(--green)">✅ 已预定 · '+(o.status==='paid'?'已支付':'待支付')+'</div>'; });
+    if (dinnerOrdered.some(function(o) { return o.status === 'ordered'; }) && dinnerTime) {
+      html += '<button class="btn green" onclick="confirmCanteenPayment(\''+escAttr(dinnerOrdered[0].id)+'\')" style="font-size:.75rem;padding:4px 10px">✅ 确认用餐 · 支付 10 NT</button>';
+    }
+  } else if (dinnerOpen) {
+    html += '<button class="btn pri" onclick="preorderCanteen(\'dinner\')" style="font-size:.78rem;padding:5px 14px">🔔 预定今日晚餐</button>';
+  }
+  html += '</div>';
+
+  html += '<div class="card"><h3>💬 明天想吃什么？</h3>';
+  html += '<div style="display:flex;gap:6px"><input id="canteenSuggestion" placeholder="比如：素饺子…" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;font-family:var(--font);background:var(--card)"><button class="btn" onclick="submitCanteenSuggestion()" style="font-size:.78rem">提交建议</button></div>';
+  html += '</div>';
+
+  var allMyOrders = (data.canteen_orders || []).filter(function(o) { return o.person === (currentUser?currentUser.name:'') && o.date === today; });
+  if (allMyOrders.length > 0) {
+    html += '<div class="card"><h3>📋 我的订餐</h3>';
+    allMyOrders.forEach(function(o) {
+      html += '<div style="font-size:.78rem;padding:4px 0;border-bottom:1px dotted var(--border)">'+esc(o.date)+' '+(o.meal==='lunch'?'午餐':'晚餐')+' · '+(o.items||[]).map(function(it){return getFoodIcon(it)+esc(it);}).join('、')+' · '+o.price+' NT · '+(o.status==='paid'?'已付 ✅':'待付')+'</div>';
+    });
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function preorderCanteen(meal) {
+  if (!currentUser) { alert('请先登录'); return; }
+  var myNT = calcNtTotal(currentUser.name);
+  if (myNT < 10) { alert('NT 余额不足（需要 10 NT）'); return; }
+  var today = new Date().toISOString().slice(0,10);
+  var menu = data.canteen_menus && data.canteen_menus[today] ? data.canteen_menus[today] : {};
+  var items = menu[meal] || [];
+  var orderId = 'co_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  if (!data.canteen_orders) data.canteen_orders = [];
+  data.canteen_orders.push({ id: orderId, person: currentUser.name, date: today, meal: meal, items: items, price: 10, is_preorder: true, status: 'ordered', paid_at: '' });
+  recordTransaction({ type: TX_TYPES.CANTEEN_PREORDER, from: currentUser.name, to: '高琳姐', amount: 10, ref_id: orderId, item_name: (meal==='lunch'?'午餐':'晚餐'), scope: 'personal' });
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  updateAll();
+  setStatus('已预定今日'+(meal==='lunch'?'午餐':'晚餐')+'（10 NT）');
+}
+
+function confirmCanteenPayment(orderId) {
+  var o = (data.canteen_orders || []).find(function(x) { return x.id === orderId; });
+  if (!o || o.status === 'paid') return;
+  o.status = 'paid'; o.paid_at = new Date().toISOString();
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  updateAll();
+  setStatus('用餐确认：' + (o.meal==='lunch'?'午餐':'晚餐') + ' 已支付 ' + o.price + ' NT');
+}
+
+function submitCanteenSuggestion() {
+  var input = document.getElementById('canteenSuggestion');
+  if (!input || !input.value.trim()) return;
+  if (!data.canteen_suggestions) data.canteen_suggestions = [];
+  data.canteen_suggestions.push({ person: currentUser?currentUser.name:'', date: new Date().toISOString().slice(0,10), suggestion: input.value.trim() });
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  input.value = '';
+  setStatus('已提交建议 ✅');
+}
+
+// ═══ 南塘云村 Hub ═══
+function renderHub() {
+  var container = document.getElementById('hubContent'); if (!container) return;
+  var listedCount = (data.inventory || []).filter(function(it) { return it.status === 'listed'; }).length;
+  var confirmedGuests = (data.inn_bookings || []).filter(function(b) { return b.status === 'confirmed'; }).length;
+  var totalBeds = 12;
+  var openGames = (data.game_sessions || []).filter(function(g) { return g.status === 'open'; }).length;
+  var teahouseCount = (data.teahouse_posts || []).length;
+
+  var cells = [
+    { icon: '🧭', label: '实景地图', sub: '待开放', action: '', color: '#c4b898', active: false },
+    { icon: '🏨', label: '客栈', sub: confirmedGuests+'/'+totalBeds+'人', action: "alert('客栈即将开放')", color: '#d4a878', active: true },
+    { icon: '🥬', label: '素社食堂', sub: '今日菜单', action: "switchTab('canteen')", color: '#8ca878', active: true },
+    { icon: '🏪', label: '集市', sub: listedCount+'件在售', action: "switchTab('bazaar')", color: '#c8a848', active: true },
+    { icon: '🍵', label: '茶馆', sub: teahouseCount+'条八卦', action: "alert('茶馆即将开放')", color: '#a89878', active: false },
+    { icon: '🎲', label: '桌游室', sub: openGames+'局进行', action: "alert('桌游室即将开放')", color: '#8898b8', active: false }
+  ];
+
+  var html = '<h2 style="margin-bottom:16px;text-align:center">🗺️ 南塘云村</h2>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:700px;margin:0 auto">';
+  cells.forEach(function(c) {
+    var bg = c.active ? '#fefdf9' : '#f5f2ec';
+    var bd = c.active ? 'var(--border)' : '#ddd8cc';
+    var cur = c.active ? 'pointer' : 'default';
+    var op = c.active ? '1' : '.55';
+    var onclick = c.active ? ' onclick="'+c.action+'"' : '';
+    html += '<div'+onclick+' style="cursor:'+cur+';background:'+bg+';border:1.5px solid '+bd+';border-radius:12px;padding:18px 14px;text-align:center;opacity:'+op+';transition:.15s">';
+    html += '<div style="font-size:2.4rem;margin-bottom:6px">'+c.icon+'</div>';
+    html += '<div style="font-weight:700;font-size:.9rem;margin-bottom:2px">'+c.label+'</div>';
+    html += '<div style="font-size:.7rem;color:var(--muted)">'+c.sub+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
 // ── Adventurer: Quest Board ──
 // ═══ Shared: quest card rendering ═══
 if (!window._cardExpanded) window._cardExpanded = {};
@@ -3663,10 +3807,10 @@ function switchTab(name, opts) {
   tabHighlight = (opts && opts.highlight) ? opts.highlight : null;
   // ── 身份权限白名单 ──
   var roleTabs = {
-    admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map','bazaar'],
-    builder: ['workspace','questboard','taskhall','ntadmin','timeline','budget','settlement','bazaar'],
-    adventurer: ['workspace','questboard','timeline','leaderboard','bazaar'],
-    npc: ['workspace','bazaar'], visitor: ['workspace','bazaar']
+    admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map','realmMap','bazaar','canteen'],
+    builder: ['workspace','questboard','taskhall','ntadmin','timeline','budget','settlement','realmMap','bazaar','canteen'],
+    adventurer: ['workspace','questboard','timeline','leaderboard','realmMap','bazaar','canteen'],
+    npc: ['workspace','realmMap','bazaar','canteen'], visitor: ['workspace','realmMap','bazaar','canteen']
   };
   if (currentUser && !previewMode) {
     var allowed = roleTabs[currentUser.role];
@@ -3674,7 +3818,7 @@ function switchTab(name, opts) {
     if (!allowed || allowed.length === 0) return;
   }
   // ── 隐藏所有 tab 内容 ──
-  ['members','players','timeline','budget','settlement','map','taskhall','settings','profile','questboard','leaderboard','ntadmin','workspace','bazaar'].forEach(function(n) {
+  ['members','players','timeline','budget','settlement','map','taskhall','settings','profile','questboard','leaderboard','ntadmin','workspace','realmMap','bazaar','canteen'].forEach(function(n) {
     var el = document.getElementById('tab-' + n); if (el) el.classList.toggle('hidden', n !== name);
   });
   // ── 高亮当前可见面板中的 active tab ──
@@ -3698,7 +3842,9 @@ function switchTab(name, opts) {
   if (name === 'questboard') renderQuestBoard();refreshMemberView();
   if (name === 'leaderboard') renderLeaderboard();
   if (name === 'map') renderDailyView('player'); // backward compat
+  if (name === 'realmMap') renderHub();
   if (name === 'bazaar') renderBazaar();
+  if (name === 'canteen') renderCanteen();
   if (name === 'workspace') renderWorkspace();
 }
 
