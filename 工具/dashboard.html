@@ -2876,7 +2876,7 @@ function renderQuestCard(t, opts) {
   h += '</div>';
   // Meta row
   h += '<div style="display:flex;gap:8px;font-size:.72rem;color:var(--muted);flex-wrap:wrap;margin-top:3px">';
-  h += '<span>🧙 '+esc(t.poster||'?')+'</span><span>📅 '+(t.deadline||'—')+'</span><span>👥 '+slots+'</span>';
+  h += '<span>🧙 '+esc(t.poster||'?')+'</span><span>📅 '+(t.posted_at||t.deadline||'—')+'</span><span>⏰ '+(t.deadline||'—')+'</span><span>👥 '+slots+'</span>';
   if (opts.showAssignee) h += '<span>👤 '+esc(t.assignee||'—')+'</span>';
   h += '<span style="color:var(--accent);font-weight:600">💎 '+(t.points||0)+' NT</span></div>';
   // Progress
