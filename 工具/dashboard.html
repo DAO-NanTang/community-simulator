@@ -118,6 +118,15 @@ select.inline-input { cursor: pointer; }
 /* Modal */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.3); z-index: 100; justify-content: center; align-items: center; }
 .modal-overlay.show { display: flex; }
+/* Village Square watercolor background */
+#villageSquare { min-height: 100vh; background: linear-gradient(180deg, #e8f0e0 0%, #d4e8d0 15%, #f0ead8 30%, #e8dcc8 50%, #f5e8d0 70%, #dce8e8 85%, #e0dce4 100%); position: relative; padding: 30px 20px 60px; }
+#villageSquare::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 20% 30%, rgba(140,180,120,.15) 0%, transparent 60%), radial-gradient(ellipse at 75% 60%, rgba(180,160,120,.12) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(160,180,200,.1) 0%, transparent 40%); pointer-events: none; }
+.village-card { background: rgba(255,252,245,.9); border: 1px solid #d0c8b0; border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; backdrop-filter: blur(6px); }
+.village-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+.village-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,25,20,.5); z-index: 120; display: flex; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
+.village-modal .vm-inner { background: rgba(255,252,245,.97); border-radius: 16px; padding: 24px; max-width: 700px; width: 92%; margin-bottom: 60px; box-shadow: 0 12px 48px rgba(0,0,0,.25); position: relative; }
+.npc-bubble { display: flex; align-items: flex-start; gap: 12px; background: #f8f5ec; border: 2px solid #d8cdb0; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; }
+.npc-bubble .npc-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #e8c8a0, #d4a878); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; border: 2px solid #d8c0a0; }
 .modal { background: var(--card); border-radius: 12px; padding: 28px; max-width: 560px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,.15); }
 .modal h2 { margin-bottom: 16px; font-size: 1.1rem; }
 .modal label { display: block; font-size: .82rem; color: var(--muted); margin: 10px 0 4px; }
@@ -997,21 +1006,21 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
         <!-- 卡片1: 活动信息站 -->
-        <div class="card" style="flex:1;min-width:180px;max-width:220px;text-align:center;cursor:pointer" onclick="alert('🔒 活动列表功能即将开放')">
+        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('activity')">
           <div style="font-size:2.5rem;margin-bottom:8px">📋</div>
           <h3 style="margin:4px 0">活动信息站</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">浏览全部活动<br>选择加入活动</p>
           <button class="btn" style="font-size:.78rem;margin-top:8px">查看活动</button>
         </div>
         <!-- 卡片2: 任务大厅 -->
-        <div class="card" style="flex:1;min-width:180px;max-width:220px;text-align:center;cursor:pointer" onclick="switchTab('questboard')">
+        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('questhall')">
           <div style="font-size:2.5rem;margin-bottom:8px">🏛️</div>
           <h3 style="margin:4px 0">任务大厅</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">在地任务<br>发布与认领</p>
           <button class="btn pri" style="font-size:.78rem;margin-top:8px">进入大厅</button>
         </div>
         <!-- 卡片3: 实景地图 -->
-        <div class="card" style="flex:1;min-width:180px;max-width:220px;text-align:center;cursor:pointer" onclick="alert('🗺️ 实景地图建设中，敬请期待')">
+        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('map')">
           <div style="font-size:2.5rem;margin-bottom:8px">🗺️</div>
           <h3 style="margin:4px 0">实景地图</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">成为在地伙伴<br>或浏览地图</p>
@@ -1028,6 +1037,50 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     </div>
   </div>
 </main>
+
+<!-- Village Modal: Activity Info -->
+<div id="villageModalActivity" class="village-modal hidden" onclick="if(event.target===this)closeVillageModal('activity')">
+  <div class="vm-inner">
+    <button onclick="closeVillageModal('activity')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)">✕</button>
+    <h2 style="margin:0 0 16px">📋 活动信息站</h2>
+    <p style="color:var(--muted);margin-bottom:16px">南塘本地举办的所有活动</p>
+    <div id="villageActivityList"></div>
+  </div>
+</div>
+
+<!-- Village Modal: Task Hall -->
+<div id="villageModalQuesthall" class="village-modal hidden" onclick="if(event.target===this)closeVillageModal('questhall')">
+  <div class="vm-inner" style="max-width:750px">
+    <button onclick="closeVillageModal('questhall')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)">✕</button>
+    <div class="npc-bubble">
+      <div class="npc-avatar">🤖</div>
+      <div style="flex:1">
+        <div style="font-weight:700;margin-bottom:4px">小云 · 任务大厅接待员</div>
+        <div style="font-size:.85rem;color:var(--text)" id="npcDialogue">你好！我是小云，任务大厅的接待员～ 今天有什么可以帮你的？想找任务还是发布委托？</div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;display:flex;gap:6px;flex-wrap:wrap" id="villageQuickBar"></div>
+    <div style="margin-bottom:10px;font-size:.82rem;font-weight:600">📋 公开委托</div>
+    <div id="villageQuestList" style="max-height:50vh;overflow-y:auto"></div>
+    <div style="margin-top:14px;text-align:center">
+      <button class="btn pri" onclick="closeVillageModal('questhall');switchTab('questboard')" style="font-size:.8rem">🏛️ 进入完整任务大厅 →</button>
+    </div>
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:.75rem;color:var(--muted)">💡 发布私人委托需要至少 1 NT 余额。营队任务请由共建者在NT管理中发布。</div>
+    </div>
+  </div>
+</div>
+
+<!-- Village Modal: Map -->
+<div id="villageModalMap" class="village-modal hidden" onclick="if(event.target===this)closeVillageModal('map')">
+  <div class="vm-inner" style="text-align:center">
+    <button onclick="closeVillageModal('map')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)">✕</button>
+    <div style="font-size:5rem;margin-bottom:16px">🗺️</div>
+    <h2>实景地图</h2>
+    <p style="color:var(--muted)">🔒 建设中，敬请期待</p>
+    <p style="font-size:.82rem;color:var(--muted)">开放后可以在这里探索南塘村、成为在地伙伴</p>
+  </div>
+</div>
 
 <!-- Add Task Modal -->
 <div class="modal-overlay" id="addTaskModal">
@@ -1766,6 +1819,89 @@ function showPlazaPlaceholder(user) {
 function showVillageSquare() {
   if (!currentUser) return;
   showPlazaPlaceholder(currentUser);
+}
+
+// ── Village modals ──
+function openVillageModal(type) {
+  if (type === 'questhall') renderVillageQuestHall();
+  if (type === 'activity') renderVillageActivityList();
+  var el = document.getElementById('villageModal' + (type==='questhall'?'Questhall':type==='activity'?'Activity':'Map'));
+  if (el) el.classList.remove('hidden');
+}
+function closeVillageModal(type) {
+  var el = document.getElementById('villageModal' + (type==='questhall'?'Questhall':type==='activity'?'Activity':'Map'));
+  if (el) el.classList.add('hidden');
+}
+
+function renderVillageQuestHall() {
+  var tasks = data.tasks || []; var name = currentUser ? currentUser.name : ''; var today = new Date().toISOString().slice(0,10);
+  // Quick filter bar
+  var qhtml = '';
+  var scopes = [{v:'all',l:'全部'},{v:'camp',l:'🏕️营地'},{v:'personal',l:'👤私人'}];
+  scopes.forEach(function(s){ qhtml += '<button class="btn'+(questScopeFilter===s.v?' pri':'')+'" onclick="questScopeFilter=\''+s.v+'\';renderVillageQuestHall()" style="font-size:.72rem;padding:2px 8px">'+s.l+'</button>'; });
+  document.getElementById('villageQuickBar').innerHTML = qhtml;
+
+  // Filtered tasks
+  var filtered = tasks.filter(function(t) {
+    if (t.status !== 'active' || !t.claimants) return false;
+    if (questScopeFilter !== 'all' && (t.scope||'camp') !== questScopeFilter) return false;
+    return true;
+  });
+
+  var html = '';
+  if (filtered.length === 0) {
+    html += '<div style="color:var(--muted);text-align:center;padding:20px">暂无公开委托</div>';
+  } else {
+    filtered.slice(0, 15).forEach(function(t) {
+      var idx = tasks.indexOf(t);
+      var activeClaimants = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
+      var slots = t.max_slots > 0 ? activeClaimants.length+'/'+t.max_slots : '不限';
+      var scopeTag = (t.scope||'camp')==='personal' ? '<span style="font-size:.65rem;background:#f0e0f0;color:#8b5e9e;padding:1px 5px;border-radius:3px">✏️私人</span>' : '<span style="font-size:.65rem;background:#e0f0e0;color:#5a8a3c;padding:1px 5px;border-radius:3px">🏕️营地</span>';
+      html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer" onclick="closeVillageModal(\'questhall\');switchTab(\'questboard\')">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+        '<span style="font-weight:600">'+esc(t.name)+'</span>'+scopeTag+'</div>'+
+        '<div style="display:flex;gap:12px;margin-top:4px;font-size:.75rem;color:var(--muted)">'+
+        '<span>🧙 '+esc(t.poster||'?')+'</span><span>📅 '+esc(t.deadline||'—')+'</span><span>👥 '+slots+'</span>'+
+        '<span style="color:var(--accent);font-weight:600">💎 '+(t.points||0)+' NT</span></div></div>';
+    });
+    if (filtered.length > 15) html += '<div style="text-align:center;color:var(--muted);font-size:.78rem">还有 '+(filtered.length-15)+' 条...</div>';
+  }
+  document.getElementById('villageQuestList').innerHTML = html;
+  // NPC dialogue update
+  document.getElementById('npcDialogue').textContent = filtered.length > 0 ?
+    '这里有 '+filtered.length+' 个公开委托等你来看～ 点击任意委托可以查看详情和领取哦！' :
+    '今天还没有公开的委托，过会儿再来看看吧～ 或者去「活动信息站」看看有什么活动可以参加！';
+}
+
+function renderVillageActivityList() {
+  var html = '';
+  html += '<div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;background:#fdfcf6">'+
+    '<div style="font-size:1.2rem;font-weight:700">🏕️ 南塘艺术共创营 · 第四期</div>'+
+    '<div style="font-size:.8rem;color:var(--muted);margin:4px 0">2026年7月 · 进行中 · 12人活跃</div>'+
+    '<div style="font-size:.82rem">工笔画创作、在地生活、展览布置…</div>'+
+    '<div style="margin-top:8px"><input id="villageInviteCode" placeholder="输入邀请码" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:.82rem;width:180px"> '+
+    '<button class="btn pri" onclick="var c=document.getElementById(\'villageInviteCode\').value;if(c){var r=doUpgradeWithCode(c);if(r&&r.ok){closeVillageModal(\'activity\');switchTab(\'workspace\');}}" style="font-size:.78rem">→ 成为冒险者</button></div></div>';
+  html += '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:10px;opacity:.6">'+
+    '<div style="font-size:1rem;font-weight:700">🎋 南塘端午文化节</div>'+
+    '<div style="font-size:.78rem;color:var(--muted)">2026年6月 · 已完结 · <span style="cursor:pointer;color:var(--accent)">📷 查看回顾</span></div></div>';
+  html += '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 16px;opacity:.5">'+
+    '<div style="font-size:1rem;font-weight:700">🌾 秋收共创周</div>'+
+    '<div style="font-size:.78rem;color:var(--muted)">预计2026年10月 · 规划中 · <span style="cursor:pointer;color:var(--accent)">🔔 关注</span></div></div>';
+  document.getElementById('villageActivityList').innerHTML = html;
+}
+
+function doUpgradeWithCode(code) {
+  var codes = getWorldCodes();
+  if (!code) return {ok:false};
+  if (!codes.includes(code)) { alert('邀请码无效'); return {ok:false}; }
+  var users = getUsers();
+  if (!currentUser) return {ok:false};
+  users[currentUser.name].role = 'adventurer';
+  users[currentUser.name].world_id = code;
+  saveUsers(users);
+  currentUser.role = 'adventurer';
+  alert('✅ 已升级为冒险者！即将进入营队界面');
+  return {ok:true};
 }
 
 function updateWorldHUD() {
