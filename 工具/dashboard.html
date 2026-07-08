@@ -2979,14 +2979,6 @@ function renderQuestBoard() {
   fhtml += '</div>';
 
   // ── Unclaimed reminder ──
-  var unclaimedCount = tasks.filter(function(t) { return t.status==='active'&&t.claimants&&(t.claimants||[]).filter(function(c){return c.status!=='dropped';}).length===0; }).length;
-  var urgentCount = tasks.filter(function(t) { if (t.status!=='active'||!t.deadline) return false; var dl=parseDL(t.deadline); var td=new Date(today+'T00:00:00'); return (dl-td)/86400000 <= 1 && (dl-td)/86400000 >= 0; }).length;
-  if (unclaimedCount > 0 || urgentCount > 0) {
-    fhtml += '<div style="background:#fef9c3;border:1px solid #e5d980;border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:.82rem">';
-    if (unclaimedCount > 0) fhtml += '⚠️ 还有 <b>'+unclaimedCount+'</b> 个任务无人认领 ';
-    if (urgentCount > 0) fhtml += '⏰ <b>'+urgentCount+'</b> 个任务今天/明天截止';
-    fhtml += '</div>';
-  }
 
   var filterTypes = ['all','主线','支线','共创','隐藏','claimable','claimed'];
   document.querySelectorAll('#questFilterBar .btn').forEach(function(b, i) { b.className = (questFilter === filterTypes[i]) ? 'btn pri' : 'btn'; });
@@ -3027,6 +3019,13 @@ function renderQuestBoard() {
   // Sort: 进行中 → 已提交 → 已完成
   var statusOrder = { 'in_progress':0, 'triggered':0, 'submitted':1, 'rejected':1, 'completed':2 };
   claimed.sort(function(a, b) { var ca = (a.claimants||[]).find(function(c){return c.name===name;}), cb = (b.claimants||[]).find(function(c){return c.name===name;}); return (statusOrder[(ca?ca.status:'')]||3) - (statusOrder[(cb?cb.status:'')]||3); });
+  // Banner with real counts
+  if (normalC.length>0||urgentC.length>0) {
+    fhtml += '<div style="background:#fef9c3;border:1px solid #e5d980;border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:.82rem">';
+    if (normalC.length>0) fhtml += '⚠️ 还有 <b>'+normalC.length+'</b> 个任务无人认领 ';
+    if (urgentC.length>0) fhtml += '⏰ <b>'+urgentC.length+'</b> 个任务即将截止';
+    fhtml += '</div>';
+  }
   var cardOpts = { context:'questboard', userName:name, isMember:true };
   var html = '';
   if (urgentC.length>0) {
