@@ -4315,15 +4315,26 @@ function renderMemberDetailFor(type, name, m) {
         submittedT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
         doneT.sort(function(a,b){return parseDate(b.deadline)-parseDate(a.deadline)});
         var h = '<div class="ms-task-col">';
-        // Filter bar
+        // Source filter bar (same as workspace)
         h += '<div style="display:flex;gap:3px;margin-bottom:8px;flex-wrap:wrap">';
-        [{v:'all',l:'全部'},{v:'camp',l:'🏕️营地'},{v:'personal',l:'✏️私人'}].forEach(function(f){
-          h += '<button class="btn'+(memTaskFilter===f.v?' pri':'')+'" onclick="memTaskFilter=memTaskFilter===f.v?\'\':f.v;renderMemberDetail(\''+escAttr(name)+'\')" style="font-size:.68rem;padding:2px 7px">'+f.l+'</button>';
+        [{v:'all',l:'📋 全部'},{v:'work',l:'🏛️ 创世工作'},{v:'quest',l:'📋 大厅委托'},{v:'personal',l:'✏️ 私人委托'}].forEach(function(f){
+          h += '<button class="btn'+(memTaskFilter===f.v?' pri':'')+'" onclick="memTaskFilter=memTaskFilter===f.v?\'\':f.v;renderMemberDetail(\''+escAttr(name)+'\')" style="font-size:.7rem;padding:3px 9px">'+f.l+'</button>';
         });
         h += '</div>';
-        // Apply filter
-        if (memTaskFilter==='camp') { activeT=activeT.filter(function(t){return(t.scope||'camp')==='camp';}); submittedT=submittedT.filter(function(t){return(t.scope||'camp')==='camp';}); doneT=doneT.filter(function(t){return(t.scope||'camp')==='camp';}); }
-        if (memTaskFilter==='personal') { activeT=activeT.filter(function(t){return(t.scope||'camp')==='personal';}); submittedT=submittedT.filter(function(t){return(t.scope||'camp')==='personal';}); doneT=doneT.filter(function(t){return(t.scope||'camp')==='personal';}); }
+        // Apply source filter
+        function getTaskSource(t) {
+          var isWiz = t.type==='初始'||t.type==='新增'||t.type==='变更';
+          var cl = (t.claimants||[]).find(function(c){return c.name===name;});
+          if ((t.scope||'camp')==='personal') return 'personal';
+          if (isWiz) return 'work';
+          if (cl) return 'quest';
+          return 'work';
+        }
+        if (memTaskFilter && memTaskFilter!=='all') {
+          activeT=activeT.filter(function(t){return getTaskSource(t)===memTaskFilter;});
+          submittedT=submittedT.filter(function(t){return getTaskSource(t)===memTaskFilter;});
+          doneT=doneT.filter(function(t){return getTaskSource(t)===memTaskFilter;});
+        }
         h += '<div style="font-size:.75rem;font-weight:600;margin-bottom:4px;color:var(--text)">📋 进行中（'+activeT.length+'项）</div>';
         if (activeT.length>0) { activeT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); }
         else { h += '<div style="color:var(--muted);font-size:.72rem;padding:6px 0">暂无进行中的任务</div>'; }
