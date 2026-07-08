@@ -1466,6 +1466,59 @@ function removeFromFinance(filterType, value) {
   });
 }
 
+// ═══ 会计系统：交易类型枚举 ═══
+var TX_TYPES = {
+  TASK_REWARD:      'task_reward',
+  TASK_POST:        'task_post',
+  CANTEEN_PREORDER: 'canteen_preorder',
+  CANTEEN_WALKIN:   'canteen_walkin',
+  BAZAAR_TRADE:     'bazaar_trade',
+  TEAHOUSE_POST:    'teahouse_post',
+  GAME_FEE:         'game_fee',
+  ADMIN_ADJUST:     'admin_adjust',
+  SEASON_BONUS:     'season_bonus'
+};
+
+// ═══ 会计系统：统一记账入口 ═══
+function recordTransaction(opts) {
+  if (!opts.amount || opts.amount <= 0) return null;
+  var tx = {
+    id: 'tx_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10),
+    type: opts.type,
+    from: opts.from || '系统',
+    to: opts.to,
+    amount: opts.amount,
+    scope: opts.scope || 'camp',
+    date: new Date().toISOString().slice(0, 10),
+    created_at: new Date().toISOString(),
+    ref_id: opts.ref_id || '',
+    task_name: opts.task_name || '',
+    item_name: opts.item_name || '',
+    confirmed_by: opts.confirmed_by || '',
+    note: opts.note || '',
+    tx_hash: ''
+  };
+  if (!data.finance) data.finance = [];
+  data.finance.push(tx);
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  return tx;
+}
+
+// ═══ 会计系统：旧流水迁移（一次性）═══
+function migrateFinanceRecords() {
+  if (!data.finance) return;
+  var migrated = 0;
+  data.finance.forEach(function(tx) {
+    if (!tx.id) {
+      tx.id = 'tx_legacy_' + Date.now().toString(36) + '_' + (migrated++);
+      tx.created_at = tx.created_at || (tx.date + 'T00:00:00.000Z');
+      tx.ref_id = tx.ref_id || '';
+      tx.tx_hash = tx.tx_hash || '';
+    }
+  });
+  if (migrated > 0) localStorage.setItem('camp_data', JSON.stringify(data));
+}
+
 function toggleDropdown(id) { var el = document.getElementById(id); el.classList.toggle('hidden'); }
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) { var so = document.getElementById('inviteSidebar') && document.getElementById('inviteSidebar').classList.contains('show'); if (!e.target.closest('.dropdown') && !so) { document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); }); } });
@@ -1497,7 +1550,9 @@ document.addEventListener('DOMContentLoaded', function() {
       data = { tasks:[], decisions:[], members:{}, budget:{}, budget_items:[],
                finance_cny:{}, finance:[], schedule:{},
                camp_progress:{step:1,steps:{'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'}},
-               camp_dates:{start:'',end:'',duration_days:15,milestones:[]}, staff_cards:[] };
+               camp_dates:{start:'',end:'',duration_days:15,milestones:[]}, staff_cards:[],
+               inventory:[], canteen_menus:{}, canteen_orders:[], canteen_suggestions:[],
+               inn_rooms:[], inn_bookings:[], teahouse_posts:[], game_sessions:[] };
     }
     // 补缺失的默认字段（兼容旧版本数据）
     if (!data.budget_items) data.budget_items = [];
@@ -1506,6 +1561,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!data.camp_dates) data.camp_dates = {start:'',end:'',duration_days:15,milestones:[]};
     if (!data.finance) data.finance = [];
     if (!data.finance_cny) data.finance_cny = {};
+    // 社区空间字段兼容
+    if (!data.inventory) data.inventory = [];
+    if (!data.canteen_menus) data.canteen_menus = {};
+    if (!data.canteen_orders) data.canteen_orders = [];
+    if (!data.canteen_suggestions) data.canteen_suggestions = [];
+    if (!data.inn_rooms) data.inn_rooms = [];
+    if (!data.inn_bookings) data.inn_bookings = [];
+    if (!data.teahouse_posts) data.teahouse_posts = [];
+    if (!data.game_sessions) data.game_sessions = [];
   }
   // 清理旧版 budget 废弃字段
   var DEAD_BUDGET_KEYS = ['salary_base_rmb','salary','buyback_nt','buyback_nt_total',
@@ -1535,7 +1599,7 @@ document.addEventListener('DOMContentLoaded', function() {
       { date: '06/29', name: '结项', icon: '🏁' },
     ];
   }
-  updateAll(); loadTemplates(); refreshTemplateSelects();
+  migrateFinanceRecords(); updateAll(); loadTemplates(); refreshTemplateSelects();
 
   // 1. Migrate existing members (idempotent)
   migrateExistingMembers();
@@ -3195,7 +3259,7 @@ function confirmSubmit() {
 function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; showSubmitModal(idx); }
 function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard();refreshMemberView(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace();var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();setStatus('已放弃：' + t.name); }
 function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var targetName = prompt('输入要触发的冒险者姓名：'); if (!targetName) return; if (!t.claimants) t.claimants = []; var alreadyThere = t.claimants.find(function(c) { return c.name === targetName; }); if (alreadyThere) { alert('该冒险者已被触发'); return; } t.claimants.push({ name: targetName, claimed_at: new Date().toISOString().slice(0,10), status: 'triggered' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已触发隐藏任务给：' + targetName); }
-function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; if (t.reviewer && currentUser.name !== t.reviewer && currentUser.name !== t.poster) { alert('该任务指定由 ' + t.reviewer + ' 审核'); return; } if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); if (!data.finance) data.finance = []; data.finance.push({ type: 'task_reward', from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, date: new Date().toISOString().slice(0,10), confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
+function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; if (t.reviewer && currentUser.name !== t.reviewer && currentUser.name !== t.poster) { alert('该任务指定由 ' + t.reviewer + ' 审核'); return; } if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); recordTransaction({ type: TX_TYPES.TASK_REWARD, from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
 function showPostTask() {
   if (!currentUser) { alert('请先登录'); return; }
   document.getElementById('postTaskName').value = '';
@@ -3245,8 +3309,7 @@ function confirmPostTask() {
   if (!data.tasks) data.tasks = [];
   data.tasks.push(task);
   if (points > 0) {
-    if (!data.finance) data.finance = [];
-    data.finance.push({ type:'task_post', from:currentUser.name, to:'任务池', amount:points, task_name:name, date:new Date().toISOString().slice(0,10), scope:'personal' });
+    recordTransaction({ type: TX_TYPES.TASK_POST, from: currentUser.name, to: '任务池', amount: points, task_name: name, scope: 'personal' });
   }
   localStorage.setItem('camp_data', JSON.stringify(data));
   closePostTaskModal();
@@ -4251,7 +4314,7 @@ function renderMemberDetailFor(type, name, m) {
         activeT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
         submittedT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
         doneT.sort(function(a,b){return parseDate(b.deadline)-parseDate(a.deadline)});
-        var h = '<div class="ms-task-col"><h4>📋 任务</h4>';
+        var h = '<div class="ms-task-col">';
         // Filter bar
         h += '<div style="display:flex;gap:3px;margin-bottom:8px;flex-wrap:wrap">';
         [{v:'all',l:'全部'},{v:'camp',l:'🏕️营地'},{v:'personal',l:'✏️私人'}].forEach(function(f){
