@@ -364,6 +364,9 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <button class="btn pri" onclick="showIdentityPicker()" style="font-size:.9rem;padding:12px 24px">✨ 我是新来的</button>
         <button class="btn" onclick="showUserList()" style="font-size:.9rem;padding:12px 24px">📋 我有账号</button>
       </div>
+      <div style="margin-top:28px;opacity:.35">
+        <button onclick="resetAllData()" style="background:none;border:none;color:var(--muted);font-size:.65rem;cursor:pointer;text-decoration:underline dotted" title="清除全部本地数据，恢复出厂状态">🗑️ 重置全部数据</button>
+      </div>
     </div>
     <div id="identityPicker" class="hidden login-card" style="text-align:center">
       <h2>你是谁？</h2>
@@ -1608,6 +1611,21 @@ function logoutUser() {
   var banner = document.getElementById('previewBanner'); if (banner) banner.style.display = 'none';
   document.body.classList.remove('builder-mode', 'adventurer-mode'); hideAllTabs();
   document.getElementById('loginPage').style.display = 'flex'; showLoginEntry();
+}
+
+function resetAllData() {
+  if (!confirm('⚠️ 确定要重置全部数据吗？\n\n这将清除：\n• 所有任务、成员、财务记录\n• 所有用户账号和密码\n• 所有模板和设置\n\n保留：admin 初始账号（砚仁 / 1500）\n\n此操作不可撤销！')) return;
+  if (!confirm('再次确认：真的要删除所有本地数据吗？')) return;
+  var keys = [
+    'camp_data', 'camp_wizard_tasks', 'camp_templates',
+    'nt_users', 'nt_session', 'nt_remembered_user',
+    'nt_invite_codes', 'nt_world_codes',
+    'inbox_lastOpened', 'inbox_seen_ids', 'inbox_seen_before',
+    'budget_item_counter'
+  ];
+  keys.forEach(function(k) { localStorage.removeItem(k); });
+  alert('✅ 已重置。页面将刷新。');
+  location.reload();
 }
 
 // ── World Entry & Routing ──
