@@ -1012,7 +1012,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
         <!-- 卡片1: 活动信息站 -->
-        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="if(currentUser&&(currentUser.role==='admin'||currentUser.role==='builder')){hidePlazaPlaceholder();switchTab('workspace')}else{openVillageModal('activity')}">
+        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('activity')">
           <div style="font-size:2.5rem;margin-bottom:8px">📋</div>
           <h3 style="margin:4px 0">活动信息站</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">浏览全部活动<br>选择加入活动</p>
@@ -4529,6 +4529,13 @@ function renderSettlementAll() {
     bucket[name].tasks.push(t);
     bucket[name].points += (t.points || 1);
     if (t.status === '已完成' || t.status === '已确认') bucket[name].done++;
+  });
+
+  // ── Filter: playerMap only shows adventurers (not 云村民/NPC) ──
+  var users = getUsers();
+  Object.keys(playerMap).forEach(function(name) {
+    var u = users[name];
+    if (u && (u.role === 'visitor' || u.role === 'npc')) { delete playerMap[name]; }
   });
 
   // ── Render avatar cards ──
