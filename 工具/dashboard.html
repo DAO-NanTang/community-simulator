@@ -438,11 +438,11 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <!-- ═══ Builder Tabs ═══ -->
   <div id="builderTabs" class="tabs hidden">
     <button class="tab" data-tab="workspace" onclick="switchTab('workspace')" id="builderWorkspaceTab">👤 砚仁</button>
-    <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务大厅</button>
-    <button class="tab" data-tab="members" onclick="switchTab('members')">📋 成员档案</button>
-    <button class="tab" data-tab="taskhall" onclick="switchTab('taskhall')">📋 工会大厅</button>
+    <button class="tab" data-tab="members" onclick="switchTab('members')">👥 成员档案</button>
+    <button class="tab" data-tab="taskhall" onclick="switchTab('taskhall')">🏛️ 工会大厅</button>
     <button class="tab" data-tab="ntadmin" onclick="switchTab('ntadmin')">🎯 NT管理</button>
-    <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 世界时间线</button>
+    <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务大厅</button>
+    <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="budget" onclick="switchTab('budget')">💰 资源金库</button>
     <button class="tab" data-tab="settlement" onclick="switchTab('settlement')">🧾 通关结算</button>
     <span style="flex:1"></span>
@@ -466,7 +466,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div id="adventurerTabs" class="tabs hidden">
     <button class="tab" data-tab="workspace" onclick="switchTab('workspace')" id="adventurerWorkspaceTab">👤 砚仁</button>
     <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务大厅</button>
-    <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 世界时间线</button>
+    <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
     <span style="flex:1"></span>
     <span class="dropdown" style="position:relative;align-self:center;margin-left:4px">
@@ -1035,7 +1035,10 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
       <div style="text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15)">
         <div style="font-size:.82rem;color:rgba(255,255,255,.7);text-shadow:0 1px 2px rgba(0,0,0,.3)" id="villageUserInfo">—</div>
-        <button class="btn" onclick="logoutUser()" style="margin-top:8px;font-size:.8rem;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">🚪 退出</button>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+          <button class="btn" onclick="alert('🗺️ 实景地图建设中')" style="font-size:.8rem;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">🗺️ 实景地图</button>
+          <button class="btn" onclick="logoutUser()" style="font-size:.8rem;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">🚪 退出</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1840,7 +1843,7 @@ function closeVillageModal(type) {
   if (el) el.classList.add('hidden');
 }
 
-var villageScopeFilter = 'all', villageQuickFilter = '', villageCatFilter = '', villageSearchText = '';
+var villageScopeFilter = 'all', villageQuickFilter = '', villageCatFilter = '', villageLocFilter = '', villageSearchText = '';
 function renderVillageQuestHall() {
   // Set fixed NPC avatar
   var npcAv = document.getElementById('npcAvatar'); if (npcAv) npcAv.innerHTML = avatarCircle(42, 56, 0);
@@ -1872,9 +1875,15 @@ function renderVillageQuestHall() {
   });
   barHTML += '</div>';
   // Type filter row (adventurer-facing)
-  barHTML += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">';
+  barHTML += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:4px">';
   ['全部','主线','支线','隐藏','共创','身份'].forEach(function(c){
     barHTML += '<button class="btn'+(villageCatFilter===c||(!villageCatFilter&&c==='全部')?' pri':'')+'" onclick="villageCatFilter=villageCatFilter===c||(c===\"全部\"&&!villageCatFilter)?\"\":c;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
+  });
+  barHTML += '</div>';
+  // Location + custom row (village only)
+  barHTML += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">';
+  ['在地任务','非在地任务','日常任务','自定义'].forEach(function(c){
+    barHTML += '<button class="btn'+(villageLocFilter===c?' pri':'')+'" onclick="villageLocFilter=villageLocFilter===c?\"\":c;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
   });
   barHTML += '</div>';
 
@@ -1887,6 +1896,10 @@ function renderVillageQuestHall() {
     if (villageSearchText && t.name.toLowerCase().indexOf(villageSearchText)===-1 && t.deadline.indexOf(villageSearchText)===-1) return false;
     if (villageScopeFilter!=='all' && (t.scope||'camp')!==villageScopeFilter) return false;
     if (villageCatFilter && villageCatFilter!=='全部' && t.type!==villageCatFilter) return false;
+    if (villageLocFilter==='在地任务' && t.location!=='local') return false;
+    if (villageLocFilter==='非在地任务' && t.location==='local') return false;
+    if (villageLocFilter==='日常任务' && t.type!=='日常') return false;
+    if (villageLocFilter==='自定义' && t.type==='日常') return false;
     if (villageQuickFilter==='today' && t.deadline!==today) return false;
     if (villageQuickFilter==='urgent'){ var dl=t.deadline?new Date(t.deadline+'T00:00:00'):null; var td=new Date(today+'T00:00:00'); if(!dl||(dl-td)/86400000>2)return false; }
     if (villageQuickFilter==='need_people'){ var ac=(t.claimants||[]).filter(function(c){return c.status!=='dropped';}); if(t.max_slots<=0||ac.length>=t.max_slots)return false; }
@@ -2331,6 +2344,7 @@ function markAllRead() {
 
 
 var PREVIEW_ROLES = { builder:'🧱共建者', adventurer:'⚔️冒险者', npc:'👥在地伙伴', visitor:'🏕️云村民' };
+var PREVIEW_LABELS = { builder:'共建者', adventurer:'冒险者', npc:'在地伙伴', visitor:'云村民' };
 function switchToPreview(role) {
   previewMode = true; previewRole = role;
   hideAllTabs();
@@ -2357,7 +2371,7 @@ function switchToPreview(role) {
 var previewRole = 'adventurer';
 
 function showPreviewBanner(role) {
-  var label = PREVIEW_ROLES[role] || role;
+  var label = PREVIEW_LABELS[role] || role;
   var banner = document.getElementById('previewBanner');
   if (!banner) { banner = document.createElement('div'); banner.id = 'previewBanner'; banner.innerHTML = ''; document.getElementById('worldHUD').after(banner); }
   banner.innerHTML = '👁️ 你正在以' + label + '视角预览 · <button onclick="exitPreview()" style="background:#1a1410;color:#c8a860;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-weight:600;margin-left:12px">返回管理界面</button>';
