@@ -1983,6 +1983,7 @@ function closeVillageModal(type) {
 }
 
 var villageScopeFilter = 'all', villageQuickFilter = '', villageCatFilter = '', villageLocFilter = '', villageSearchText = '';
+function parseDL(dl) { if(!dl) return null; var m=dl.match(/(\d+)\/(\d+)/); if(m) return new Date(2026,parseInt(m[1])-1,parseInt(m[2])); var d=new Date(dl+'T00:00:00'); return isNaN(d.getTime())?null:d; }
 function renderVillageQuestHall() {
   // Set fixed NPC avatar
   var npcAv = document.getElementById('npcAvatar'); if (npcAv) npcAv.innerHTML = avatarCircle(42, 56, 0);
@@ -1997,6 +1998,8 @@ function renderVillageQuestHall() {
   tlHTML += ' <span style="cursor:pointer;color:var(--accent);margin-left:4px" onclick="alert(\'📦 往期档案功能即将开放\')">📦 往期档案</span>';
   var el = document.getElementById('npcTimelineBar'); if (el) el.innerHTML = tlHTML;
 
+  // Helper: normalize deadline "M/D" → Date object
+  function parseDL(dl) { if(!dl) return null; var m=dl.match(/(\d+)\/(\d+)/); if(m) return new Date(2026,parseInt(m[1])-1,parseInt(m[2])); var d=new Date(dl+'T00:00:00'); return isNaN(d.getTime())?null:d; }
   // ── Search text ──
   var si = document.getElementById('villageSearchInput');
   if (si && si.value !== villageSearchText) villageSearchText = si.value.trim().toLowerCase();
@@ -2033,7 +2036,7 @@ function renderVillageQuestHall() {
   // ── Filter + three-layer logic ──
   var active = tasks.filter(function(t){ return t.status==='active' && t.claimants; });
   var unclaimed = active.filter(function(t){ return (t.claimants||[]).filter(function(c){return c.status!=='dropped';}).length===0; }).length;
-  var urgent = active.filter(function(t){ if(!t.deadline)return false; var d=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); return (d-td)/86400000<=2&&(d-td)/86400000>=0; }).length;
+  var urgent = active.filter(function(t){ if(!t.deadline)return false; var d=parseDL(t.deadline); var td=new Date(today+'T00:00:00'); return (d-td)/86400000<=2&&(d-td)/86400000>=0; }).length;
 
   var filtered = active.filter(function(t) {
     if (villageSearchText && t.name.toLowerCase().indexOf(villageSearchText)===-1 && t.deadline.indexOf(villageSearchText)===-1) return false;
@@ -2044,7 +2047,7 @@ function renderVillageQuestHall() {
     if (villageLocFilter==='日常任务' && t.type!=='日常') return false;
     if (villageLocFilter==='自定义' && t.type==='日常') return false;
     if (villageQuickFilter==='today' && t.deadline!==today) return false;
-    if (villageQuickFilter==='urgent'){ var dl=t.deadline?new Date(t.deadline+'T00:00:00'):null; var td=new Date(today+'T00:00:00'); if(!dl||(dl-td)/86400000>2)return false; }
+    if (villageQuickFilter==='urgent'){ var dl=t.deadline?parseDL(t.deadline):null; var td=new Date(today+'T00:00:00'); if(!dl||(dl-td)/86400000>2)return false; }
     if (villageQuickFilter==='need_people'){ var ac=(t.claimants||[]).filter(function(c){return c.status!=='dropped';}); if(t.max_slots<=0||ac.length>=t.max_slots)return false; }
     return true;
   });
@@ -2077,7 +2080,7 @@ function renderVillageQuestHall() {
   // Split canClaim into urgent (48h) and normal
   var urgentClaim = [], normalClaim = [];
   canClaim.forEach(function(t){
-    if (t.deadline) { var dl=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); if ((dl-td)/86400000<=2&&(dl-td)/86400000>=0) { urgentClaim.push(t); return; } }
+    if (t.deadline) { var dl=parseDL(t.deadline); var td=new Date(today+'T00:00:00'); if ((dl-td)/86400000<=2&&(dl-td)/86400000>=0) { urgentClaim.push(t); return; } }
     normalClaim.push(t);
   });
   urgentClaim.sort(sortByDeadline); normalClaim.sort(sortByPosted);
@@ -2973,7 +2976,7 @@ function renderQuestBoard() {
 
   // ── Unclaimed reminder ──
   var unclaimedCount = tasks.filter(function(t) { return t.status==='active'&&t.claimants&&(t.claimants||[]).filter(function(c){return c.status!=='dropped';}).length===0; }).length;
-  var urgentCount = tasks.filter(function(t) { if (t.status!=='active'||!t.deadline) return false; var dl=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); return (dl-td)/86400000 <= 1 && (dl-td)/86400000 >= 0; }).length;
+  var urgentCount = tasks.filter(function(t) { if (t.status!=='active'||!t.deadline) return false; var dl=parseDL(t.deadline); var td=new Date(today+'T00:00:00'); return (dl-td)/86400000 <= 1 && (dl-td)/86400000 >= 0; }).length;
   if (unclaimedCount > 0 || urgentCount > 0) {
     fhtml += '<div style="background:#fef9c3;border:1px solid #e5d980;border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:.82rem">';
     if (unclaimedCount > 0) fhtml += '⚠️ 还有 <b>'+unclaimedCount+'</b> 个任务无人认领 ';
@@ -2995,7 +2998,7 @@ function renderQuestBoard() {
     if (questScopeFilter !== 'all' && (t.scope||'camp') !== questScopeFilter) return false;
     // quick filters
     if (questQuickFilter === 'today' && t.deadline !== today) return false;
-    if (questQuickFilter === 'urgent') { var dl = t.deadline ? new Date(t.deadline+'T00:00:00') : null; var td = new Date(today+'T00:00:00'); if (!dl || (dl-td)/86400000 > 2) return false; }
+    if (questQuickFilter === 'urgent') { var dl = t.deadline ? parseDL(t.deadline) : null; var td = new Date(today+'T00:00:00'); if (!dl || (dl-td)/86400000 > 2) return false; }
     if (questQuickFilter === 'need_people' && (t.max_slots <= 0 || activeClaimants.length >= t.max_slots)) return false;
     if (questQuickFilter === 'submitted_all') { var allSub = activeClaimants.length > 0 && activeClaimants.every(function(c){return c.status==='submitted'||c.status==='completed';}); if (!allSub) return false; }
     // category filter
@@ -3013,7 +3016,7 @@ function renderQuestBoard() {
   // Sort: urgent first, then by posted_at
   var qSortDL = function(a,b){ var da=a.deadline?new Date(a.deadline+'T00:00:00'):new Date('2099'); var db=b.deadline?new Date(b.deadline+'T00:00:00'):new Date('2099'); return da-db; };
   var qSortPosted = function(a,b){ return (b.posted_at||'').localeCompare(a.posted_at||''); };
-  var urgentC = claimable.filter(function(t){ if(!t.deadline)return false; var d=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); return (d-td)/86400000<=2&&(d-td)/86400000>=0; });
+  var urgentC = claimable.filter(function(t){ if(!t.deadline)return false; var d=parseDL(t.deadline); var td=new Date(today+'T00:00:00'); return (d-td)/86400000<=2&&(d-td)/86400000>=0; });
   var normalC = claimable.filter(function(t){ return urgentC.indexOf(t)===-1; });
   urgentC.sort(qSortDL); normalC.sort(qSortPosted);
   claimed.sort(function(a,b){ var ca=(a.claimants||[]).find(function(c){return c.name===name;}); var cb=(b.claimants||[]).find(function(c){return c.name===name;}); var sa=ca&&ca.status==='in_progress'?0:1; var sb=cb&&cb.status==='in_progress'?0:1; if(sa!==sb)return sa-sb; return qSortDL(a,b); });
