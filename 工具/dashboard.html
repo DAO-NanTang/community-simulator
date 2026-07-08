@@ -440,7 +440,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button class="tab" data-tab="workspace" onclick="switchTab('workspace')" id="builderWorkspaceTab">👤 砚仁</button>
     <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务大厅</button>
     <button class="tab" data-tab="members" onclick="switchTab('members')">📋 成员档案</button>
-    <button class="tab" data-tab="taskhall" onclick="switchTab('taskhall')">📋 猎人公会</button>
+    <button class="tab" data-tab="taskhall" onclick="switchTab('taskhall')">📋 工会大厅</button>
     <button class="tab" data-tab="ntadmin" onclick="switchTab('ntadmin')">🎯 NT管理</button>
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 世界时间线</button>
     <button class="tab" data-tab="budget" onclick="switchTab('budget')">💰 资源金库</button>
@@ -1871,9 +1871,9 @@ function renderVillageQuestHall() {
     barHTML += '<button class="btn'+(villageQuickFilter===q.v?' pri':'')+'" onclick="villageQuickFilter=villageQuickFilter===\''+q.v+'\'?\'\':\''+q.v+'\';renderVillageQuestHall()" style="font-size:.7rem;padding:3px 10px">'+q.l+'</button>';
   });
   barHTML += '</div>';
-  // Category row
+  // Type filter row (adventurer-facing)
   barHTML += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">';
-  ['全部','课程','宣传','生活','财务','管理','其他'].forEach(function(c){
+  ['全部','主线','支线','隐藏','共创','身份'].forEach(function(c){
     barHTML += '<button class="btn'+(villageCatFilter===c||(!villageCatFilter&&c==='全部')?' pri':'')+'" onclick="villageCatFilter=villageCatFilter===c||(c===\"全部\"&&!villageCatFilter)?\"\":c;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
   });
   barHTML += '</div>';
@@ -1886,7 +1886,7 @@ function renderVillageQuestHall() {
   var filtered = active.filter(function(t) {
     if (villageSearchText && t.name.toLowerCase().indexOf(villageSearchText)===-1 && t.deadline.indexOf(villageSearchText)===-1) return false;
     if (villageScopeFilter!=='all' && (t.scope||'camp')!==villageScopeFilter) return false;
-    if (villageCatFilter && villageCatFilter!=='全部' && t.category!==villageCatFilter) return false;
+    if (villageCatFilter && villageCatFilter!=='全部' && t.type!==villageCatFilter) return false;
     if (villageQuickFilter==='today' && t.deadline!==today) return false;
     if (villageQuickFilter==='urgent'){ var dl=t.deadline?new Date(t.deadline+'T00:00:00'):null; var td=new Date(today+'T00:00:00'); if(!dl||(dl-td)/86400000>2)return false; }
     if (villageQuickFilter==='need_people'){ var ac=(t.claimants||[]).filter(function(c){return c.status!=='dropped';}); if(t.max_slots<=0||ac.length>=t.max_slots)return false; }
