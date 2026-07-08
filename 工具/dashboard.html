@@ -152,13 +152,16 @@ select.inline-input { cursor: pointer; }
 .invite-sidebar .is-gen-btn{width:100%;margin-top:6px;padding:7px;font-size:.75rem}
 .invite-sidebar .is-hint{font-size:.65rem;color:var(--muted);margin-top:6px;text-align:center}
 .invite-sidebar .is-empty{text-align:center;color:var(--muted);padding:20px 0;font-size:.78rem}
-/* Hub slide panel — same style as invite sidebar */
-.hub-slide-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.15);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
-.hub-slide-backdrop.show{opacity:1;pointer-events:auto}
-.hub-slide-panel{position:fixed;top:50%;left:20px;transform:translate(-120%,-50%);width:370px;max-width:92vw;max-height:78vh;z-index:51;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 30px rgba(0,0,0,.18);transition:transform .22s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden}
-.hub-slide-panel.show{transform:translate(0,-50%)}
+/* Hub slide panel — exact copy of invite sidebar style */
+.hub-slide-backdrop{display:none;position:fixed;inset:0;background:transparent;z-index:49}
+.hub-slide-backdrop.show{display:block}
+.hub-slide-panel{position:fixed;width:320px;max-height:72vh;z-index:52;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transform:translateX(6px);transition:opacity .12s,transform .15s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
+.hub-slide-panel.show{opacity:1;transform:translateX(0);pointer-events:auto}
 .hub-slide-panel .hs-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)}
-.hub-slide-panel .hs-body{flex:1;padding:12px 14px;overflow-y:auto}
+.hub-slide-panel .hs-tabs{display:flex;gap:0;padding:6px 10px;border-bottom:1px solid var(--border)}
+.hub-slide-panel .hs-tab{flex:1;text-align:center;padding:5px 0;font-size:.75rem;cursor:pointer;color:var(--muted);background:0;border:0;border-bottom:2px solid transparent;transition:.12s;font-family:var(--font)}
+.hub-slide-panel .hs-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.hub-slide-panel .hs-body{flex:1;padding:10px 14px;overflow-y:auto}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 /* Reviewer Picker Dropdown */
 .picker-dropdown{position:fixed;width:260px;max-height:240px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden}
@@ -1322,6 +1325,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 <div class="hub-slide-backdrop" id="hubSlideBackdrop" onclick="closeHubSlide()"></div>
 <div class="hub-slide-panel" id="hubSlidePanel">
   <div class="hs-header"><span style="font-weight:700;font-size:.85rem" id="hubSlideTitle">🏪 集市</span><button onclick="closeHubSlide()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:2px 4px">✕</button></div>
+  <div class="hs-tabs" id="hubSlideTabs" style="display:none"></div>
   <div class="hs-body" id="hubSlideBody"></div>
 </div>
 
@@ -3293,6 +3297,13 @@ function openHubSlide(page) {
   var title = document.getElementById('hubSlideTitle');
   var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
+  // Position like invite sidebar - relative to hub dropdown
+  var hubBtn = document.getElementById('hubMenu') || document.getElementById('hubMenu2');
+  if (hubBtn && panel) {
+    var br = hubBtn.parentElement.getBoundingClientRect();
+    panel.style.top = Math.min(br.bottom + 4, window.innerHeight - 400) + 'px';
+    panel.style.left = Math.max(8, br.left) + 'px';
+  }
   if (panel) { panel.classList.add('show'); renderHubSlideContent(page); }
   if (bd) bd.classList.add('show');
 }
