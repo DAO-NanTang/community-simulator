@@ -3497,7 +3497,10 @@ function renderMembers() {
   // 1b. Supplement: members in data.members but not in nt_users
   Object.keys(members).forEach(function(name) {
     if (staffData[name]) return;
-    // Infer role: staff→builder, otherwise check if name appears in tasks with known assignee
+    // Check nt_users first: only add if role matches (exclude visitor/npc from adventurer list)
+    var u = users[name];
+    if (u && u.role !== memberFilter) return;
+    // Infer role: staff→builder, otherwise adventurer
     var inferredRole = isStaff2(name) ? 'builder' : 'adventurer';
     if (inferredRole !== memberFilter) return;
     staffData[name] = { tasks: [], points: 0, done: 0, active: 0, todo: 0 };
