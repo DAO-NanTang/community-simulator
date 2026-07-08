@@ -2844,7 +2844,7 @@ function renderWorkspace() {
       }
       if (doneTasks.length>0) {
         html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="toggleWSDone(this,'+doneTasks.length+')">📦 已完成（'+doneTasks.length+'项）▾</div>';
-        html += '<div id="wsDoneList" style="display:none">';
+        html += '<div id="wsDoneList" style="display:none" onclick="event.stopPropagation()">';
         doneTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
         html += '</div>';
       }
@@ -4232,7 +4232,7 @@ function renderMemberDetailFor(type, name, m) {
         }
         if (doneT.length>0) {
           h += '<div style="font-size:.75rem;font-weight:600;margin:8px 0 4px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"memDoneList\");el.style.display=el.style.display===\"none\"?\"\":\"none\";this.textContent=el.style.display===\"none\"?\"📦 已完成（'+doneT.length+'项）▴\":\"📦 已完成（'+doneT.length+'项）▾\"">📦 已完成（'+doneT.length+'项）▾</div>';
-          h += '<div id="memDoneList" style="display:none">';
+          h += '<div id="memDoneList" style="display:none" onclick="event.stopPropagation()">';
           doneT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); });
           h += '</div>';
         }
