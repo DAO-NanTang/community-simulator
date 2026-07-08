@@ -1075,10 +1075,10 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <p style="margin:2px 0 0;font-size:.82rem;color:rgba(255,255,255,.7);text-shadow:0 1px 2px rgba(0,0,0,.3)">欢迎你，寻找人生副本</p>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
-        <!-- 卡片1: 活动信息站 -->
+        <!-- 卡片1: 社区副本 -->
         <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('activity')">
           <div style="font-size:2.5rem;margin-bottom:8px">📋</div>
-          <h3 style="margin:4px 0">活动信息站</h3>
+          <h3 style="margin:4px 0">社区副本</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">浏览全部活动<br>选择加入活动</p>
           <button class="btn" style="font-size:.78rem;margin-top:8px">查看活动</button>
         </div>
@@ -1111,7 +1111,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 <div id="villageModalActivity" class="village-modal hidden" onclick="if(event.target===this)closeVillageModal('activity')">
   <div class="vm-inner">
     <button onclick="closeVillageModal('activity')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)">✕</button>
-    <h2 style="margin:0 0 16px">📋 活动信息站</h2>
+    <h2 style="margin:0 0 16px">📋 社区副本</h2>
     <p style="color:var(--muted);margin-bottom:16px">南塘本地举办的所有活动</p>
     <div id="villageActivityList"></div>
   </div>
