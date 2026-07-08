@@ -162,6 +162,11 @@ select.inline-input { cursor: pointer; }
 .hub-slide-panel .hs-tab{flex:1;text-align:center;padding:5px 0;font-size:.75rem;cursor:pointer;color:var(--muted);background:0;border:0;border-bottom:2px solid transparent;transition:.12s;font-family:var(--font)}
 .hub-slide-panel .hs-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
 .hub-slide-panel .hs-body{flex:1;padding:10px 14px;overflow-y:auto}
+/* Hub sub-panel — cascading from dropdown */
+.hub-sub-panel{position:fixed;width:320px;max-height:72vh;z-index:52;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transform:translateX(-8px);transition:opacity .12s,transform .15s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
+.hub-sub-panel.show{opacity:1;transform:translateX(0);pointer-events:auto}
+.hub-sub-panel .hs-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)}
+.hub-sub-panel .hs-body{flex:1;padding:10px 14px;overflow-y:auto}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 /* Reviewer Picker Dropdown */
 .picker-dropdown{position:fixed;width:260px;max-height:240px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden}
@@ -1321,11 +1326,10 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 
 
 
-<!-- Hub Slide Panel -->
+<!-- Hub Slide Panel (一级菜单滑出) -->
 <div class="hub-slide-backdrop" id="hubSlideBackdrop" onclick="closeHubSlide()"></div>
-<div class="hub-slide-panel" id="hubSlidePanel">
+<div class="hub-sub-panel" id="hubSubPanel">
   <div class="hs-header"><span style="font-weight:700;font-size:.85rem" id="hubSlideTitle">🏪 集市</span><button onclick="closeHubSlide()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:2px 4px">✕</button></div>
-  <div class="hs-tabs" id="hubSlideTabs" style="display:none"></div>
   <div class="hs-body" id="hubSlideBody"></div>
 </div>
 
@@ -3378,6 +3382,9 @@ function renderHubSlideContent(page) {
   body.innerHTML = h;
 }
 
+// ═══ Hub cascade menus ═══
+window._hubSubPage = '';
+
 function renderHubDropdown() {
   var listedCount = (data.inventory || []).filter(function(it) { return it.status === 'listed'; }).length;
   var confirmedGuests = (data.inn_bookings || []).filter(function(b) { return b.status === 'confirmed'; }).length;
@@ -3394,15 +3401,66 @@ function renderHubDropdown() {
     { id:'games', icon:'🎲', label:'桌游室', info:openGames+'局', ok:true }
   ];
 
+  // Main menu
   var html = '';
   items.forEach(function(item) {
     var op = item.ok ? '1' : '.4';
-    var onclick = item.ok ? ' onclick="openHubSlide(\''+item.id+'\');toggleDropdown(\'hubMenu\');toggleDropdown(\'hubMenu2\')"' : '';
-    html += '<button'+onclick+' style="text-align:left;font-size:.8rem;opacity:'+op+';cursor:'+(item.ok?'pointer':'default')+'" class="btn">'+item.icon+' '+item.label+'<span style="float:right;color:var(--muted);font-size:.7rem;margin-left:8px">'+item.info+'</span></button>';
+    var onclick = item.ok ? ' onclick="openHubSub(\''+item.id+'\',this)"' : '';
+    html += '<div'+onclick+' style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;cursor:'+(item.ok?'pointer':'default')+';opacity:'+op+';font-size:.82rem;border-radius:4px;transition:.1s" onmouseover="if('+item.ok+')this.style.background=\'#f5efe4\'" onmouseout="this.style.background=\'\'">';
+    html += '<span>'+item.icon+' '+item.label+'</span>';
+    html += '<span style="color:var(--muted);font-size:.7rem">'+item.info+' <span style="color:var(--accent)">›</span></span>';
+    html += '</div>';
   });
 
   var m1 = document.getElementById('hubMenu'); if (m1) m1.innerHTML = html;
   var m2 = document.getElementById('hubMenu2'); if (m2) m2.innerHTML = html;
+  // Also render sub content into the sub panel (hidden, will be positioned by JS)
+  updateHubSubPanel();
+}
+
+function updateHubSubPanel() {
+  var sp = document.getElementById('hubSubPanel');
+  if (!sp) return;
+  sp.innerHTML = ''; // will be populated on openHubSub
+}
+
+function openHubSub(page, el) {
+  window._hubSubPage = page;
+  // Build sub content
+  var sp = document.getElementById('hubSubPanel');
+  var title = document.getElementById('hubSlideTitle');
+  var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
+  if (title) title.textContent = titles[page] || page;
+
+  // Position sub-panel: to the LEFT of the dropdown menu
+  var menu = document.getElementById('hubMenu');
+  if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
+  if (menu && sp) {
+    var mr = menu.getBoundingClientRect();
+    sp.style.top = mr.top + 'px';
+    sp.style.left = Math.max(8, mr.left - 340) + 'px';
+    sp.style.minHeight = mr.height + 'px';
+  }
+
+  // Render sub content
+  renderHubSlideContent(page);
+  var body = document.getElementById('hubSlideBody');
+  if (sp && body) sp.innerHTML = body.innerHTML;
+
+  // Show sub panel
+  if (sp) sp.classList.add('show');
+  document.getElementById('hubSlideBackdrop').classList.add('show');
+
+  // Hide main dropdown
+  if (menu) menu.classList.add('hidden');
+}
+
+function closeHubSlide() {
+  window._hubSubPage = '';
+  var sp = document.getElementById('hubSubPanel');
+  var bd = document.getElementById('hubSlideBackdrop');
+  if (sp) sp.classList.remove('show');
+  if (bd) bd.classList.remove('show');
 }
 
 // ═══ 集市内容（终端风内嵌版）═══ — 保留旧函数兼容
