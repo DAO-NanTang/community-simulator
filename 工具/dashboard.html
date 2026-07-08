@@ -414,6 +414,20 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
     </div>
   </div>
+  <div id="profileSetupCard" class="hidden login-card" style="text-align:center;max-width:380px;padding:18px 20px">
+    <h2>🎉 欢迎加入南塘云村！</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin:4px 0 12px">完善一下你的个人资料吧（可跳过）</p>
+    <label style="font-size:.8rem">性别</label>
+    <select id="psGender" style="width:100%;margin:4px 0;padding:8px;border:1px solid var(--border);border-radius:6px">
+      <option value="">— 不透露 —</option><option value="male">男</option><option value="female">女</option>
+    </select>
+    <label style="font-size:.8rem;margin-top:8px">个人简介</label>
+    <textarea id="psBio" rows="3" placeholder="介绍一下自己…" style="width:100%;margin:4px 0;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+      <button class="btn" onclick="skipProfileSetup()" style="font-size:.8rem">跳过 →</button>
+      <button class="btn pri" onclick="finishProfileSetup()" style="font-size:.8rem">✅ 完成 →</button>
+    </div>
+  </div>
 
   <!-- Password Modal (kept for backward compat) -->
   <div id="passwordModal" class="modal-overlay" style="z-index:1000"><div class="modal" style="text-align:center">
@@ -1619,7 +1633,8 @@ function doRegister() {
   if (!password || password.length < 6) { errEl.textContent = '密码至少 6 位'; return; }
   var result = registerUser(name, password, regRole, regAvatarSeed, inviteCode);
   if (!result.ok) { errEl.textContent = result.error; return; }
-  loginUser(name, password, false);
+  // Show profile completion card for first-time registration
+  showProfileSetup(name, password);
 }
 function generateUID() { return 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
@@ -1638,7 +1653,32 @@ function registerUser(name, password, role, avatarSeed, inviteCode) {
   return { ok: true };
 }
 
-function showLoginEntry() { document.getElementById('loginEntry').classList.remove('hidden'); document.getElementById('registerForm').classList.add('hidden'); document.getElementById('userListPanel').classList.add('hidden'); document.getElementById('identityPicker').classList.add('hidden'); updateLoginDateRange(); }
+function showLoginEntry() { document.getElementById('loginEntry').classList.remove('hidden'); document.getElementById('registerForm').classList.add('hidden'); document.getElementById('userListPanel').classList.add('hidden'); document.getElementById('identityPicker').classList.add('hidden'); document.getElementById('profileSetupCard').classList.add('hidden'); updateLoginDateRange(); }
+
+var pendingProfileName = '', pendingProfilePwd = '';
+function showProfileSetup(name, password) {
+  pendingProfileName = name; pendingProfilePwd = password;
+  document.getElementById('registerForm').classList.add('hidden');
+  document.getElementById('profileSetupCard').classList.remove('hidden');
+  document.getElementById('psGender').value = '';
+  document.getElementById('psBio').value = '';
+}
+function finishProfileSetup() {
+  var name = pendingProfileName;
+  var gender = document.getElementById('psGender').value;
+  var bio = document.getElementById('psBio').value.trim();
+  if (!data.members) data.members = {};
+  if (!data.members[name]) data.members[name] = {};
+  data.members[name].gender = gender;
+  data.members[name].bio = bio;
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  document.getElementById('profileSetupCard').classList.add('hidden');
+  loginUser(name, pendingProfilePwd, false);
+}
+function skipProfileSetup() {
+  document.getElementById('profileSetupCard').classList.add('hidden');
+  loginUser(pendingProfileName, pendingProfilePwd, false);
+}
 function showIdentityPicker() { document.getElementById('loginEntry').classList.add('hidden'); document.getElementById('identityPicker').classList.remove('hidden'); }
 function updateLoginDateRange() {
   var el = document.getElementById('loginDateRange');
