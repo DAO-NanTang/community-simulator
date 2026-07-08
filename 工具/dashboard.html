@@ -155,7 +155,7 @@ select.inline-input { cursor: pointer; }
 /* Hub slide panel — same style as invite sidebar */
 .hub-slide-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.15);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
 .hub-slide-backdrop.show{opacity:1;pointer-events:auto}
-.hub-slide-panel{position:fixed;top:50%;right:20px;transform:translate(120%,-50%);width:370px;max-width:92vw;max-height:78vh;z-index:51;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 30px rgba(0,0,0,.18);transition:transform .22s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden}
+.hub-slide-panel{position:fixed;top:50%;left:20px;transform:translate(-120%,-50%);width:370px;max-width:92vw;max-height:78vh;z-index:51;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 30px rgba(0,0,0,.18);transition:transform .22s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden}
 .hub-slide-panel.show{transform:translate(0,-50%)}
 .hub-slide-panel .hs-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)}
 .hub-slide-panel .hs-body{flex:1;padding:12px 14px;overflow-y:auto}
