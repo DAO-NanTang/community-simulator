@@ -1967,6 +1967,8 @@ function toggleVillageDone(el, cnt) {
   el.textContent = isHide ? '📦 已完成/已领满（'+cnt+'项）▴' : '📦 已完成/已领满（'+cnt+'项）▾';
 }
 function toggleWSDone(el, cnt) { window._wsDoneOpen=!window._wsDoneOpen; var list=document.getElementById('wsDoneList'); if(list)list.style.display=window._wsDoneOpen?'':'none'; el.textContent=window._wsDoneOpen?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
+function toggleQuestSection(sec, cnt, el) {var key='_questFold'+sec.charAt(0).toUpperCase()+sec.slice(1);var ids={urgent:'qsUrgent',normal:'qsNormal',claimed:'qsClaimed'};window[key]=!window[key];var div=document.getElementById(ids[sec]);if(div)div.style.display=window[key]?'none':'';if(el)el.textContent=el.textContent.replace(/[▾▴]/,'')+(window[key]?' ▾':' ▴');}
+function toggleCardExpand(name, ctx) { if(!window._cardExpanded)window._cardExpanded={}; window._cardExpanded[name+'_'+ctx]=!window._cardExpanded[name+'_'+ctx]; var m={village:'renderVillageQuestHall',questboard:'renderQuestBoard',workspace:'renderWorkspace',member:null,taskhall:null}; var fn=m[ctx]; if(fn&&typeof window[fn]==='function')window[fn](); }
 function toggleMemDone(el, cnt) { window._memDoneOpen=!window._memDoneOpen; var list=document.getElementById('memDoneList'); if(list)list.style.display=window._memDoneOpen?'':'none'; el.textContent=window._memDoneOpen?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
 function showWsAvatarPicker() {
   if (!currentUser) return;
@@ -3057,17 +3059,21 @@ function renderQuestBoard() {
   var cardOpts = { context:'questboard', userName:name, isMember:true };
   var html = '';
   if (urgentC.length>0) {
-    html += '<div class="card"><h3 style="color:var(--red)">⚠️ 即将截止（'+urgentC.length+'项）</h3>';
+    html += '<div class="card"><h3 style="color:var(--red);cursor:pointer" onclick="toggleQuestSection(\'urgent\','+urgentC.length+',this)">⚠️ 即将截止（'+urgentC.length+'项）'+(window._questFoldUrgent?' ▾':' ▴')+'</h3>';
+    html += '<div id="qsUrgent" style="display:'+(window._questFoldUrgent?'none':'')+'">';
     urgentC.forEach(function(t) { html += renderQuestCard(t, cardOpts); });
-    html += '</div>';
+    html += '</div></div>';
   }
-  html += '<div class="card"><h3>🟢 可领取（' + normalC.length + '项）</h3>';
+  html += '<div class="card"><h3 style="cursor:pointer" onclick="toggleQuestSection(\'normal\','+normalC.length+',this)">🟢 可领取（' + normalC.length + '项）'+(window._questFoldNormal?' ▾':' ▴')+'</h3>';
+  html += '<div id="qsNormal" style="display:'+(window._questFoldNormal?'none':'')+'">';
   if (normalC.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">暂无可用委托</div>'; }
   else { normalC.forEach(function(t) { html += renderQuestCard(t, cardOpts); }); }
-  html += '</div><div class="card"><h3>📋 已领取（' + claimed.length + '项）</h3>';
+  html += '</div></div>';
+  html += '<div class="card"><h3 style="cursor:pointer" onclick="toggleQuestSection(\'claimed\','+claimed.length+',this)">📋 已领取（' + claimed.length + '项）'+(window._questFoldClaimed?' ▾':' ▴')+'</h3>';
+  html += '<div id="qsClaimed" style="display:'+(window._questFoldClaimed?'none':'')+'">';
   if (claimed.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">还没有领取任何委托</div>'; }
   else { claimed.forEach(function(t) { html += renderQuestCard(t, cardOpts); }); }
-  html += '</div>';
+  html += '</div></div>';
 
   // ── Archive: completed/confirmed tasks ──
   var archiveTasks = tasks.filter(function(t) { return t.status==='已完成'||t.status==='已确认'; });
