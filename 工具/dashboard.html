@@ -1839,77 +1839,116 @@ function closeVillageModal(type) {
   if (el) el.classList.add('hidden');
 }
 
-var villageScopeFilter = 'all';
+var villageScopeFilter = 'all', villageQuickFilter = '', villageCatFilter = '';
 function renderVillageQuestHall() {
   var tasks = data.tasks || []; var name = currentUser ? currentUser.name : ''; var today = new Date().toISOString().slice(0,10);
-  // ── Full filter bar (scope + quick + category) ──
-  var qhtml = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">';
-  [{v:'all',l:'全部'},{v:'camp',l:'🏕️营地'},{v:'personal',l:'👤私人'}].forEach(function(s){
-    qhtml += '<button class="btn'+(villageScopeFilter===s.v?' pri':'')+'" onclick="villageScopeFilter=\''+s.v+'\';renderVillageQuestHall()" style="font-size:.7rem;padding:3px 10px">'+s.l+'</button>';
-  });
-  qhtml += '<span style="color:#ccc;margin:0 3px">|</span>';
-  [{v:'today',l:'📅今天'},{v:'urgent',l:'⏰即将截止'},{v:'need_people',l:'👥缺人中'}].forEach(function(q){
-    qhtml += '<button class="btn'+(villageQuickFilter===q.v?' pri':'')+'" onclick="villageQuickFilter=villageQuickFilter===\''+q.v+'\'?\'\':\''+q.v+'\';renderVillageQuestHall()" style="font-size:.7rem;padding:3px 10px">'+q.l+'</button>';
-  });
-  qhtml += '</div>';
-  // Category row
-  qhtml += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:8px">';
-  ['全部','课程','宣传','生活','财务','管理','其他'].forEach(function(c){
-    qhtml += '<button class="btn'+(villageCatFilter===c||(!villageCatFilter&&c==='全部')?' pri':'')+'" onclick="villageCatFilter=villageCatFilter===c||(c===\"全部\"&&!villageCatFilter)?\"\":c;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
-  });
-  qhtml += '</div>';
-  document.getElementById('villageQuickBar').innerHTML = qhtml;
+  var isMember = currentUser && (currentUser.role==='admin'||currentUser.role==='builder'||currentUser.role==='adventurer');
 
-  // ── Filter chain ──
-  var filtered = tasks.filter(function(t) {
-    if (t.status !== 'active' || !t.claimants) return false;
-    if (villageScopeFilter !== 'all' && (t.scope||'camp') !== villageScopeFilter) return false;
-    if (villageCatFilter && villageCatFilter !== '全部' && t.category !== villageCatFilter) return false;
-    if (villageQuickFilter === 'today' && t.deadline !== today) return false;
-    if (villageQuickFilter === 'urgent') { var dl=t.deadline?new Date(t.deadline+'T00:00:00'):null; var td=new Date(today+'T00:00:00'); if(!dl||(dl-td)/86400000>2) return false; }
-    if (villageQuickFilter === 'need_people') { var ac=(t.claimants||[]).filter(function(c){return c.status!=='dropped';}); if(t.max_slots<=0||ac.length>=t.max_slots) return false; }
+  // ── NPC + Search bar ──
+  var barHTML = '';
+  // Scope + Quick filters
+  barHTML += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">';
+  [{v:'all',l:'全部'},{v:'camp',l:'🏕️营地'},{v:'personal',l:'👤私人'}].forEach(function(s){
+    barHTML += '<button class="btn'+(villageScopeFilter===s.v?' pri':'')+'" onclick="villageScopeFilter=\''+s.v+'\';renderVillageQuestHall()" style="font-size:.7rem;padding:3px 10px">'+s.l+'</button>';
+  });
+  barHTML += '<span style="color:#ccc;margin:0 2px">|</span>';
+  [{v:'today',l:'📅今天'},{v:'urgent',l:'⏰即将截止'},{v:'need_people',l:'👥缺人中'}].forEach(function(q){
+    barHTML += '<button class="btn'+(villageQuickFilter===q.v?' pri':'')+'" onclick="villageQuickFilter=villageQuickFilter===\''+q.v+'\'?\'\':\''+q.v+'\';renderVillageQuestHall()" style="font-size:.7rem;padding:3px 10px">'+q.l+'</button>';
+  });
+  barHTML += '</div>';
+  // Category row
+  barHTML += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">';
+  ['全部','课程','宣传','生活','财务','管理','其他'].forEach(function(c){
+    barHTML += '<button class="btn'+(villageCatFilter===c||(!villageCatFilter&&c==='全部')?' pri':'')+'" onclick="villageCatFilter=villageCatFilter===c||(c===\"全部\"&&!villageCatFilter)?\"\":c;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
+  });
+  barHTML += '</div>';
+
+  // ── Filter + three-layer logic ──
+  var active = tasks.filter(function(t){ return t.status==='active' && t.claimants; });
+  var unclaimed = active.filter(function(t){ return (t.claimants||[]).filter(function(c){return c.status!=='dropped';}).length===0; }).length;
+  var urgent = active.filter(function(t){ if(!t.deadline)return false; var d=new Date(t.deadline+'T00:00:00'); var td=new Date(today+'T00:00:00'); return (d-td)/86400000<=2&&(d-td)/86400000>=0; }).length;
+
+  var filtered = active.filter(function(t) {
+    if (villageScopeFilter!=='all' && (t.scope||'camp')!==villageScopeFilter) return false;
+    if (villageCatFilter && villageCatFilter!=='全部' && t.category!==villageCatFilter) return false;
+    if (villageQuickFilter==='today' && t.deadline!==today) return false;
+    if (villageQuickFilter==='urgent'){ var dl=t.deadline?new Date(t.deadline+'T00:00:00'):null; var td=new Date(today+'T00:00:00'); if(!dl||(dl-td)/86400000>2)return false; }
+    if (villageQuickFilter==='need_people'){ var ac=(t.claimants||[]).filter(function(c){return c.status!=='dropped';}); if(t.max_slots<=0||ac.length>=t.max_slots)return false; }
     return true;
   });
 
-  // ── Unclaimed reminder ──
-  var unclaimed = tasks.filter(function(t){return t.status==='active'&&t.claimants&&(t.claimants||[]).filter(function(c){return c.status!=='dropped';}).length===0;}).length;
-  if (unclaimed > 0) qhtml += '<div style="background:#fef9c3;border-radius:6px;padding:6px 12px;margin-bottom:8px;font-size:.78rem">⚠️ 还有 <b>'+unclaimed+'</b> 个委托无人认领</div>';
-  document.getElementById('villageQuickBar').innerHTML = qhtml + document.getElementById('villageQuickBar').innerHTML.replace(qhtml,'');
+  // ── Unclaimed banner ──
+  var bannerHTML = '';
+  if (unclaimed>0||urgent>0) {
+    bannerHTML += '<div style="background:#fef9c3;border:1px solid #e5d980;border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:.8rem">';
+    if (unclaimed>0) bannerHTML += '⚠️ 还有 <b>'+unclaimed+'</b> 个委托无人认领 ';
+    if (urgent>0) bannerHTML += '⏰ <b>'+urgent+'</b> 个即将截止';
+    bannerHTML += '</div>';
+  }
 
-  // ── Task cards ──
-  var html = '';
-  if (filtered.length === 0) {
-    html += '<div style="color:var(--muted);text-align:center;padding:20px">暂无公开委托</div>';
+  document.getElementById('villageQuickBar').innerHTML = barHTML + bannerHTML;
+
+  // ── Task cards with three-layer logic ──
+  var cardHTML = '';
+  if (filtered.length===0) {
+    cardHTML += '<div style="color:var(--muted);text-align:center;padding:30px">暂无公开委托</div>';
   } else {
-    filtered.slice(0, 20).forEach(function(t) {
-      var idx = tasks.indexOf(t);
-      var activeClaimants = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
-      var slots = t.max_slots > 0 ? activeClaimants.length+'/'+t.max_slots : '不限';
-      var scopeTag = (t.scope||'camp')==='personal'
-        ? '<span style="font-size:.6rem;background:#f0e0f0;color:#8b5e9e;padding:1px 5px;border-radius:3px">✏️私人</span>'
-        : '<span style="font-size:.6rem;background:#e0f0e0;color:#5a8a3c;padding:1px 5px;border-radius:3px">🏕️营地</span>';
+    filtered.slice(0,30).forEach(function(t) {
+      var isCamp = (t.scope||'camp')==='camp';
+      var locked = isCamp && !isMember; // village: camp tasks greyed for outsiders
+      var activeC = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
+      var slots = t.max_slots>0 ? activeC.length+'/'+t.max_slots : '不限';
       var typeBadge = ({'主线':'M','支线':'S','共创':'C','隐藏':'H'}[t.type]||'M');
-      html += '<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px">'+
+      var doneCount = activeC.filter(function(c){return c.status==='completed'||c.status==='submitted';}).length;
+
+      cardHTML += '<div style="border:1px solid '+(locked?'#e0d8c8':'var(--border)')+';border-radius:10px;padding:12px 14px;margin-bottom:8px;'+(locked?'opacity:.55;background:#fafaf5':'')+'">'+
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
-        '<span style="font-size:.65rem;font-weight:700;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px">'+typeBadge+'</span>'+
-        '<span style="font-weight:600;flex:1">'+esc(t.name)+'</span>'+scopeTag+'</div>'+
-        '<div style="display:flex;gap:12px;font-size:.75rem;color:var(--muted);flex-wrap:wrap">'+
+        '<span style="font-size:.6rem;font-weight:700;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px">'+typeBadge+'</span>'+
+        '<span style="font-weight:600;flex:1;'+(locked?'color:var(--muted)':'')+'">'+esc(t.name)+'</span>'+
+        (isCamp?'<span style="font-size:.6rem;background:#e0f0e0;color:#5a8a3c;padding:1px 5px;border-radius:3px">🏕️营地</span>':
+         '<span style="font-size:.6rem;background:#f0e0f0;color:#8b5e9e;padding:1px 5px;border-radius:3px">✏️私人</span>')+
+        '</div>'+
+        '<div style="display:flex;gap:10px;font-size:.73rem;color:var(--muted);flex-wrap:wrap">'+
         '<span>🧙 '+esc(t.poster||'?')+'</span><span>📅 '+esc(t.deadline||'—')+'</span><span>👥 '+slots+'</span>'+
         '<span style="color:var(--accent);font-weight:600">💎 '+(t.points||0)+' NT</span>'+
-        '<span style="font-size:.7rem;color:var(--muted)">'+esc(t.category||'')+'</span></div>'+
-        (t.note ? '<div style="font-size:.72rem;color:var(--muted);margin-top:3px">📝 '+esc(t.note)+'</div>' : '')+
-        '<div style="margin-top:6px"><button class="btn pri" onclick="closeVillageModal(\'questhall\');switchTab(\'questboard\')" style="font-size:.7rem;padding:3px 10px">查看详情 & 领取 →</button></div></div>';
+        '<span>'+esc(t.category||'')+'</span></div>'+
+        (doneCount>0?'<div style="font-size:.7rem;color:var(--green);margin-top:2px">📋 '+doneCount+'人已提交</div>':'')+
+        (locked ?
+          '<div style="margin-top:6px;font-size:.75rem;color:var(--red)">🔒 需加入营队才能领取</div>' :
+          '<div style="margin-top:6px"><button class="btn pri" onclick="closeVillageModal(\'questhall\');switchTab(\'questboard\')" style="font-size:.7rem;padding:3px 10px">查看 & 领取 →</button></div>')+
+        '</div>';
     });
-    if (filtered.length > 20) html += '<div style="text-align:center;color:var(--muted);font-size:.78rem">还有 '+(filtered.length-20)+' 条...</div>';
+    if (filtered.length>30) cardHTML += '<div style="text-align:center;color:var(--muted);font-size:.78rem;padding:6px">还有 '+(filtered.length-30)+' 条...</div>';
   }
-  document.getElementById('villageQuestList').innerHTML = html;
 
-  // NPC dialogue
-  document.getElementById('npcDialogue').textContent = filtered.length > 0 ?
-    '这里有 '+filtered.length+' 个委托等你来看～ 按类型筛选、查看详情、一键领取！' :
-    '今天还没有公开的委托，过会儿再来看看吧～';
+  // ── Publish area ──
+  var publishHTML = '';
+  if (isMember) {
+    publishHTML += '<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:10px;text-align:center">'+
+      '<button class="btn" onclick="closeVillageModal(\'questhall\');showPostForm()" style="font-size:.78rem">📝 发布私人任务（需要 ≥1 NT）</button></div>';
+  }
+
+  // ── Recent submissions ──
+  var subs = [];
+  tasks.forEach(function(t){ (t.claimants||[]).forEach(function(c){
+    if(c.status==='submitted'&&c.submitted_at) subs.push({p:c.name,t:t.name,d:c.submitted_at,s:'📤提交'});
+    if(c.status==='completed'&&c.reviewed_at) subs.push({p:c.name,t:t.name,d:c.reviewed_at,s:'✅完成'});
+  });});
+  subs.sort(function(a,b){return b.d.localeCompare(a.d);});
+  var feedHTML = '';
+  if (subs.length>0) {
+    feedHTML += '<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px"><div style="font-size:.72rem;font-weight:600;margin-bottom:4px">🔥 最近动态</div>';
+    subs.slice(0,4).forEach(function(s){
+      feedHTML += '<div style="font-size:.7rem;color:var(--muted);padding:1px 0">'+esc(s.p)+' '+s.s+'了「'+esc(s.t)+'」· '+esc(s.d)+'</div>';
+    });
+    feedHTML += '</div>';
+  }
+
+  document.getElementById('villageQuestList').innerHTML = cardHTML + publishHTML + feedHTML;
+  document.getElementById('npcDialogue').textContent = isMember ?
+    (filtered.length>0 ? '欢迎回来！这里有 '+filtered.length+' 个委托。营队任务可以直接领取～' : '今天还没有新委托，去发布一个吧！') :
+    (filtered.length>0 ? '这里有 '+filtered.length+' 个公开委托！私人委托可以直接领，营队任务需要先加入营队哦～' : '今天还没有公开的委托，过会儿再来看看吧～');
 }
-var villageQuickFilter = '', villageCatFilter = '';
 
 function renderVillageActivityList() {
   var isMember = currentUser && (currentUser.role==='admin'||currentUser.role==='builder'||currentUser.role==='adventurer');
