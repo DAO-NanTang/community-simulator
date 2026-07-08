@@ -4234,14 +4234,25 @@ function renderMemberDetailFor(type, name, m) {
     <div class="ms-right">` +
       (view === 'materials' ? renderMaterialSheet(name, memInfo) :
       (function(){
-        var activeT = tasks.filter(function(t){ return t.status!=='已完成'&&t.status!=='已确认'; });
-        var doneT = tasks.filter(function(t){ return t.status==='已完成'||t.status==='已确认'; });
+        // Group by claimant status (same logic as workspace)
+        var activeT = [], submittedT = [], doneT = [];
+        tasks.forEach(function(t){
+          var cl = (t.claimants||[]).find(function(c){return c.name===name;});
+          if (cl && cl.status==='completed') { doneT.push(t); }
+          else if (cl && cl.status==='submitted') { submittedT.push(t); }
+          else if (t.status==='已完成'||t.status==='已确认') { doneT.push(t); }
+          else { activeT.push(t); }
+        });
         activeT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
+        submittedT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
         doneT.sort(function(a,b){return parseDate(b.deadline)-parseDate(a.deadline)});
         var h = '<div class="ms-task-col"><h4>📋 任务 (' + tasks.length + '项)</h4>';
         h += '<div style="font-size:.75rem;font-weight:600;margin-bottom:4px;color:var(--text)">📋 进行中（'+activeT.length+'项）</div>';
         if (activeT.length>0) { activeT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); }
         else { h += '<div style="color:var(--muted);font-size:.72rem;padding:6px 0">暂无进行中的任务</div>'; }
+        h += '<div style="font-size:.75rem;font-weight:600;margin:8px 0 4px;color:var(--accent)">⏳ 审核中（'+submittedT.length+'项）</div>';
+        if (submittedT.length>0) { submittedT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); }
+        else { h += '<div style="color:var(--muted);font-size:.72rem;padding:6px 0">暂无审核中的任务</div>'; }
         h += '<div style="font-size:.75rem;font-weight:600;margin:8px 0 4px;color:var(--muted);cursor:pointer" onclick="toggleMemDone(this,'+doneT.length+')">'+(window._memDoneOpen?'📦 已完成（'+doneT.length+'项）▴':'📦 已完成（'+doneT.length+'项）▾')+'</div>';
         h += '<div id="memDoneList" style="display:'+(window._memDoneOpen?'':'none')+'" onclick="event.stopPropagation()">';
         if (doneT.length>0) { doneT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); }
