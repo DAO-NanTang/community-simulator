@@ -3401,15 +3401,11 @@ function renderHubDropdown() {
     { id:'games', icon:'🎲', label:'桌游室', info:openGames+'局', ok:true }
   ];
 
-  // Main menu
   var html = '';
   items.forEach(function(item) {
     var op = item.ok ? '1' : '.4';
-    var onclick = item.ok ? ' onclick="openHubSub(\''+item.id+'\',this)"' : '';
-    html += '<div'+onclick+' style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;cursor:'+(item.ok?'pointer':'default')+';opacity:'+op+';font-size:.82rem;border-radius:4px;transition:.1s" onmouseover="if('+item.ok+')this.style.background=\'#f5efe4\'" onmouseout="this.style.background=\'\'">';
-    html += '<span>'+item.icon+' '+item.label+'</span>';
-    html += '<span style="color:var(--muted);font-size:.7rem">'+item.info+' <span style="color:var(--accent)">›</span></span>';
-    html += '</div>';
+    var onclick = item.ok ? ' onclick="openHubSub(\''+item.id+'\')"' : '';
+    html += '<button'+onclick+' style="text-align:left;font-size:.8rem;opacity:'+op+';cursor:'+(item.ok?'pointer':'default')+'" class="btn">'+item.icon+' '+item.label+'<span style="float:right;color:var(--muted);font-size:.7rem;margin-left:8px">'+item.info+' ›</span></button>';
   });
 
   var m1 = document.getElementById('hubMenu'); if (m1) m1.innerHTML = html;
@@ -3418,33 +3414,29 @@ function renderHubDropdown() {
   updateHubSubPanel();
 }
 
-function updateHubSubPanel() {
-  var sp = document.getElementById('hubSubPanel');
-  if (!sp) return;
-  sp.innerHTML = ''; // will be populated on openHubSub
-}
+function updateHubSubPanel() { /* sub panel populated in openHubSub */ }
 
-function openHubSub(page, el) {
+function openHubSub(page) {
   window._hubSubPage = page;
   var sp = document.getElementById('hubSubPanel');
   var title = document.getElementById('hubSlideTitle');
   var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
 
-  // Position sub-panel: anchored to dropdown, sliding from the left
+  // Position sub-panel: anchored below dropdown, right-aligned
   var menu = document.getElementById('hubMenu');
   if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
   if (menu && sp) {
     var mr = menu.getBoundingClientRect();
     sp.style.top = mr.top + 'px';
-    sp.style.left = Math.max(8, mr.left - 336) + 'px'; // 320px width + 16px gap
-    sp.style.maxHeight = Math.max(300, mr.height) + 'px';
+    sp.style.right = (window.innerWidth - mr.right + 8) + 'px';
+    sp.style.maxHeight = Math.max(300, Math.min(mr.height, window.innerHeight - mr.top - 20)) + 'px';
   }
 
-  // hubSlideBody is inside hubSubPanel, renderHubSlideContent populates it directly
+  // Render content
   renderHubSlideContent(page);
 
-  // Show sub panel with backdrop
+  // Show
   if (sp) sp.classList.add('show');
   document.getElementById('hubSlideBackdrop').classList.add('show');
   // Hide dropdown
