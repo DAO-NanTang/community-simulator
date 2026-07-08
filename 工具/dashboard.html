@@ -2064,7 +2064,7 @@ function renderVillageQuestHall() {
   var canClaim = [], myTasks = [], doneTasks = [];
   filtered.slice(0,50).forEach(function(t) {
     var activeC = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
-    var myClaim = isMember ? (t.claimants||[]).find(function(c){return c.name===name&&c.status!=='dropped';}) : null;
+    var myClaim = name ? (t.claimants||[]).find(function(c){return c.name===name&&c.status!=='dropped';}) : null;
     var isFull = t.max_slots>0 && activeC.length>=t.max_slots;
     if (myClaim && myClaim.status==='completed') { doneTasks.push(t); }
     else if (myClaim) { myTasks.push(t); }
