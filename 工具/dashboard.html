@@ -2904,7 +2904,8 @@ function renderQuestCard(t, opts) {
   var isCoCreate = t.type==='共创';
   var activeC = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
   var slots = t.max_slots>0 ? activeC.length+'/'+t.max_slots : '不限';
-  var typeBadge = ({'主线':'M','支线':'S','共创':'C','隐藏':'H','身份':'ID'}[t.type]||'M');
+  var typeLabel = ({'主线':'M·主线','支线':'S·支线','共创':'C·共创','隐藏':'H·隐藏','身份':'ID·身份'}[t.type]||t.type);
+  var typeBadge = typeLabel[0];
   var doneCount = activeC.filter(function(c){return c.status==='completed';}).length;
   var subCount = activeC.filter(function(c){return c.status==='submitted';}).length;
   var expanded = window._cardExpanded[t.name+'_'+ctx];
@@ -2924,7 +2925,7 @@ function renderQuestCard(t, opts) {
   var h = '<div style="border:1px solid '+(grey||locked?'#e0d8c8':'var(--border)')+';border-radius:10px;padding:10px 14px;margin-bottom:6px;'+(grey||locked?'opacity:.75;background:#fafaf7':'')+'" onclick="event.stopPropagation()">';
   // Header row (click to expand)
   h += '<div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="event.stopPropagation();window._cardExpanded[\''+escAttr(t.name)+'_'+ctx+'\']=!window._cardExpanded[\''+escAttr(t.name)+'_'+ctx+'\'];'+(_refreshFn[ctx]||'')+'">';
-  h += '<span style="font-size:.6rem;font-weight:700;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px">'+typeBadge+'</span>';
+  h += '<span style="font-size:.6rem;font-weight:700;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px" title="'+escAttr(typeLabel)+'">'+typeBadge+'</span>';
   h += '<span style="font-weight:600;flex:1;'+(grey||locked?'color:var(--muted)':'')+'">'+esc(t.name)+'</span>';
   h += '<span style="font-size:.6rem;background:'+scopeColorBg+';color:'+scopeColorTxt+';padding:1px 5px;border-radius:3px">'+scopeTag+'</span>'+coopWarn;
   h += '<span style="font-size:.6rem;color:var(--muted);margin-left:4px">'+(expanded?'收起 ▴':'展开 ▾')+'</span>';
@@ -4246,7 +4247,7 @@ function renderMemberDetailFor(type, name, m) {
         activeT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
         submittedT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
         doneT.sort(function(a,b){return parseDate(b.deadline)-parseDate(a.deadline)});
-        var h = '<div class="ms-task-col"><h4>📋 任务 (' + tasks.length + '项)</h4>';
+        var h = '<div class="ms-task-col"><h4>📋 任务</h4>';
         h += '<div style="font-size:.75rem;font-weight:600;margin-bottom:4px;color:var(--text)">📋 进行中（'+activeT.length+'项）</div>';
         if (activeT.length>0) { activeT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); }
         else { h += '<div style="color:var(--muted);font-size:.72rem;padding:6px 0">暂无进行中的任务</div>'; }
