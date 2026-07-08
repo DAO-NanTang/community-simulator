@@ -163,7 +163,7 @@ select.inline-input { cursor: pointer; }
 .hub-slide-panel .hs-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
 .hub-slide-panel .hs-body{flex:1;padding:10px 14px;overflow-y:auto}
 /* Hub sub-panel — cascading from dropdown */
-.hub-sub-panel{position:fixed;width:320px;max-height:72vh;z-index:52;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transform:translateX(12px);transition:opacity .12s,transform .15s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
+.hub-sub-panel{position:fixed;width:320px;max-height:72vh;z-index:52;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transform:translateX(-12px);transition:opacity .12s,transform .15s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
 .hub-sub-panel.show{opacity:1;transform:translateX(0);pointer-events:auto}
 .hub-sub-panel .hs-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)}
 .hub-sub-panel .hs-body{flex:1;padding:10px 14px;overflow-y:auto}
@@ -3423,13 +3423,15 @@ function openHubSub(page, el) {
   var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
 
-  // Position sub-panel: 右上角对齐选中行的右上角, 向左滑出
-  if (el && sp) {
-    var rr = el.getBoundingClientRect();
-    // 二级面板右边缘 = 一级菜单右边缘, 上边缘 = 选中行上边缘 - 小偏移
-    sp.style.top = Math.max(8, rr.top - 4) + 'px';
-    sp.style.right = (window.innerWidth - rr.right + 4) + 'px';
-    sp.style.maxHeight = Math.min(500, window.innerHeight - rr.top - 20) + 'px';
+  // Position sub-panel: 一级菜单左侧, 左上角固定, 不遮挡一级菜单
+  var menu = document.getElementById('hubMenu');
+  if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
+  if (menu && sp) {
+    var mr = menu.getBoundingClientRect();
+    sp.style.top = mr.top + 'px';
+    sp.style.left = Math.max(4, mr.left - 332) + 'px'; // 320px panel + 12px gap
+    sp.style.right = 'auto';
+    sp.style.maxHeight = Math.min(500, window.innerHeight - mr.top - 20) + 'px';
   }
 
   // Render content
