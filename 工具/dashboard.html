@@ -1864,6 +1864,12 @@ function hidePlazaPlaceholder() {
   var hud = document.getElementById('worldHUD'); if (hud) hud.classList.remove('hidden');
 }
 
+function toggleVillageDone(el, cnt) {
+  var list = document.getElementById('villageDoneList');
+  var isHide = !list || list.style.display === 'none';
+  if (list) list.style.display = isHide ? '' : 'none';
+  el.textContent = isHide ? '📦 已完成/已领满（'+cnt+'项）▴' : '📦 已完成/已领满（'+cnt+'项）▾';
+}
 function showVillageSquare() {
   if (!currentUser) return;
   showPlazaPlaceholder(currentUser);
@@ -1984,7 +1990,7 @@ function renderVillageQuestHall() {
     myTasks.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); });
   }
   if (doneTasks.length>0) {
-    cardHTML += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"villageDoneList\");el.style.display=el.style.display===\"none\"?\"\":\"none\";this.textContent=el.style.display===\"none\"?\"📦 已完成/已领满（'+doneTasks.length+'项）▾\":\"📦 已完成/已领满（'+doneTasks.length+'项）▴\"">📦 已完成/已领满（'+doneTasks.length+'项）▾</div>';
+    cardHTML += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="toggleVillageDone(this,'+doneTasks.length+')">📦 已完成/已领满（'+doneTasks.length+'项）▾</div>';
     cardHTML += '<div id="villageDoneList" style="display:none">';
     doneTasks.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); });
     cardHTML += '</div>';
