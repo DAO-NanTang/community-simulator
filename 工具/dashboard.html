@@ -1945,6 +1945,7 @@ function enterWorld(user) {
 
 function hideAllTabs() { ['members','players','timeline','budget','settlement','realmMap','bazaar','map','taskhall','settings','profile','questboard','leaderboard','ntadmin','workspace'].forEach(function(n) { var el = document.getElementById('tab-' + n); if (el) el.classList.add('hidden'); }); }
 var workspacePanel = 'tasks'; // 'tasks' | 'flow' | 'settings'
+var memTaskFilter = '';
 
 function showPlazaPlaceholder(user) {
   hideAllTabs();
@@ -4254,6 +4255,18 @@ function renderMemberDetailFor(type, name, m) {
         submittedT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
         doneT.sort(function(a,b){return parseDate(b.deadline)-parseDate(a.deadline)});
         var h = '<div class="ms-task-col"><h4>📋 任务</h4>';
+        // Filter bar
+        h += '<div style="display:flex;gap:3px;margin-bottom:8px;flex-wrap:wrap">';
+        [{v:'all',l:'全部'},{v:'camp',l:'🏕️营地'},{v:'personal',l:'✏️私人'},{v:'in_progress',l:'🔄进行中'},{v:'submitted',l:'⏳待审核'},{v:'completed',l:'✅已完成'}].forEach(function(f){
+          h += '<button class="btn'+(memTaskFilter===f.v?' pri':'')+'" onclick="memTaskFilter=memTaskFilter===f.v?\'\':f.v;renderMemberDetail(\''+escAttr(name)+'\')" style="font-size:.68rem;padding:2px 7px">'+f.l+'</button>';
+        });
+        h += '</div>';
+        // Apply filter
+        if (memTaskFilter==='camp') { activeT=activeT.filter(function(t){return(t.scope||'camp')==='camp';}); submittedT=submittedT.filter(function(t){return(t.scope||'camp')==='camp';}); doneT=doneT.filter(function(t){return(t.scope||'camp')==='camp';}); }
+        if (memTaskFilter==='personal') { activeT=activeT.filter(function(t){return(t.scope||'camp')==='personal';}); submittedT=submittedT.filter(function(t){return(t.scope||'camp')==='personal';}); doneT=doneT.filter(function(t){return(t.scope||'camp')==='personal';}); }
+        if (memTaskFilter==='in_progress') { doneT=[]; submittedT=[]; }
+        if (memTaskFilter==='submitted') { activeT=[]; doneT=[]; }
+        if (memTaskFilter==='completed') { activeT=[]; submittedT=[]; }
         h += '<div style="font-size:.75rem;font-weight:600;margin-bottom:4px;color:var(--text)">📋 进行中（'+activeT.length+'项）</div>';
         if (activeT.length>0) { activeT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); }
         else { h += '<div style="color:var(--muted);font-size:.72rem;padding:6px 0">暂无进行中的任务</div>'; }
