@@ -2837,20 +2837,18 @@ function renderWorkspace() {
       var doneTasks = filtered.filter(function(e){ return e.claim.status==='completed'; });
       var wsOpts = { context:'workspace', userName:currentUser.name, isMember:true };
       html += '<div class="card" style="padding:10px 14px">';
-      if (activeTasks.length>0) {
-        html += '<div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--text)">📋 进行中（'+activeTasks.length+'项）</div>';
-        activeTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
-      }
-      if (submittedTasks.length>0) {
-        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--accent)">⏳ 审核中（'+submittedTasks.length+'项）</div>';
-        submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
-      }
-      if (doneTasks.length>0) {
-        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"wsDoneList\");var show=el.style.display===\"none\";el.style.display=show?\"\":\"none\";this.textContent=(show?\"📦 已完成（'+doneTasks.length+'项）▴\":\"📦 已完成（'+doneTasks.length+'项）▾\")">📦 已完成（'+doneTasks.length+'项）▾</div>';
-        html += '<div id="wsDoneList" style="display:none">';
-        doneTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
-        html += '</div>';
-      }
+      // Always show all 3 sections
+      html += '<div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--text)">📋 进行中（'+activeTasks.length+'项）</div>';
+      if (activeTasks.length>0) { activeTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); }); }
+      else { html += '<div style="color:var(--muted);font-size:.75rem;padding:8px 0">暂无进行中的任务</div>'; }
+      html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--accent)">⏳ 审核中（'+submittedTasks.length+'项）</div>';
+      if (submittedTasks.length>0) { submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); }); }
+      else { html += '<div style="color:var(--muted);font-size:.75rem;padding:8px 0">暂无审核中的任务</div>'; }
+      html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"wsDoneList\");var show=el.style.display===\"none\";el.style.display=show?\"\":\"none\";this.textContent=(show?\"📦 已完成（'+doneTasks.length+'项）▴\":\"📦 已完成（'+doneTasks.length+'项）▾\")">📦 已完成（'+doneTasks.length+'项）▾</div>';
+      html += '<div id="wsDoneList" style="display:none">';
+      if (doneTasks.length>0) { doneTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); }); }
+      else { html += '<div style="color:var(--muted);font-size:.75rem;padding:8px 0">暂无已完成的任务</div>'; }
+      html += '</div>';
       html += '</div>';
     }
 
