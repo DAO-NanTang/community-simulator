@@ -11,6 +11,7 @@ package-lock.json
 
 # Secrets (DO NOT COMMIT)
 feishu_config.json
+_local_*.json
 
 # Large binaries
 *.rar
