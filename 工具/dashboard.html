@@ -118,7 +118,9 @@ select.inline-input { cursor: pointer; }
 /* Modal */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.3); z-index: 100; justify-content: center; align-items: center; }
 .modal-overlay.show { display: flex; }
-/* Village Square header area — matches login cover image style */
+/* Village Square full-page watercolor background */
+#plazaPlaceholder { background: url(ai_expand_image1783014990973.png) center/cover fixed; min-height: 100vh; }
+#plazaPlaceholder::before { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.15); pointer-events: none; }
 .village-card { background: rgba(255,252,245,.9); border: 1px solid #d0c8b0; border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; backdrop-filter: blur(6px); }
 .village-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 .village-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,25,20,.5); z-index: 120; display: flex; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
@@ -997,19 +999,11 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <!-- 村口占位页（NPC/游客） -->
   <div id="plazaPlaceholder" class="hidden">
     <!-- Village header bar — same style as login header -->
-    <div style="position:relative;overflow:hidden;min-height:140px;margin:-8px -8px 0;z-index:0">
-      <img src="ai_expand_image1783014990973.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%;z-index:0">
-      <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.3),rgba(0,0,0,.05) 50%,rgba(0,0,0,.2) 100%);z-index:1"></div>
-      <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px">
-        <div>
-          <span style="font-size:2rem;filter:drop-shadow(2px 2px 3px rgba(0,0,0,.4))">🏕️</span>
-          <div style="color:#fff;font-size:1.1rem;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.5);margin-top:2px">南塘村口</div>
-          <div style="color:rgba(255,255,255,.85);font-size:.78rem;text-shadow:0 1px 2px rgba(0,0,0,.4)" id="villageUserInfo">—</div>
-        </div>
-        <button class="btn" onclick="logoutUser()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);font-size:.8rem;padding:5px 14px;backdrop-filter:blur(4px)">🚪 退出</button>
+    <div id="villageSquare" style="max-width:700px;margin:0 auto;padding:60px 20px 30px">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:3rem">🏕️</div>
+        <h2 style="margin:4px 0">南塘村口</h2>
       </div>
-    </div>
-    <div id="villageSquare" style="max-width:700px;margin:0 auto;padding:20px">
       <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
         <!-- 卡片1: 活动信息站 -->
         <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('activity')">
@@ -1032,6 +1026,10 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">成为在地伙伴<br>或浏览地图</p>
           <button class="btn" style="font-size:.78rem;margin-top:8px">🔒 建设中</button>
         </div>
+      </div>
+      <div style="text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid rgba(0,0,0,.08)">
+        <div style="font-size:.82rem;color:var(--muted)" id="villageUserInfo">—</div>
+        <button class="btn" onclick="logoutUser()" style="margin-top:8px;font-size:.8rem">🚪 退出</button>
       </div>
     </div>
   </div>
