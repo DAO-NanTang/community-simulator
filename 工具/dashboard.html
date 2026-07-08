@@ -1862,35 +1862,31 @@ function renderVillageQuestHall() {
   if (si && si.value !== villageSearchText) villageSearchText = si.value.trim().toLowerCase();
 
   // ── Filter bar (3 rows, clearly separated) ──
-  var barHTML = '<div style="line-height:2.2">';
-  // Row 1: Scope + Quick filters
-  barHTML += '<div style="margin-bottom:2px">';
-  [{v:'all',l:'全部'},{v:'camp',l:'🏕️营地'},{v:'personal',l:'👤私人'}].forEach(function(s){
-    barHTML += '<button class="btn'+(villageScopeFilter===s.v?' pri':'')+'" onclick="villageScopeFilter=\''+s.v+'\';renderVillageQuestHall()" style="font-size:.7rem;padding:3px 10px">'+s.l+'</button>';
+  // Row 1: Scope + Quick (bigger text)
+  barHTML += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">';
+  [{v:'all',l:'全部'},{v:'camp',l:'🏕️ 营地'},{v:'personal',l:'👤 私人'}].forEach(function(s){
+    barHTML += '<button class="btn'+(villageScopeFilter===s.v?' pri':'')+'" onclick="villageScopeFilter='+escAttr("'"+s.v+"'")+';renderVillageQuestHall()" style="font-size:.82rem;padding:4px 14px">'+s.l+'</button>';
   });
-  barHTML += '<span style="color:#ccc;margin:0 2px">|</span>';
-  [{v:'today',l:'📅今天'},{v:'urgent',l:'⏰即将截止'},{v:'need_people',l:'👥缺人中'}].forEach(function(q){
-    barHTML += '<button class="btn'+(villageQuickFilter===q.v?' pri':'')+'" onclick="villageQuickFilter=villageQuickFilter===\''+q.v+'\'?\'\':\''+q.v+'\';renderVillageQuestHall()" style="font-size:.7rem;padding:3px 10px">'+q.l+'</button>';
+  barHTML += '<span style="color:#ccc;margin:0 4px;align-self:center">|</span>';
+  [{v:'today',l:'📅 今天'},{v:'urgent',l:'⏰ 即将截止'},{v:'need_people',l:'👥 缺人中'}].forEach(function(q){
+    barHTML += '<button class="btn'+(villageQuickFilter===q.v?' pri':'')+'" onclick="villageQuickFilter=villageQuickFilter==='+escAttr("'"+q.v+"'")+'?'+escAttr("'")+':'+escAttr("'"+q.v+"'")+';renderVillageQuestHall()" style="font-size:.82rem;padding:4px 14px">'+q.l+'</button>';
   });
   barHTML += '</div>';
-  // Row 2: Type filter
-  barHTML += '<div style="margin-bottom:2px">';
+  // Row 2: Type + Location + Custom (smaller text)
+  barHTML += '<div style="display:flex;gap:3px;flex-wrap:wrap">';
   ['全部','主线','支线','隐藏','共创','身份'].forEach(function(c){
-    barHTML += '<button class="btn'+(villageCatFilter===c||(!villageCatFilter&&c==='全部')?' pri':'')+'" onclick="villageCatFilter=villageCatFilter===c||(c===\"全部\"&&!villageCatFilter)?\"\":c;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
+    barHTML += '<button class="btn'+(villageCatFilter===c||(!villageCatFilter&&c==='全部')?' pri':'')+'" onclick="villageCatFilter=villageCatFilter===c||(c==='+escAttr("全部")+'&&!villageCatFilter)?'+escAttr("")+':c;renderVillageQuestHall()" style="font-size:.7rem;padding:2px 8px">'+c+'</button>';
   });
-  barHTML += '</div>';
-  // Row 3: Location + custom
-  barHTML += '<div>';
+  barHTML += '<span style="color:#ccc;margin:0 3px;align-self:center;font-size:.7rem">|</span>';
   ['在地任务','非在地任务','日常任务'].forEach(function(c){
-    barHTML += '<button class="btn'+(villageLocFilter===c?' pri':'')+'" onclick="villageLocFilter=villageLocFilter===c?\"\":c;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
+    barHTML += '<button class="btn'+(villageLocFilter===c?' pri':'')+'" onclick="villageLocFilter=villageLocFilter===c?'+escAttr("")+':c;renderVillageQuestHall()" style="font-size:.7rem;padding:2px 8px">'+c+'</button>';
   });
-  // Custom tags
   var customTags = (data.custom_tags || []);
   customTags.forEach(function(ct){
-    barHTML += '<button class="btn'+(villageLocFilter===ct?' pri':'')+'" onclick="villageLocFilter=villageLocFilter===ct?\"\":ct;renderVillageQuestHall()" style="font-size:.65rem;padding:2px 7px">'+ct+'</button>';
+    barHTML += '<button class="btn'+(villageLocFilter===ct?' pri':'')+'" onclick="villageLocFilter=villageLocFilter===ct?'+escAttr("")+':ct;renderVillageQuestHall()" style="font-size:.7rem;padding:2px 8px">'+ct+'</button>';
   });
   var canAddTag = currentUser && (currentUser.role==='admin'||currentUser.role==='npc');
-  barHTML += '<button class="btn" onclick="'+(canAddTag?'var t=prompt(\"新标签名：\");if(t){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(t);localStorage.setItem(\"camp_data\",JSON.stringify(data));renderVillageQuestHall()}':'alert(\"仅管理员和在地伙伴可添加标签\")')+'" style="font-size:.65rem;padding:2px 7px;color:var(--accent)" title="'+(canAddTag?'添加自定义标签':'仅管理员/在地伙伴可添加')+'">＋ 标签</button>';
+  barHTML += '<button class="btn" '+(!canAddTag?'disabled':'')+' onclick="'+escAttr("var t=prompt('新标签名：');if(t){if(!data.custom_tags)data.custom_tags=[];if(data.custom_tags.indexOf(t)<0){data.custom_tags.push(t);localStorage.setItem('camp_data',JSON.stringify(data));renderVillageQuestHall()}}")+'" style="font-size:.65rem;padding:2px 6px;color:var(--accent);border-style:dashed" title="'+(canAddTag?'添加自定义标签':'仅管理员/在地伙伴可添加标签')+'">＋</button>';
   barHTML += '</div>';
 
   // ── Filter + three-layer logic ──
@@ -2689,26 +2685,30 @@ function renderQuestBoard() {
   var container = document.getElementById('questBoardContent'); if (!container) return; var tasks = data.tasks || []; var name = currentUser ? currentUser.name : '';
   var today = new Date().toISOString().slice(0,10);
 
-  // ── Quick filter bar ──
-  var scopeBtns = [{v:'all',l:'全部'},{v:'camp',l:'🏕️营地'},{v:'personal',l:'👤私人'}];
-  var quickBtns = [{v:'today',l:'📅今天'},{v:'urgent',l:'⏰即将截止'},{v:'need_people',l:'👥缺人中'},{v:'submitted_all',l:'✅已提交'}];
-  var fhtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="questQuickBar">';
-  scopeBtns.forEach(function(s) { fhtml += '<button class="btn'+(questScopeFilter===s.v?' pri':'')+'" onclick="questScopeFilter=\''+s.v+'\';renderQuestBoard()" style="font-size:.75rem;padding:3px 10px">'+s.l+'</button>'; });
-  fhtml += '<span style="color:var(--border);margin:0 4px">|</span>';
-  quickBtns.forEach(function(q) { fhtml += '<button class="btn'+(questQuickFilter===q.v?' pri':'')+'" onclick="questQuickFilter=questQuickFilter===\''+q.v+'\'?\'\':\''+q.v+'\';renderQuestBoard()" style="font-size:.75rem;padding:3px 10px">'+q.l+'</button>'; });
+  // ── Row 1: Scope + Quick (bigger) ──
+  var scopeBtns = [{v:'all',l:'全部'},{v:'camp',l:'🏕️ 营地'},{v:'personal',l:'👤 私人'}];
+  var quickBtns = [{v:'today',l:'📅 今天'},{v:'urgent',l:'⏰ 即将截止'},{v:'need_people',l:'👥 缺人中'},{v:'submitted_all',l:'✅ 已提交'}];
+  var fhtml = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">';
+  scopeBtns.forEach(function(s) { fhtml += '<button class="btn'+(questScopeFilter===s.v?' pri':'')+'" onclick="questScopeFilter='+escAttr("'"+s.v+"'")+';renderQuestBoard()" style="font-size:.82rem;padding:4px 14px">'+s.l+'</button>'; });
+  fhtml += '<span style="color:var(--border);margin:0 4px;align-self:center">|</span>';
+  quickBtns.forEach(function(q) { fhtml += '<button class="btn'+(questQuickFilter===q.v?' pri':'')+'" onclick="questQuickFilter=questQuickFilter==='+escAttr("'"+q.v+"'")+'?'+escAttr("'")+':'+escAttr("'"+q.v+"'")+';renderQuestBoard()" style="font-size:.82rem;padding:4px 14px">'+q.l+'</button>'; });
   fhtml += '</div>';
 
-  // ── Location + custom row ──
-  fhtml += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:8px" id="questLocBar">';
+  // ── Row 2: Type + Location + Tags (smaller) ──
+  fhtml += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">';
+  ['全部','主线','支线','隐藏','共创','身份'].forEach(function(c){
+    fhtml += '<button class="btn'+(questFilter===c||(!questFilter&&c==='全部')?' pri':'')+'" onclick="questFilter=questFilter===c||(c==='+escAttr("全部")+'&&!questFilter)?'+escAttr("")+':c;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+c+'</button>';
+  });
+  fhtml += '<span style="color:var(--border);margin:0 3px;align-self:center;font-size:.7rem">|</span>';
   ['在地任务','非在地任务','日常任务'].forEach(function(c){
-    fhtml += '<button class="btn'+(questLocFilter===c?' pri':'')+'" onclick="questLocFilter=questLocFilter===c?\"\":c;renderQuestBoard()" style="font-size:.65rem;padding:2px 7px">'+c+'</button>';
+    fhtml += '<button class="btn'+(questLocFilter===c?' pri':'')+'" onclick="questLocFilter=questLocFilter===c?'+escAttr("")+':c;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+c+'</button>';
   });
   var customTags = (data.custom_tags || []);
   customTags.forEach(function(ct){
-    fhtml += '<button class="btn'+(questLocFilter===ct?' pri':'')+'" onclick="questLocFilter=questLocFilter===ct?\"\":ct;renderQuestBoard()" style="font-size:.65rem;padding:2px 7px">'+ct+'</button>';
+    fhtml += '<button class="btn'+(questLocFilter===ct?' pri':'')+'" onclick="questLocFilter=questLocFilter===ct?'+escAttr("")+':ct;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+ct+'</button>';
   });
-  var canAddTag = currentUser && (currentUser.role==='admin'||currentUser.role==='npc');
-  fhtml += '<button class="btn" onclick="'+(canAddTag?'var t=prompt(\"新标签名：\");if(t){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(t);localStorage.setItem(\"camp_data\",JSON.stringify(data));renderQuestBoard()}':'alert(\"仅管理员和在地伙伴可添加标签\")')+'" style="font-size:.65rem;padding:2px 7px;color:var(--accent)">＋ 标签</button>';
+  var canAddTag2 = currentUser && (currentUser.role==='admin'||currentUser.role==='npc');
+  fhtml += '<button class="btn" '+(!canAddTag2?'disabled':'')+' onclick="'+escAttr("var t=prompt('新标签名：');if(t){if(!data.custom_tags)data.custom_tags=[];if(data.custom_tags.indexOf(t)<0){data.custom_tags.push(t);localStorage.setItem('camp_data',JSON.stringify(data));renderQuestBoard()}}")+'" style="font-size:.65rem;padding:2px 6px;color:var(--accent);border-style:dashed" title="'+(canAddTag2?'添加自定义标签':'仅管理员/在地伙伴可添加')+'">＋</button>';
   fhtml += '</div>';
 
   // ── Unclaimed reminder ──
