@@ -3965,15 +3965,25 @@ function renderMembers() {
     staffData[name] = { tasks: [], points: 0, done: 0, active: 0, todo: 0 };
   });
 
-  // 2. From data.tasks: enrich with task stats
+  // 2. From data.tasks: enrich with task stats (assignee + claimants)
+  var seen = {};
   tasks.forEach(function(t) {
-    var name = t.assignee || '(未分配)';
-    if (!staffData[name]) return;
-    staffData[name].tasks.push(t);
-    staffData[name].points += (t.points || 1);
-    if (t.status === '已完成' || t.status === '已确认') staffData[name].done++;
-    else if (t.status === '进行中') staffData[name].active++;
-    else staffData[name].todo++;
+    var name = t.assignee || '';
+    if (name && staffData[name] && !seen[name+'|'+t.name]) {
+      seen[name+'|'+t.name] = true;
+      staffData[name].tasks.push(t);
+      staffData[name].points += (t.points || 1);
+      if (t.status === '已完成' || t.status === '已确认') staffData[name].done++;
+      else if (t.status === '进行中') staffData[name].active++;
+      else staffData[name].todo++;
+    }
+    (t.claimants||[]).forEach(function(c){
+      var cn = c.name;
+      if (cn && staffData[cn] && !seen[cn+'|'+t.name]) {
+        seen[cn+'|'+t.name] = true;
+        if (staffData[cn].tasks.indexOf(t) === -1) staffData[cn].tasks.push(t);
+      }
+    });
   });
 
   // 3. Sort by task count
