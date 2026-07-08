@@ -485,7 +485,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="budget" onclick="switchTab('budget')">💰 资源金库</button>
     <button class="tab" data-tab="settlement" onclick="switchTab('settlement')">🧾 通关结算</button>
-    <button class="tab" data-tab="realmMap" onclick="switchTab('realmMap')">🗺️ 实景地图</button>
+    <button class="tab" data-tab="realmMap" onclick="switchTab('realmMap')">🗺️ 南塘云村</button>
     <button class="tab" data-tab="bazaar" onclick="switchTab('bazaar')">🏪 集市</button>
     <span style="flex:1"></span>
     <span class="dropdown" style="position:relative;align-self:center;margin-left:8px">
@@ -509,14 +509,14 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务大厅</button>
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
-    <button class="tab" data-tab="realmMap" onclick="switchTab('realmMap')">🗺️ 实景地图</button>
+    <button class="tab" data-tab="realmMap" onclick="switchTab('realmMap')">🗺️ 南塘云村</button>
     <button class="tab" data-tab="bazaar" onclick="switchTab('bazaar')">🏪 集市</button>
     <span style="flex:1"></span>
     <span class="dropdown" style="position:relative;align-self:center;margin-left:4px">
       <button class="btn" onclick="toggleDropdown('gearMenuAdventure')" title="工具" style="font-size:.8rem;padding:4px 8px"><i class="ph-duotone ph-gear"></i></button>
       <div id="gearMenuAdventure" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:140px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
         <button class="btn" onclick="showVillageSquare();toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-house"></i> 回南塘村口</button>
-        <button class="btn" onclick="alert('🗺️ 实景地图建设中，敬请期待');toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-map-trifold"></i> 实景地图</button>
+        <button class="btn" onclick="switchTab('realmMap');toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-map-trifold"></i> 南塘云村</button>
         <hr style="border-color:var(--border);margin:2px 0">
         <button class="btn" onclick="logoutUser();toggleDropdown('gearMenuAdventure')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-sign-out"></i> 退出登录</button>
       </div>
@@ -1022,8 +1022,8 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div id="tab-realmMap" class="hidden">
     <div class="card" style="text-align:center;padding:80px 20px">
       <div style="font-size:4rem;margin-bottom:16px">🗺️</div>
-      <h2 style="margin:0 0 8px">实景地图 · 即将开放</h2>
-      <p style="color:var(--muted);font-size:.9rem;max-width:400px;margin:0 auto">南塘村落实景地图建设中。<br>开放后可在村中自由探索、发现隐藏任务、与NPC互动。</p>
+      <h2 style="margin:0 0 8px">南塘云村 · 即将开放</h2>
+      <p style="color:var(--muted);font-size:.9rem;max-width:400px;margin:0 auto">实景地图、客栈、素社、集市、茶馆、桌游室。<br>社区空间正在建设中，敬请期待。</p>
     </div>
   </div>
 
