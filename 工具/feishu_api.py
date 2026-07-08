@@ -74,9 +74,10 @@ class FeishuClient:
             if page_token:
                 url += f"&page_token={page_token}"
             resp = self._request('GET', url)
-            items = resp.get('data', {}).get('items', [])
+            data = resp.get('data', {}) or {}
+            items = data.get('items') or []
             records.extend(items)
-            if not resp.get('data', {}).get('has_more'):
+            if not data.get('has_more'):
                 break
             page_token = resp['data'].get('page_token')
         return records
@@ -120,21 +121,23 @@ class FeishuClient:
         return results
 
     def _get_field_val(self, fs_fields, key, field_map):
-        """从飞书字段中按项目字段名取值"""
+        """从飞书字段中按项目字段名取值（field_map: {name: id}）"""
         fid = field_map.get(key)
         if not fid: return None
         val = fs_fields.get(fid)
         if isinstance(val, list) and len(val) > 0:
             return val[0].get('text', '') if isinstance(val[0], dict) else val[0]
+        if val is None:
+            # 尝试直接用字段名取值
+            val = fs_fields.get(key)
         return val
 
     def _to_feishu_fields(self, rec, field_map):
-        """将项目字段记录转为飞书字段格式"""
+        """将项目字段记录转为飞书字段格式（使用字段名作为 key）"""
         result = {}
         for key, val in rec.items():
-            fid = field_map.get(key)
-            if fid and val is not None:
-                result[fid] = val if isinstance(val, (int, float)) else str(val)
+            if key in field_map and val is not None and val != '':
+                result[key] = val if isinstance(val, (int, float)) else str(val)
         return result
 
 
