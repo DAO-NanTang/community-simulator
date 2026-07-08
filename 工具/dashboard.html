@@ -2553,7 +2553,24 @@ function updateAll() {
   renderLeaderboard();
   renderQuestBoard();
   localStorage.setItem('camp_data', JSON.stringify(data));
+  autoSaveToFeishu();
 }
+
+// ── Feishu sync ──
+var feishuSaveTimer = null;
+function autoSaveToFeishu() {
+  clearTimeout(feishuSaveTimer);
+  feishuSaveTimer = setTimeout(function() {
+    try { fetch('http://localhost:8765/api/save', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(function(){}); } catch(e) {}
+  }, 2000);
+}
+(function tryFeishuLoad() {
+  try {
+    fetch('http://localhost:8765/api/load-all').then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+      if (d && d.tasks) { data = d; localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); }
+    }).catch(function(){});
+  } catch(e) {}
+})();
 
 // ── Stats ──
 function updateStats() {
