@@ -118,7 +118,10 @@ select.inline-input { cursor: pointer; }
 /* Modal */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.3); z-index: 100; justify-content: center; align-items: center; }
 .modal-overlay.show { display: flex; }
-/* Village Square — clean card style, same as login page */
+/* Village Square — full-page immersive like login */
+#plazaPlaceholder:not(.hidden) { display: block; position: fixed; inset: 0; z-index: 200; background: url(ai_expand_image1783014990973.png) center/cover no-repeat; overflow-y: auto; }
+#plazaPlaceholder:not(.hidden)::before { content: ''; position: fixed; inset: 0; background: linear-gradient(0deg,rgba(0,0,0,.25),rgba(0,0,0,.05) 40%,rgba(0,0,0,.15) 100%); z-index: 0; pointer-events: none; }
+#villageSquare { position: relative; z-index: 1; }
 .village-card { background: rgba(255,252,245,.9); border: 1px solid #d0c8b0; border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; backdrop-filter: blur(6px); }
 .village-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
 .village-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,25,20,.5); z-index: 120; display: flex; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
@@ -1802,11 +1805,16 @@ var workspacePanel = 'overview'; // 'overview' | 'camp' | 'personal' | 'flow' | 
 
 function showPlazaPlaceholder(user) {
   hideAllTabs();
+  var hud = document.getElementById('worldHUD'); if (hud) hud.classList.add('hidden');
   var pp = document.getElementById('plazaPlaceholder');
   var roleNames = { npc: '在地伙伴', visitor: '云村民', adventurer: '冒险者', builder: '共建者', admin: '管理员' };
   var users = getUsers(), u = users[user.name];
   var vi = document.getElementById('villageUserInfo'); if (vi) vi.textContent = '👤 ' + user.name + ' · ' + (roleNames[user.role] || user.role) + ' · 注册于 ' + ((u && u.created) || '—');
   pp.classList.remove('hidden');
+}
+function hidePlazaPlaceholder() {
+  document.getElementById('plazaPlaceholder').classList.add('hidden');
+  var hud = document.getElementById('worldHUD'); if (hud) hud.classList.remove('hidden');
 }
 
 function showVillageSquare() {
