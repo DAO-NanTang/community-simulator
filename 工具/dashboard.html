@@ -1945,16 +1945,34 @@ function enterWorld(user) {
 
 function hideAllTabs() { ['members','players','timeline','budget','settlement','realmMap','bazaar','map','taskhall','settings','profile','questboard','leaderboard','ntadmin','workspace'].forEach(function(n) { var el = document.getElementById('tab-' + n); if (el) el.classList.add('hidden'); }); }
 var workspacePanel = 'tasks'; // 'tasks' | 'flow' | 'settings'
-function cycleWsAvatar() {
+function cycleWsAvatar() { showWsAvatarPicker(); }
+
+function showWsAvatarPicker() {
+  var existing = document.getElementById('wsAvatarPicker');
+  if (existing) { existing.remove(); return; }
+  if (!currentUser) return;
+  var seed = (data.members&&data.members[currentUser.name]) ? (data.members[currentUser.name].avatar_seed||0) : 0;
+  var html = '<div id="wsAvatarPicker" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:300;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.3);max-width:460px;width:90%">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0;font-size:.9rem">🎨 选择头像</h3><button class="btn" onclick="document.getElementById(\'wsAvatarPicker\').remove()" style="font-size:.7rem;padding:2px 8px">✕</button></div>';
+  html += '<div style="display:flex;gap:4px;flex-wrap:wrap;max-height:280px;overflow-y:auto">';
+  CHARACTER_SEEDS.forEach(function(name, i) {
+    var url = 'https://api.dicebear.com/7.x/' + AVATAR_STYLE + '/svg?seed=' + encodeURIComponent(name) + '&size=48&radius=50';
+    var active = i === seed ? 'border:3px solid var(--accent);background:#fdf5e0' : 'border:1px solid var(--border)';
+    html += '<div onclick="wsSelectAvatar('+i+')" style="cursor:pointer;padding:3px;border-radius:8px;'+active+'" title="'+esc(name)+'"><img src="'+url+'" width="40" height="40" style="border-radius:50%" alt=""></div>';
+  });
+  html += '</div></div>';
+  var div = document.createElement('div'); div.innerHTML = html; document.body.appendChild(div.firstElementChild);
+}
+function wsSelectAvatar(seed) {
   if (!currentUser) return;
   var m = data.members || {};
   if (!m[currentUser.name]) m[currentUser.name] = {};
-  m[currentUser.name].avatar_seed = ((m[currentUser.name].avatar_seed||0) + 1) % 60;
-  var users = getUsers();
-  var u = users[currentUser.name];
-  if (u) u.avatar_seed = m[currentUser.name].avatar_seed;
+  m[currentUser.name].avatar_seed = seed;
+  var users = getUsers(); var u = users[currentUser.name];
+  if (u) u.avatar_seed = seed;
   saveUsers(users);
   localStorage.setItem('camp_data', JSON.stringify(data));
+  var el = document.getElementById('wsAvatarPicker'); if (el) el.remove();
   renderWorkspace();
 }
 
