@@ -2846,7 +2846,7 @@ function renderWorkspace() {
         submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
       }
       if (doneTasks.length>0) {
-        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"wsDoneList\");el.style.display=el.style.display===\"none\"?\"\":\"none\";this.textContent=el.style.display===\"none\"?\"📦 已完成（'+doneTasks.length+'项）▴\":\"📦 已完成（'+doneTasks.length+'项）▾\"">📦 已完成（'+doneTasks.length+'项）▾</div>';
+        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"wsDoneList\");var show=el.style.display===\"none\";el.style.display=show?\"\":\"none\";this.textContent=(show?\"📦 已完成（'+doneTasks.length+'项）▴\":\"📦 已完成（'+doneTasks.length+'项）▾\")">📦 已完成（'+doneTasks.length+'项）▾</div>';
         html += '<div id="wsDoneList" style="display:none">';
         doneTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
         html += '</div>';
