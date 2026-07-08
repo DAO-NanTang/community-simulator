@@ -1056,7 +1056,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div class="vm-inner" style="max-width:750px">
     <button onclick="closeVillageModal('questhall')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)">✕</button>
     <div class="npc-bubble">
-      <div class="npc-avatar">🤖</div>
+      <div class="npc-avatar" id="npcAvatar" style="overflow:hidden;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#e8c8a0,#d4a878);border:2px solid #d8c0a0"></div>
       <div style="flex:1">
         <div style="font-weight:700;margin-bottom:2px">小云 · 任务大厅接待员</div>
         <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px" id="npcDialogue">你好！我是小云～ 想找什么任务？</div>
@@ -1069,9 +1069,6 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <div style="margin-bottom:14px;display:flex;gap:6px;flex-wrap:wrap" id="villageQuickBar"></div>
     <div style="margin-bottom:10px;font-size:.82rem;font-weight:600">📋 公开委托</div>
     <div id="villageQuestList" style="max-height:50vh;overflow-y:auto"></div>
-    <div style="margin-top:14px;text-align:center">
-      <button class="btn pri" onclick="closeVillageModal('questhall');switchTab('questboard')" style="font-size:.8rem">🏛️ 进入完整任务大厅 →</button>
-    </div>
     <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
       <div style="font-size:.75rem;color:var(--muted)">💡 发布私人委托需要至少 1 NT 余额。营队任务请由共建者在NT管理中发布。</div>
     </div>
@@ -1845,6 +1842,8 @@ function closeVillageModal(type) {
 
 var villageScopeFilter = 'all', villageQuickFilter = '', villageCatFilter = '', villageSearchText = '';
 function renderVillageQuestHall() {
+  // Set fixed NPC avatar
+  var npcAv = document.getElementById('npcAvatar'); if (npcAv) npcAv.innerHTML = avatarCircle(42, 56, 0);
   var tasks = data.tasks || []; var name = currentUser ? currentUser.name : ''; var today = new Date().toISOString().slice(0,10);
   var isMember = currentUser && (currentUser.role==='admin'||currentUser.role==='builder'||currentUser.role==='adventurer');
 
