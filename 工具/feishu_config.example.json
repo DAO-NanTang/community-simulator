@@ -1,0 +1,43 @@
+{
+  "_说明": "复制此文件为 feishu_config.json，填入你的飞书应用凭据",
+  "app_id": "cli_xxxxxxxxxxxxx",
+  "app_secret": "你的飞书应用 Secret",
+  "app_token": "你的飞书多维表格 Base Token",
+  "tables": {
+    "用户表": {
+      "table_id": "tblxxxxxxxxx",
+      "key_field": "姓名",
+      "fields": { "姓名": "fldxxxxx", "用户类型": "fldxxxxx" }
+    },
+    "营地表": {
+      "table_id": "tblxxxxxxxxx",
+      "key_field": "营期名称",
+      "fields": { "营期名称": "fldxxxxx" }
+    },
+    "任务表": {
+      "table_id": "tblxxxxxxxxx",
+      "key_field": "任务名称",
+      "fields": { "任务名称": "fldxxxxx" }
+    },
+    "流水表": {
+      "table_id": "tblxxxxxxxxx",
+      "key_field": "事由",
+      "fields": { "事由": "fldxxxxx" }
+    },
+    "预算表": {
+      "table_id": "tblxxxxxxxxx",
+      "key_field": "项目名称",
+      "fields": { "项目名称": "fldxxxxx" }
+    },
+    "日程表": {
+      "table_id": "tblxxxxxxxxx",
+      "key_field": "板块名称",
+      "fields": { "板块名称": "fldxxxxx" }
+    },
+    "决策表": {
+      "table_id": "tblxxxxxxxxx",
+      "key_field": "决策标题",
+      "fields": { "决策标题": "fldxxxxx" }
+    }
+  }
+}

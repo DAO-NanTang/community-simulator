@@ -1,5 +1,40 @@
+# Temp & backup
 _temp_*
 _backup_*
-*.xlsx
+*_backup_*.html
+*_archive_*.html
+
+# Dependencies
 node_modules/
+__pycache__/
+package-lock.json
+
+# Secrets (DO NOT COMMIT)
+feishu_config.json
+
+# Large binaries
+*.rar
+*.xlsx
+*.png
+*.jpg
+*.log
+
+# OS
 .DS_Store
+~$*
+
+# Sub-projects (not core)
+asciiflow-local/
+floor-planner/
+homeRoughEditor/
+map-editor/
+开源代码/
+地图编辑器/
+布局草图/
+assets/
+jiag/
+南塘云村_阶段/
+方案/
+计算机制/
+计算结果/
+工资条/
