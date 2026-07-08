@@ -1965,8 +1965,8 @@ function toggleVillageDone(el, cnt) {
   if (list) list.style.display = isHide ? '' : 'none';
   el.textContent = isHide ? '📦 已完成/已领满（'+cnt+'项）▴' : '📦 已完成/已领满（'+cnt+'项）▾';
 }
-function toggleWSDone(el, cnt) { var list=document.getElementById('wsDoneList'); var show=!list||list.style.display==='none'; if(list)list.style.display=show?'':'none'; el.textContent=show?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
-function toggleMemDone(el, cnt) { var list=document.getElementById('memDoneList'); var show=!list||list.style.display==='none'; if(list)list.style.display=show?'':'none'; el.textContent=show?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
+function toggleWSDone(el, cnt) { window._wsDoneOpen=!window._wsDoneOpen; var list=document.getElementById('wsDoneList'); if(list)list.style.display=window._wsDoneOpen?'':'none'; el.textContent=window._wsDoneOpen?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
+function toggleMemDone(el, cnt) { window._memDoneOpen=!window._memDoneOpen; var list=document.getElementById('memDoneList'); if(list)list.style.display=window._memDoneOpen?'':'none'; el.textContent=window._memDoneOpen?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
 function showWsAvatarPicker() {
   if (!currentUser) return;
   var el = document.getElementById('wsAvatarPicker');
@@ -2843,8 +2843,8 @@ function renderWorkspace() {
         submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
       }
       if (doneTasks.length>0) {
-        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="toggleWSDone(this,'+doneTasks.length+')">📦 已完成（'+doneTasks.length+'项）▾</div>';
-        html += '<div id="wsDoneList" style="display:none" onclick="event.stopPropagation()">';
+        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="toggleWSDone(this,'+doneTasks.length+')">'+(window._wsDoneOpen?'📦 已完成（'+doneTasks.length+'项）▴':'📦 已完成（'+doneTasks.length+'项）▾')+'</div>';
+        html += '<div id="wsDoneList" style="display:'+(window._wsDoneOpen?'':'none')+'" onclick="event.stopPropagation()">';
         doneTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
         html += '</div>';
       }
@@ -4232,7 +4232,7 @@ function renderMemberDetailFor(type, name, m) {
         }
         if (doneT.length>0) {
           h += '<div style="font-size:.75rem;font-weight:600;margin:8px 0 4px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"memDoneList\");el.style.display=el.style.display===\"none\"?\"\":\"none\";this.textContent=el.style.display===\"none\"?\"📦 已完成（'+doneT.length+'项）▴\":\"📦 已完成（'+doneT.length+'项）▾\"">📦 已完成（'+doneT.length+'项）▾</div>';
-          h += '<div id="memDoneList" style="display:none" onclick="event.stopPropagation()">';
+          h += '<div id="memDoneList" style="display:'+(window._memDoneOpen?'':'none')+'" onclick="event.stopPropagation()">';
           doneT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); });
           h += '</div>';
         }
