@@ -163,7 +163,7 @@ select.inline-input { cursor: pointer; }
 .hub-slide-panel .hs-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
 .hub-slide-panel .hs-body{flex:1;padding:10px 14px;overflow-y:auto}
 /* Hub sub-panel — cascading from dropdown */
-.hub-sub-panel{position:fixed;width:320px;max-height:72vh;z-index:52;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transform:translateX(-8px);transition:opacity .12s,transform .15s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
+.hub-sub-panel{position:fixed;width:320px;max-height:72vh;z-index:52;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transform:translateX(12px);transition:opacity .12s,transform .15s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
 .hub-sub-panel.show{opacity:1;transform:translateX(0);pointer-events:auto}
 .hub-sub-panel .hs-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)}
 .hub-sub-panel .hs-body{flex:1;padding:10px 14px;overflow-y:auto}
@@ -3404,7 +3404,7 @@ function renderHubDropdown() {
   var html = '';
   items.forEach(function(item) {
     var op = item.ok ? '1' : '.4';
-    var onclick = item.ok ? ' onclick="openHubSub(\''+item.id+'\')"' : '';
+    var onclick = item.ok ? ' onclick="openHubSub(\''+item.id+'\',this)"' : '';
     html += '<button'+onclick+' style="text-align:left;font-size:.8rem;opacity:'+op+';cursor:'+(item.ok?'pointer':'default')+'" class="btn">'+item.icon+' '+item.label+'<span style="float:right;color:var(--muted);font-size:.7rem;margin-left:8px">'+item.info+' ›</span></button>';
   });
 
@@ -3416,31 +3416,29 @@ function renderHubDropdown() {
 
 function updateHubSubPanel() { /* sub panel populated in openHubSub */ }
 
-function openHubSub(page) {
+function openHubSub(page, el) {
   window._hubSubPage = page;
   var sp = document.getElementById('hubSubPanel');
   var title = document.getElementById('hubSlideTitle');
   var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
 
-  // Position sub-panel: anchored below dropdown, right-aligned
-  var menu = document.getElementById('hubMenu');
-  if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
-  if (menu && sp) {
-    var mr = menu.getBoundingClientRect();
-    sp.style.top = mr.top + 'px';
-    sp.style.right = (window.innerWidth - mr.right + 8) + 'px';
-    sp.style.maxHeight = Math.max(300, Math.min(mr.height, window.innerHeight - mr.top - 20)) + 'px';
+  // Position sub-panel: 右上角对齐选中行的右上角, 向左滑出
+  if (el && sp) {
+    var rr = el.getBoundingClientRect();
+    // 二级面板右边缘 = 一级菜单右边缘, 上边缘 = 选中行上边缘 - 小偏移
+    sp.style.top = Math.max(8, rr.top - 4) + 'px';
+    sp.style.right = (window.innerWidth - rr.right + 4) + 'px';
+    sp.style.maxHeight = Math.min(500, window.innerHeight - rr.top - 20) + 'px';
   }
 
   // Render content
   renderHubSlideContent(page);
 
-  // Show
+  // Show sub panel + backdrop, keep dropdown visible
   if (sp) sp.classList.add('show');
   document.getElementById('hubSlideBackdrop').classList.add('show');
-  // Hide dropdown
-  if (menu) menu.classList.add('hidden');
+  // Do NOT hide dropdown - it stays visible as the first-level menu
 }
 
 function closeHubSlide() {
