@@ -2793,34 +2793,33 @@ function renderWorkspace() {
     });
     html += '</div>';
 
-    // Task cards
+    // Task cards — grouped: active → submitted → completed (archive)
     if (filtered.length === 0) {
       html += '<div class="card" style="text-align:center;padding:40px;color:var(--muted)">';
       html += '<div style="font-size:2rem;margin-bottom:8px">📋</div>';
       html += '<div>' + (wsTabFilter === 'all' ? '还没有任务。去任务大厅领取吧！' : '没有匹配的任务') + '</div>';
       html += '</div>';
     } else {
-      html += '<div class="card" style="padding:10px 14px"><div style="display:flex;flex-direction:column;gap:5px">';
-      filtered.forEach(function(e) {
-        var t = e.task, c = e.claim;
-        var st = statusLabel[c.status] || c.status;
-        var sc = scopeIcon[e.scope] || '';
-        var bgColor = c.status === 'completed' ? '#e8f0e2' : (c.status === 'submitted' ? '#fef9ee' : '#fefdf9');
-        var borderColor = c.status === 'completed' ? 'var(--green)' : (c.status === 'submitted' ? '#e8c840' : 'var(--border)');
-        html += '<div style="display:flex;align-items:center;gap:10px;background:'+bgColor+';border:1px solid '+borderColor+';border-radius:8px;padding:10px 14px;font-size:.82rem">';
-        html += '<span style="font-size:1.1rem;flex-shrink:0">'+sc+'</span>';
-        html += '<div style="flex:1;min-width:0">';
-        html += '<div style="font-weight:600">'+esc(t.name)+' <span style="font-size:.7rem;color:var(--muted);font-weight:400">NT '+(t.points||0)+' · '+esc(t.deadline||'—')+(t.start ? ' · '+esc(t.start)+'→' : '')+'</span></div>';
-        html += '<div style="font-size:.72rem;color:var(--muted)">'+st+'</div>';
+      var activeTasks = filtered.filter(function(e){ return e.claim.status==='in_progress'||e.claim.status==='triggered'||e.claim.status==='rejected'; });
+      var submittedTasks = filtered.filter(function(e){ return e.claim.status==='submitted'; });
+      var doneTasks = filtered.filter(function(e){ return e.claim.status==='completed'; });
+      var wsOpts = { context:'workspace', userName:currentUser.name, isMember:true };
+      html += '<div class="card" style="padding:10px 14px">';
+      if (activeTasks.length>0) {
+        html += '<div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--text)">📋 进行中（'+activeTasks.length+'项）</div>';
+        activeTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
+      }
+      if (submittedTasks.length>0) {
+        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--accent)">⏳ 审核中（'+submittedTasks.length+'项）</div>';
+        submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
+      }
+      if (doneTasks.length>0) {
+        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\"wsDoneList\");el.style.display=el.style.display===\"none\"?\"\":\"none\";this.textContent=el.style.display===\"none\"?\"📦 已完成（'+doneTasks.length+'项）▴\":\"📦 已完成（'+doneTasks.length+'项）▾\"">📦 已完成（'+doneTasks.length+'项）▾</div>';
+        html += '<div id="wsDoneList" style="display:none">';
+        doneTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
         html += '</div>';
-        html += '<div style="flex-shrink:0">';
-        if (c.status === 'in_progress' || c.status === 'triggered') html += '<button class="btn green" onclick="submitTask('+e.idx+')" style="font-size:.7rem;padding:4px 10px">📤 提交</button>';
-        else if (c.status === 'rejected') html += '<button class="btn" onclick="submitTask('+e.idx+')" style="font-size:.7rem;padding:4px 10px">🔄 重交</button>';
-        else if (c.status === 'submitted') html += '<span style="font-size:.7rem;color:var(--muted)">⏳ 等待审核</span>';
-        else if (c.status === 'completed') html += '<span style="font-size:.7rem;color:var(--green)">✅ 已通过</span>';
-        html += '</div></div>';
-      });
-      html += '</div></div>';
+      }
+      html += '</div>';
     }
 
   } // end if/else (flow/settings/tasks)
