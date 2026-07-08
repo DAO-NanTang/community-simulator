@@ -152,6 +152,12 @@ select.inline-input { cursor: pointer; }
 .invite-sidebar .is-gen-btn{width:100%;margin-top:6px;padding:7px;font-size:.75rem}
 .invite-sidebar .is-hint{font-size:.65rem;color:var(--muted);margin-top:6px;text-align:center}
 .invite-sidebar .is-empty{text-align:center;color:var(--muted);padding:20px 0;font-size:.78rem}
+/* Hub slide panel */
+.hub-slide-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.hub-slide-panel{position:fixed;top:0;right:0;width:420px;max-width:90vw;height:100vh;z-index:51;background:#1a1a1a;border-left:1px solid #333;box-shadow:-4px 0 20px rgba(0,0,0,.5);transform:translateX(100%);transition:transform .2s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;font-family:var(--font)}
+.hub-slide-panel.show{transform:translateX(0)}
+.hub-slide-backdrop.show{opacity:1;pointer-events:auto}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 /* Reviewer Picker Dropdown */
 .picker-dropdown{position:fixed;width:260px;max-height:240px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden}
 .picker-dropdown.hidden{display:none}
@@ -1303,6 +1309,16 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 </div>
 
 
+
+<!-- Hub Slide Panel -->
+<div class="hub-slide-backdrop" id="hubSlideBackdrop" onclick="closeHubSlide()"></div>
+<div class="hub-slide-panel" id="hubSlidePanel">
+  <div style="background:#2a2a2a;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333">
+    <span style="color:#aaa;font-family:monospace;font-size:.82rem" id="hubSlideTitle">$ _</span>
+    <span onclick="closeHubSlide()" style="cursor:pointer;color:#888;font-size:1.2rem">&times;</span>
+  </div>
+  <div id="hubSlideBody" style="padding:16px;overflow-y:auto;flex:1"></div>
+</div>
 
 <!-- Invite Code Sidebar -->
 <div class="invite-backdrop" id="inviteBackdrop" onclick="dismissInviteSidebar()"></div>
@@ -3264,71 +3280,137 @@ function submitCanteenSuggestion() {
   setStatus('已提交建议 ✅');
 }
 
-// ═══ 南塘云村 Hub ═══
-function openHubPage(page) { window._hubPage = page; renderHub(); }
-function closeHubPage() { window._hubPage = ''; renderHub(); }
+// ═══ 南塘云村 Hub（终端风）═══
+function openHubSlide(page) {
+  window._hubPage = page;
+  var panel = document.getElementById('hubSlidePanel');
+  var bd = document.getElementById('hubSlideBackdrop');
+  var title = document.getElementById('hubSlideTitle');
+  var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
+  if (title) title.textContent = '$ '+titles[page];
+  if (panel) { panel.classList.add('show'); renderHubSlideContent(page); }
+  if (bd) bd.classList.add('show');
+}
+function closeHubSlide() {
+  window._hubPage = '';
+  var panel = document.getElementById('hubSlidePanel');
+  var bd = document.getElementById('hubSlideBackdrop');
+  if (panel) panel.classList.remove('show');
+  if (bd) bd.classList.remove('show');
+}
+
+function renderHubSlideContent(page) {
+  var body = document.getElementById('hubSlideBody'); if (!body) return;
+  var h = '';
+  if (page === 'bazaar') {
+    var listed = (data.inventory || []).filter(function(it) { return it.status === 'listed'; });
+    var byOwner = {}; listed.forEach(function(it) { if (!byOwner[it.owner]) byOwner[it.owner] = []; byOwner[it.owner].push(it); });
+    var owners = Object.keys(byOwner).sort();
+    h += '<div style="margin-bottom:12px;color:#888">$ ls /mnt/bazaar/</div>';
+    if (owners.length === 0) {
+      h += '<div style="color:#666">  [空] 暂无物品在售</div>';
+    } else {
+      owners.forEach(function(owner) {
+        h += '<div style="color:#aaa;margin:8px 0 4px">  '+esc(owner)+'/</div>';
+        byOwner[owner].forEach(function(it) {
+          h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #333;font-size:.82rem">';
+          h += '<span><span style="color:#aaa">'+esc(it.name)+'</span><span style="color:#666;margin-left:8px">'+esc(it.category)+'</span></span>';
+          h += '<span style="display:flex;align-items:center;gap:8px"><span style="color:#c80">'+it.price+' NT</span>';
+          if (currentUser && currentUser.name !== it.owner) h += '<span onclick="showPurchase(\''+escAttr(it.id)+'\')" style="cursor:pointer;color:#5a5;font-size:.75rem">[购买]</span>';
+          else if (currentUser && currentUser.name === it.owner) h += '<span style="color:#555;font-size:.75rem">[我的]</span>';
+          h += '</span></div>';
+        });
+      });
+    }
+    if (currentUser) h += '<div style="margin-top:14px"><span onclick="workspacePanel=\'items\';switchTab(\'workspace\')" style="cursor:pointer;color:#5af;font-size:.82rem">$ publish --new-item</span></div>';
+  } else if (page === 'canteen') {
+    var today = new Date().toISOString().slice(0,10);
+    var hour = new Date().getHours();
+    var menu = data.canteen_menus && data.canteen_menus[today] ? data.canteen_menus[today] : { lunch: [], dinner: [] };
+    var myOrders = (data.canteen_orders || []).filter(function(o) { return o.person === (currentUser?currentUser.name:'') && o.date === today; });
+    var lunchOpen = hour < 10 || (hour === 10 && new Date().getMinutes() < 30);
+    var dinnerOpen = hour < 16 || (hour === 16 && new Date().getMinutes() < 30);
+
+    h += '<div style="margin-bottom:12px;color:#888">$ cat /etc/canteen/menu.json</div>';
+    h += '<div style="color:#aaa;margin-bottom:16px">';
+    h += '<div style="color:#5af;margin:8px 0">  [午餐] 11:30-13:00 '+(lunchOpen?'<span style="color:#5a5">◉ 预定中</span>':'<span style="color:#a55">◉ 已截止</span>')+'</div>';
+    if (menu.lunch.length > 0) {
+      h += '  '+menu.lunch.map(function(item){return getFoodIcon(item)+' '+item;}).join('  ')+'<br>';
+    } else { h += '  <span style="color:#666">(待更新)</span><br>'; }
+    h += '  <span style="color:#888">预定 10 NT | 现场 15 NT</span><br>';
+    var lunchOrdered = myOrders.filter(function(o) { return o.meal === 'lunch'; });
+    if (lunchOrdered.length > 0) {
+      h += '  <span style="color:#5a5">✓ 已预定</span><br>';
+    } else if (lunchOpen) {
+      h += '  <span onclick="preorderCanteen(\'lunch\')\" style="cursor:pointer;color:#5af">$ order --meal=lunch --preorder</span><br>';
+    }
+    h += '<div style="color:#5af;margin:12px 0 8px">  [晚餐] 17:30-19:00 '+(dinnerOpen?'<span style="color:#5a5">◉ 预定中</span>':'<span style="color:#a55">◉ 已截止</span>')+'</div>';
+    if (menu.dinner.length > 0) {
+      h += '  '+menu.dinner.map(function(item){return getFoodIcon(item)+' '+item;}).join('  ')+'<br>';
+    } else { h += '  <span style="color:#666">(待更新)</span><br>'; }
+    h += '  <span style="color:#888">预定 10 NT | 现场 15 NT</span><br>';
+    var dinnerOrdered = myOrders.filter(function(o) { return o.meal === 'dinner'; });
+    if (dinnerOrdered.length > 0) {
+      h += '  <span style="color:#5a5">✓ 已预定</span><br>';
+    } else if (dinnerOpen) {
+      h += '  <span onclick="preorderCanteen(\'dinner\')\" style="cursor:pointer;color:#5af">$ order --meal=dinner --preorder</span><br>';
+    }
+    h += '</div>';
+    h += '<div style="color:#888">$ echo "明天想吃什么?" | tee /dev/suggestions</div>';
+    h += '<div style="display:flex;gap:8px;margin-top:6px"><input id="canteenSuggestion" placeholder="> 素饺子…" style="flex:1;background:#111;border:1px solid #444;color:#aaa;padding:6px 10px;font-family:var(--font);font-size:.82rem;border-radius:4px"><span onclick="submitCanteenSuggestion()" style="cursor:pointer;color:#5af;font-size:.82rem;white-space:nowrap">[提交]</span></div>';
+  } else {
+    // placeholder for inn/teahouse/games/map
+    var labels = {inn:'客栈',teahouse:'茶馆',games:'桌游室',map:'实景地图'};
+    var icons = {inn:'🏨',teahouse:'🍵',games:'🎲',map:'🧭'};
+    h += '<div style="margin-bottom:12px;color:#888">$ ssh nantang/'+page+'</div>';
+    h += '<div style="color:#666;padding:20px 0">  '+icons[page]+' '+labels[page]+' — 即将开放</div>';
+  }
+  body.innerHTML = h;
+}
 
 function renderHub() {
   var container = document.getElementById('hubContent'); if (!container) return;
-  var hubPage = window._hubPage || '';
   var listedCount = (data.inventory || []).filter(function(it) { return it.status === 'listed'; }).length;
   var confirmedGuests = (data.inn_bookings || []).filter(function(b) { return b.status === 'confirmed'; }).length;
   var totalBeds = 12;
   var openGames = (data.game_sessions || []).filter(function(g) { return g.status === 'open'; }).length;
   var teahouseCount = (data.teahouse_posts || []).length;
 
-  // ═══ 一级菜单：六宫格（始终显示）═══
-  var cells = [
-    { id:'map', icon:'🧭', label:'实景地图', sub:'待开放', active:false },
-    { id:'inn', icon:'🏨', label:'客栈', sub:confirmedGuests+'/'+totalBeds+'人', active:true },
-    { id:'canteen', icon:'🥬', label:'素社食堂', sub:'今日菜单', active:true },
-    { id:'bazaar', icon:'🏪', label:'集市', sub:listedCount+'件在售', active:true },
-    { id:'teahouse', icon:'🍵', label:'茶馆', sub:teahouseCount+'条八卦', active:true },
-    { id:'games', icon:'🎲', label:'桌游室', sub:openGames+'局进行', active:true }
+  var items = [
+    { id:'map', icon:'🧭', label:'实景地图', info:'待开放', ok:false },
+    { id:'inn', icon:'🏨', label:'客栈', info:confirmedGuests+'/'+totalBeds+'人入住', ok:true },
+    { id:'canteen', icon:'🥬', label:'素社食堂', info:'午/晚餐预定', ok:true },
+    { id:'bazaar', icon:'🏪', label:'集市', info:listedCount+'件在售', ok:true },
+    { id:'teahouse', icon:'🍵', label:'茶馆', info:teahouseCount+'条八卦', ok:true },
+    { id:'games', icon:'🎲', label:'桌游室', info:openGames+'局进行中', ok:true }
   ];
 
+  // Terminal-style interface
   var html = '';
-  // Grid
-  html += '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px">';
-  cells.forEach(function(c) {
-    var sel = hubPage === c.id;
-    var bg = sel ? '#fdf5e0' : (c.active ? '#fefdf9' : '#f5f2ec');
-    var bd = sel ? '2px solid var(--accent)' : (c.active ? '1.5px solid var(--border)' : '1.5px solid #ddd8cc');
-    var cur = c.active ? 'pointer' : 'default';
-    var op = c.active ? '1' : '.5';
-    var onclick = c.active ? ' onclick="openHubPage(\''+c.id+'\')"' : '';
-    html += '<div'+onclick+' style="cursor:'+cur+';background:'+bg+';border:'+bd+';border-radius:10px;padding:14px 8px;text-align:center;opacity:'+op+';transition:.15s">';
-    html += '<div style="font-size:1.8rem;line-height:1.2">'+c.icon+'</div>';
-    html += '<div style="font-weight:600;font-size:.78rem;margin-top:4px">'+c.label+'</div>';
-    html += '<div style="font-size:.65rem;color:var(--muted)">'+c.sub+'</div>';
+  html += '<div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:0;overflow:hidden;font-family:\'Courier New\',monospace;font-size:.85rem;line-height:1.7">';
+  // Title bar
+  html += '<div style="background:#2a2a2a;padding:8px 14px;border-bottom:1px solid #333;display:flex;align-items:center;gap:8px">';
+  html += '<span style="color:#f55;font-size:.7rem">●</span><span style="color:#fa0;font-size:.7rem">●</span><span style="color:#5f5;font-size:.7rem">●</span>';
+  html += '<span style="color:#aaa;font-size:.75rem;margin-left:8px">nantang@cloud:~$ ls /mnt/village/</span>';
+  html += '</div>';
+  // Content area
+  html += '<div style="padding:14px 18px">';
+  items.forEach(function(item) {
+    var cur = item.ok ? 'pointer' : 'default';
+    var col = item.ok ? '#bbb' : '#555';
+    var onclick = item.ok ? ' onclick="openHubSlide(\''+item.id+'\')"' : '';
+    html += '<div'+onclick+' style="cursor:'+cur+';color:'+col+';padding:5px 0;display:flex;justify-content:space-between;align-items:center">';
+    html += '<span>'+item.icon+'  <span style="color:'+(item.ok?'#ddd':'#555')+'">'+item.label+'</span></span>';
+    html += '<span style="color:'+(item.ok?'#888':'#444')+';font-size:.75rem">'+item.info+'</span>';
     html += '</div>';
   });
-  html += '</div>';
-
-  // ═══ 二级页面：选中子模块内容 ═══
-  if (hubPage === 'bazaar') {
-    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="btn" onclick="closeHubPage()" style="font-size:.75rem">← 返回云村</button><h3 style="margin:0">🏪 南塘集市</h3></div>';
-    html += renderBazaarContent();
-  } else if (hubPage === 'canteen') {
-    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="btn" onclick="closeHubPage()" style="font-size:.75rem">← 返回云村</button><h3 style="margin:0">🥬 素社食堂</h3></div>';
-    html += renderCanteenContent();
-  } else if (hubPage === 'inn') {
-    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="btn" onclick="closeHubPage()" style="font-size:.75rem">← 返回云村</button><h3 style="margin:0">🏨 南塘客栈</h3></div>';
-    html += '<div class="card" style="text-align:center;padding:60px 20px"><div style="font-size:3rem;margin-bottom:12px">🏨</div><div style="color:var(--muted)">客栈即将开放</div><div style="font-size:.75rem;color:var(--muted);margin-top:4px">房型：梅兰竹菊（4单人间）+ A/B（2四人间）= 12床位</div></div>';
-  } else if (hubPage === 'games') {
-    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="btn" onclick="closeHubPage()" style="font-size:.75rem">← 返回云村</button><h3 style="margin:0">🎲 桌游室</h3></div>';
-    html += '<div class="card" style="text-align:center;padding:60px 20px"><div style="font-size:3rem;margin-bottom:12px">🎲</div><div style="color:var(--muted)">桌游室即将开放</div><div style="font-size:.75rem;color:var(--muted);margin-top:4px">全员可发起 · 报名 · 提醒 · 到场确认</div></div>';
-  } else if (hubPage === 'teahouse') {
-    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="btn" onclick="closeHubPage()" style="font-size:.75rem">← 返回云村</button><h3 style="margin:0">🍵 南塘茶馆</h3></div>';
-    html += '<div class="card" style="text-align:center;padding:60px 20px"><div style="font-size:3rem;margin-bottom:12px">🍵</div><div style="color:var(--muted)">茶馆即将开放</div><div style="font-size:.75rem;color:var(--muted);margin-top:4px">八卦中心 · 5 NT/条 · 7天自动归档</div></div>';
-  } else if (hubPage === 'map') {
-    html += '<div class="card" style="text-align:center;padding:60px 20px"><div style="font-size:3rem;margin-bottom:12px">🧭</div><div style="color:var(--muted)">实景地图 · 待开放</div><div style="font-size:.75rem;color:var(--muted);margin-top:4px">真正的南塘村落地图 Canvas/SVG 敬请期待</div></div>';
-  }
+  html += '<div style="color:#5a5;margin-top:8px">$ <span style="animation:blink 1s step-end infinite">▊</span></div>';
+  html += '</div></div>';
 
   container.innerHTML = html;
 }
 
-// ═══ 集市内容（内嵌版，不跳tab）═══
+// ═══ 集市内容（终端风内嵌版）═══ — 保留旧函数兼容
 function renderBazaarContent() {
   var listed = (data.inventory || []).filter(function(it) { return it.status === 'listed'; });
   var byOwner = {}; listed.forEach(function(it) { if (!byOwner[it.owner]) byOwner[it.owner] = []; byOwner[it.owner].push(it); });
@@ -3357,59 +3439,7 @@ function renderBazaarContent() {
   return h;
 }
 
-// ═══ 素社内容（内嵌版）═══
-function renderCanteenContent() {
-  var today = new Date().toISOString().slice(0,10);
-  var hour = new Date().getHours();
-  var menu = data.canteen_menus && data.canteen_menus[today] ? data.canteen_menus[today] : { lunch: [], dinner: [] };
-  var myOrders = (data.canteen_orders || []).filter(function(o) { return o.person === (currentUser?currentUser.name:'') && o.date === today; });
-  var lunchOpen = hour < 10 || (hour === 10 && new Date().getMinutes() < 30);
-  var dinnerOpen = hour < 16 || (hour === 16 && new Date().getMinutes() < 30);
-  var lunchTime = hour >= 11 && hour < 13;
-  var dinnerTime = hour >= 17 && hour < 19;
-  var h = '';
-
-  h += '<div class="card"><h3>🥬 午餐 11:30-13:00 '+(lunchOpen?'<span style="font-size:.7rem;color:var(--green)">预定开放中</span>':'<span style="font-size:.7rem;color:var(--muted)">预定已截止</span>')+'</h3>';
-  if (menu.lunch.length > 0) {
-    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
-    menu.lunch.forEach(function(item) { h += '<span style="font-size:.82rem;background:#f8f4ec;padding:6px 12px;border-radius:8px">'+getFoodIcon(item)+' '+esc(item)+'</span>'; });
-    h += '</div>';
-  } else { h += '<div style="color:var(--muted);margin-bottom:10px">今日菜单待更新</div>'; }
-  h += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">💰 预定 10 NT · 现场 15 NT</div>';
-  var lunchOrdered = myOrders.filter(function(o) { return o.meal === 'lunch'; });
-  if (lunchOrdered.length > 0) {
-    lunchOrdered.forEach(function(o) { h += '<div style="font-size:.78rem;color:var(--green)">✅ 已预定 · '+(o.status==='paid'?'已支付':'待支付')+'</div>'; });
-    if (lunchOrdered.some(function(o) { return o.status === 'ordered'; }) && lunchTime) {
-      h += '<button class="btn green" onclick="confirmCanteenPayment(\''+escAttr(lunchOrdered[0].id)+'\')" style="font-size:.75rem;padding:4px 10px">✅ 确认用餐 · 支付 10 NT</button>';
-    }
-  } else if (lunchOpen) {
-    h += '<button class="btn pri" onclick="preorderCanteen(\'lunch\')" style="font-size:.78rem;padding:5px 14px">🔔 预定今日午餐</button>';
-  }
-  h += '</div>';
-
-  h += '<div class="card"><h3>🥬 晚餐 17:30-19:00 '+(dinnerOpen?'<span style="font-size:.7rem;color:var(--green)">预定开放中</span>':'<span style="font-size:.7rem;color:var(--muted)">预定已截止</span>')+'</h3>';
-  if (menu.dinner.length > 0) {
-    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
-    menu.dinner.forEach(function(item) { h += '<span style="font-size:.82rem;background:#f8f4ec;padding:6px 12px;border-radius:8px">'+getFoodIcon(item)+' '+esc(item)+'</span>'; });
-    h += '</div>';
-  } else { h += '<div style="color:var(--muted);margin-bottom:10px">今日菜单待更新</div>'; }
-  h += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">💰 预定 10 NT · 现场 15 NT</div>';
-  var dinnerOrdered = myOrders.filter(function(o) { return o.meal === 'dinner'; });
-  if (dinnerOrdered.length > 0) {
-    dinnerOrdered.forEach(function(o) { h += '<div style="font-size:.78rem;color:var(--green)">✅ 已预定 · '+(o.status==='paid'?'已支付':'待支付')+'</div>'; });
-    if (dinnerOrdered.some(function(o) { return o.status === 'ordered'; }) && dinnerTime) {
-      h += '<button class="btn green" onclick="confirmCanteenPayment(\''+escAttr(dinnerOrdered[0].id)+'\')" style="font-size:.75rem;padding:4px 10px">✅ 确认用餐 · 支付 10 NT</button>';
-    }
-  } else if (dinnerOpen) {
-    h += '<button class="btn pri" onclick="preorderCanteen(\'dinner\')" style="font-size:.78rem;padding:5px 14px">🔔 预定今日晚餐</button>';
-  }
-  h += '</div>';
-
-  h += '<div class="card"><h3>💬 明天想吃什么？</h3>';
-  h += '<div style="display:flex;gap:6px"><input id="canteenSuggestion" placeholder="比如：素饺子…" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;font-family:var(--font);background:var(--card)"><button class="btn" onclick="submitCanteenSuggestion()" style="font-size:.78rem">提交建议</button></div></div>';
-
-  return h;
-}
+function renderCanteenContent() { return '<div style="color:#aaa">请通过终端视图访问素社食堂</div>'; }
 
 // ── Adventurer: Quest Board ──
 // ═══ Shared: quest card rendering ═══
