@@ -570,7 +570,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <button class="btn pri" onclick="filterMembers('builder')">🧙 共建者</button>
       <button class="btn" onclick="filterMembers('adventurer')">⚔️ 冒险者</button>
       <button class="btn" onclick="filterMembers('npc')">👥 南塘NPC</button>
-      <button class="btn" onclick="filterMembers('visitor')">🏕️ 游客</button>
+      <button class="btn" onclick="filterMembers('visitor')">🏕️ 云村民</button>
     </div>
     <div class="ms-avatar-row" id="memberAvatars"></div>
     <div id="memberDetail"></div>
@@ -1648,7 +1648,7 @@ var loginSelectedUser = null;
 
 function renderUserGrids() {
   var users = getUsers();
-  var roleLabels = { admin:'管理员', builder:'共建者', adventurer:'冒险者', npc:'南塘NPC', visitor:'游客' };
+  var roleLabels = { admin:'管理员', builder:'共建者', adventurer:'冒险者', npc:'在地伙伴', visitor:'云村民' };
   var roleColors = { admin:'#c8a040', builder:'#5a8a3c', adventurer:'#5b8cb8', npc:'#8b7355', visitor:'#9b9078' };
   var allUsers = Object.values(users).sort(function(a,b) {
     var order = {admin:0,builder:1,adventurer:2,npc:3,visitor:4};
