@@ -2913,9 +2913,10 @@ function renderQuestCard(t, opts) {
   var isMine = !!myClaim && !isDone;
   var isFull = t.max_slots>0 && activeC.length>=t.max_slots && !myClaim;
   var grey = isDone || (isFull && !myClaim);
-  var scopeTag = (t.scope||'camp')==='personal' ? '✏️私人' : '🏕️营地';
-  var scopeColorBg = (t.scope||'camp')==='personal' ? '#f0e0f0' : '#e0f0e0';
-  var scopeColorTxt = (t.scope||'camp')==='personal' ? '#8b5e9e' : '#5a8a3c';
+  var isWizard = t.type==='初始'||t.type==='新增'||t.type==='变更';
+  var scopeTag = (t.scope||'camp')==='personal' ? '✏️私人' : (isWizard ? '🏛️创世' : '🏕️营队');
+  var scopeColorBg = (t.scope||'camp')==='personal' ? '#f0e0f0' : (isWizard ? '#e8e0f0' : '#e0f0e0');
+  var scopeColorTxt = (t.scope||'camp')==='personal' ? '#8b5e9e' : (isWizard ? '#6b5e9e' : '#5a8a3c');
   var coopWarn = isCoCreate && activeC.length>0 && !grey && !locked ?
     '<span style="font-size:.6rem;background:#fde8c8;color:#b8781e;padding:1px 5px;border-radius:3px;margin-left:4px">🤝共创'+(t.max_slots>0?' · 需'+t.max_slots+'人':'')+'</span>' : '';
 
