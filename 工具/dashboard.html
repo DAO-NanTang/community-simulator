@@ -3153,6 +3153,7 @@ function confirmSubmit() {
   localStorage.setItem('camp_data', JSON.stringify(data));
   renderQuestBoard(); renderMyProfile();
   if (!document.getElementById('tab-workspace').classList.contains('hidden')) renderWorkspace();
+  var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();
   setStatus('已提交：' + t.name);
   closeSubmitModal();
 }
