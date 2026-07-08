@@ -152,19 +152,17 @@ select.inline-input { cursor: pointer; }
 .invite-sidebar .is-gen-btn{width:100%;margin-top:6px;padding:7px;font-size:.75rem}
 .invite-sidebar .is-hint{font-size:.65rem;color:var(--muted);margin-top:6px;text-align:center}
 .invite-sidebar .is-empty{text-align:center;color:var(--muted);padding:20px 0;font-size:.78rem}
-/* Reviewer Picker */
-.picker-backdrop{display:none;position:fixed;inset:0;background:transparent;z-index:49}
-.picker-backdrop.show{display:block}
-.picker-sidebar{position:fixed;width:260px;max-height:60vh;z-index:52;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transform:translateX(4px);transition:opacity .12s,transform .15s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;pointer-events:none}
-.picker-sidebar.show{opacity:1;transform:translateX(0);pointer-events:auto}
-.picker-sidebar .pk-header{padding:10px 12px;border-bottom:1px solid var(--border)}
-.picker-sidebar .pk-header input{width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;font-family:var(--font);background:var(--bg)}
-.picker-sidebar .pk-list{flex:1;overflow-y:auto;padding:6px}
-.picker-sidebar .pk-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;transition:.1s}
-.picker-sidebar .pk-row:hover{background:var(--bg)}
-.picker-sidebar .pk-row .pk-avatar{width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#e0d8c8}
-.picker-sidebar .pk-row .pk-name{flex:1}
-.picker-sidebar .pk-row .pk-role{font-size:.65rem;color:var(--muted)}
+/* Reviewer Picker Dropdown */
+.picker-dropdown{position:fixed;width:260px;max-height:240px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden}
+.picker-dropdown.hidden{display:none}
+.picker-dropdown .pk-header{padding:8px 10px;border-bottom:1px solid var(--border)}
+.picker-dropdown .pk-header input{width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:.76rem;font-family:var(--font);background:var(--bg);box-sizing:border-box}
+.picker-dropdown .pk-list{flex:1;overflow-y:auto;padding:4px}
+.picker-dropdown .pk-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:5px;cursor:pointer;font-size:.78rem;transition:.08s}
+.picker-dropdown .pk-row:hover{background:var(--bg)}
+.picker-dropdown .pk-row .pk-avatar{width:28px;height:28px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#e0d8c8}
+.picker-dropdown .pk-row .pk-name{flex:1;font-weight:500}
+.picker-dropdown .pk-row .pk-role{font-size:.62rem;color:var(--muted)}
 
 
 /* Timeline */
@@ -1264,10 +1262,9 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div class="is-body" id="inviteSidebarBody"></div>
 </div>
 
-<!-- Reviewer Picker Sidebar -->
-<div class="picker-backdrop" id="pickerBackdrop" onclick="closeReviewerPicker()"></div>
-<div class="picker-sidebar" id="pickerSidebar">
-  <div class="pk-header"><input type="text" id="pickerSearch" placeholder="🔍 搜索审核人…" oninput="renderReviewerList()"></div>
+<!-- Reviewer Picker Dropdown -->
+<div class="picker-dropdown hidden" id="pickerDropdown">
+  <div class="pk-header"><input type="text" id="pickerSearch" placeholder="🔍 搜索…" oninput="renderReviewerList()"></div>
   <div class="pk-list" id="pickerList"></div>
 </div>
 
@@ -2918,28 +2915,28 @@ function renderQuestBoard() {
   // ── Row 1: Scope + Quick (bigger) ──
   var scopeBtns = [{v:'all',l:'全部'},{v:'camp',l:'🏕️ 营地'},{v:'personal',l:'👤 私人'}];
   var quickBtns = [{v:'today',l:'📅 今天'},{v:'urgent',l:'⏰ 即将截止'},{v:'need_people',l:'👥 缺人中'},{v:'submitted_all',l:'✅ 已提交'}];
-  var fhtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="margin:0">📋 任务大厅</h3><button class="btn pri" onclick="showPostTask()" style="font-size:.78rem;padding:5px 14px">＋ 发布委托</button></div>';
-  fhtml += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">';
+  var fhtml = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;align-items:center">';
   scopeBtns.forEach(function(s) { fhtml += '<button class="btn'+(questScopeFilter===s.v?' pri':'')+'" onclick="questScopeFilter='+escAttr("'"+s.v+"'")+';renderQuestBoard()" style="font-size:.82rem;padding:4px 14px">'+s.l+'</button>'; });
   fhtml += '<span style="color:var(--border);margin:0 4px;align-self:center">|</span>';
   quickBtns.forEach(function(q) { fhtml += '<button class="btn'+(questQuickFilter===q.v?' pri':'')+'" onclick="questQuickFilter=questQuickFilter==='+escAttr("'"+q.v+"'")+'?'+escAttr("'")+':'+escAttr("'"+q.v+"'")+';renderQuestBoard()" style="font-size:.82rem;padding:4px 14px">'+q.l+'</button>'; });
+  fhtml += '<span style="flex:1"></span>';
+  fhtml += '<button class="btn pri" onclick="showPostTask()" style="font-size:.78rem;padding:5px 14px">＋ 发布委托</button>';
   fhtml += '</div>';
 
-  // ── Row 2: Type + Location + Tags (smaller) ──
-  fhtml += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">';
-  ['全部','主线','支线','隐藏','共创','身份'].forEach(function(c){
-    fhtml += '<button class="btn'+(questFilter===c||(!questFilter&&c==='全部')?' pri':'')+'" onclick="questFilter=questFilter===c||(c==='+escAttr("全部")+'&&!questFilter)?'+escAttr("")+':c;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+c+'</button>';
+  // ── Row 2: Type filter (simplified) ──
+  fhtml += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;align-items:center">';
+  [{v:'all',l:'全部'},{v:'主线',l:'主线'},{v:'支线',l:'支线'},{v:'共创',l:'共创'},{v:'隐藏',l:'隐藏'}].forEach(function(c){
+    fhtml += '<button class="btn'+(questFilter===c.v||(!questFilter&&c.v==='all')?' pri':'')+'" onclick="questFilter=questFilter===c.v||(c.v==='+escAttr('all')+'&&!questFilter)?'+escAttr('')+':c.v;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+c.l+'</button>';
   });
-  fhtml += '<span style="color:var(--border);margin:0 3px;align-self:center;font-size:.7rem">|</span>';
-  ['在地任务','非在地任务','日常任务'].forEach(function(c){
-    fhtml += '<button class="btn'+(questLocFilter===c?' pri':'')+'" onclick="questLocFilter=questLocFilter===c?'+escAttr("")+':c;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+c+'</button>';
-  });
-  var customTags = (data.custom_tags || []);
-  customTags.forEach(function(ct){
-    fhtml += '<button class="btn'+(questLocFilter===ct?' pri':'')+'" onclick="questLocFilter=questLocFilter===ct?'+escAttr("")+':ct;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+ct+'</button>';
-  });
-  var canAddTag2 = currentUser && (currentUser.role==='admin'||currentUser.role==='npc');
-  fhtml += '<button class="btn" '+(!canAddTag2?'disabled':'')+' onclick="'+escAttr("var t=prompt('新标签名：');if(t){if(!data.custom_tags)data.custom_tags=[];if(data.custom_tags.indexOf(t)<0){data.custom_tags.push(t);localStorage.setItem('camp_data',JSON.stringify(data));renderQuestBoard()}}")+'" style="font-size:.65rem;padding:2px 6px;color:var(--accent);border-style:dashed" title="'+(canAddTag2?'添加自定义标签':'仅管理员/在地伙伴可添加')+'">＋</button>';
+  // Inline tag input
+  if (currentUser && (currentUser.role==='admin'||currentUser.role==='npc')) {
+    fhtml += '<span style="color:var(--border);margin:0 3px;font-size:.7rem">|</span>';
+    var customTags = (data.custom_tags || []);
+    customTags.forEach(function(ct){
+      fhtml += '<span style="display:inline-flex;align-items:center;gap:2px;font-size:.7rem;background:'+(questLocFilter===ct?'var(--accent);color:#fff':'var(--bg)')+';border:1px solid var(--border);border-radius:4px;padding:2px 6px;cursor:pointer" onclick="questLocFilter=questLocFilter===ct?\'\':ct;renderQuestBoard()">'+esc(ct)+'<button onclick="event.stopPropagation();var t=data.custom_tags||[];t.splice(t.indexOf(\''+escAttr(ct)+'\'),1);localStorage.setItem(\'camp_data\',JSON.stringify(data));renderQuestBoard()" style="cursor:pointer;opacity:.4;font-size:.6rem;border:none;background:none;margin-left:2px">×</button></span>';
+    });
+    fhtml += '<input id="questNewTag" placeholder="+标签" style="width:56px;font-size:.68rem;padding:2px 6px;border:1px dashed var(--border);border-radius:4px;background:transparent" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v&&(!data.custom_tags||data.custom_tags.indexOf(v)<0)){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(v);localStorage.setItem(\'camp_data\',JSON.stringify(data));this.value=\'\';renderQuestBoard()}}">';
+  }
   fhtml += '</div>';
 
   // ── Unclaimed reminder ──
@@ -3120,7 +3117,7 @@ function showPostTask() {
   var today = new Date().toISOString().slice(0,10);
   document.getElementById('postTaskStart').value = today;
   document.getElementById('postTaskDeadline').value = '';
-  document.getElementById('postTaskReviewer').value = '';
+  document.getElementById('postTaskReviewer').value = currentUser ? currentUser.name : '';
   document.getElementById('postReqNote').checked = true;
   document.getElementById('postReqPhoto').checked = false;
   document.getElementById('postReqFile').checked = false;
@@ -3223,10 +3220,59 @@ function deleteInviteCode(code) { var isA = inviteSidebarTab === 'adventurer'; i
 
 // ═══ Reviewer Picker ═══
 var reviewerPickTarget = '';
-function showReviewerPicker(targetId) { reviewerPickTarget = targetId; var sb = document.getElementById('pickerSidebar'); var btn = document.getElementById(targetId); if (btn) { var br = btn.getBoundingClientRect(); sb.style.top = Math.min(br.bottom + 4, window.innerHeight - 400) + 'px'; sb.style.right = (window.innerWidth - br.right) + 'px'; } document.getElementById('pickerBackdrop').classList.add('show'); sb.classList.add('show'); document.getElementById('pickerSearch').value = ''; renderReviewerList(); setTimeout(function() { document.getElementById('pickerSearch').focus(); }, 150); }
-function closeReviewerPicker() { document.getElementById('pickerBackdrop').classList.remove('show'); document.getElementById('pickerSidebar').classList.remove('show'); }
-function renderReviewerList() { var q = (document.getElementById('pickerSearch').value || '').trim().toLowerCase(); var users = getUsers(); var names = Object.keys(users).filter(function(n) { return !q || n.toLowerCase().indexOf(q) !== -1; }).sort(function(a, b) { if (a === (currentUser && currentUser.name)) return -1; if (b === (currentUser && currentUser.name)) return 1; return a.localeCompare(b); }); var h = ''; if (names.length === 0) { h = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:.78rem">无匹配用户</div>'; } else { names.forEach(function(n) { var u = users[n]; var si = u.avatar_seed || 0; var isSelf = currentUser && n === currentUser.name; h += '<div class="pk-row" onclick="selectReviewer(\'' + escAttr(n) + '\')" style="' + (isSelf ? 'background:var(--bg)' : '') + '"><div class="pk-avatar">' + avatarCircle(si, 32, 0) + '</div><span class="pk-name">' + esc(n) + '</span><span class="pk-role">' + (ROLE_TITLES[u.role] || u.role) + '</span></div>'; }); } document.getElementById('pickerList').innerHTML = h; }
-function selectReviewer(name) { if (reviewerPickTarget) { var el = document.getElementById(reviewerPickTarget); if (el) el.value = name; } closeReviewerPicker(); }
+function showReviewerPicker(targetId) {
+  reviewerPickTarget = targetId;
+  var dd = document.getElementById('pickerDropdown');
+  var inp = document.getElementById(targetId);
+  if (inp) {
+    var r = inp.getBoundingClientRect();
+    dd.style.top = (r.bottom + 2) + 'px';
+    dd.style.left = r.left + 'px';
+    dd.style.width = r.width + 'px';
+  }
+  dd.classList.remove('hidden');
+  document.getElementById('pickerSearch').value = '';
+  renderReviewerList();
+  setTimeout(function() { document.getElementById('pickerSearch').focus(); }, 100);
+}
+function closeReviewerPicker() { document.getElementById('pickerDropdown').classList.add('hidden'); }
+function renderReviewerList() {
+  var q = (document.getElementById('pickerSearch').value || '').trim().toLowerCase();
+  var users = getUsers();
+  var list = document.getElementById('pickerList');
+  var names = Object.keys(users).filter(function(n) { return !q || n.toLowerCase().indexOf(q) !== -1; }).sort(function(a, b) {
+    if (a === (currentUser && currentUser.name)) return -1;
+    if (b === (currentUser && currentUser.name)) return 1;
+    return a.localeCompare(b);
+  });
+  if (names.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:16px;font-size:.75rem">无匹配用户</div>';
+    return;
+  }
+  var h = '';
+  names.forEach(function(n) {
+    var u = users[n];
+    var si = u.avatar_seed || 0;
+    var isSelf = currentUser && n === currentUser.name;
+    h += '<div class="pk-row" onclick="selectReviewer(\'' + escAttr(n) + '\')" style="' + (isSelf ? 'background:var(--bg)' : '') + '"><div class="pk-avatar">' + avatarCircle(si, 28, 0) + '</div><span class="pk-name">' + esc(n) + '</span><span class="pk-role">' + (ROLE_TITLES[u.role] || u.role) + '</span></div>';
+  });
+  list.innerHTML = h;
+}
+function selectReviewer(name) {
+  if (reviewerPickTarget) {
+    var el = document.getElementById(reviewerPickTarget);
+    if (el) el.value = name;
+  }
+  closeReviewerPicker();
+}
+// Close picker when clicking outside
+document.addEventListener('click', function(e) {
+  var dd = document.getElementById('pickerDropdown');
+  if (!dd || dd.classList.contains('hidden')) return;
+  if (!dd.contains(e.target) && e.target.id !== reviewerPickTarget) {
+    closeReviewerPicker();
+  }
+});
 
 // ═══ Camp Task (NT Admin) ═══
 function showCampTask() { if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'builder')) { alert('仅管理员和共建者可发布营队任务'); return; } document.getElementById('campTaskName').value = ''; document.getElementById('campTaskType').value = '支线'; document.getElementById('campTaskCategory').value = '其他'; document.getElementById('campTaskPoints').value = '15'; document.getElementById('campTaskSlots').value = '0'; var today = new Date().toISOString().slice(0,10); document.getElementById('campTaskStart').value = today; document.getElementById('campTaskDeadline').value = ''; document.getElementById('campTaskReviewer').value = ''; document.getElementById('campReqNote').checked = true; document.getElementById('campReqPhoto').checked = false; document.getElementById('campReqFile').checked = false; document.getElementById('campReqPhotoCount').value = '1'; document.getElementById('campReqFileCount').value = '1'; document.getElementById('campTaskNote').value = ''; var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); document.getElementById('campTaskPoolInfo').textContent = '💡 使用营地资金池 · 剩余：' + (poolTotal - totalIssued).toLocaleString() + ' / ' + poolTotal.toLocaleString() + ' NT · 提交后需审核'; document.getElementById('campTaskModal').classList.add('show'); }
