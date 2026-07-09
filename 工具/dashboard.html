@@ -1299,6 +1299,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <button class="btn" onclick="savePostDraft()">💾 存草稿</button>
       <button class="btn pri" onclick="confirmPostTask()">✅ 发布委托</button>
     </div>
+    <div id="postTaskDraftList" style="border-top:1px dashed var(--border);margin-top:10px;padding-top:8px"></div>
   </div>
 </div>
 
@@ -4963,7 +4964,7 @@ function savePostDraft() {
   }
   localStorage.setItem('camp_data', JSON.stringify(data));
   closePostTaskModal();
-  renderWorkspace(); setStatus('草稿已保存：' + name);
+  switchTab('workspace'); setStatus('草稿已保存：' + name);
 }
 function editDraft(idx) {
   draftEditIdx = idx;
@@ -5115,6 +5116,7 @@ function showPostTask() {
   refreshTypeOptions(); // 刷新类型下拉（含自定义标签）
   var myNT = calcNtTotal(currentUser.name);
   document.getElementById('postTaskNTInfo').textContent = '💡 将从你的个人 NT 扣除 · 当前余额：' + myNT.toLocaleString() + ' NT';
+  var drafts = (data.tasks||[]).filter(function(t){ return t.status==='draft' && t.poster===currentUser.name; }); var dl = document.getElementById('postTaskDraftList'); if (drafts.length > 0) { var dh = '<div style="font-size:.75rem;font-weight:600;margin-bottom:4px">📦 草稿箱（'+drafts.length+'）</div>'; drafts.forEach(function(t){ var idx=data.tasks.indexOf(t); dh+='<div style="font-size:.72rem;padding:3px 0;cursor:pointer;color:var(--accent)" onclick="closePostTaskModal();editDraft('+idx+')">📝 '+esc(t.name)+(t.points?' · NT'+t.points:'')+'</div>'; }); dl.innerHTML = dh; dl.style.display = ''; } else { dl.innerHTML = ''; dl.style.display = 'none'; }
   document.getElementById('postTaskModal').classList.add('show');
 }
 function closePostTaskModal() { document.getElementById('postTaskModal').classList.remove('show'); }
