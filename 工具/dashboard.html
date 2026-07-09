@@ -4254,11 +4254,15 @@ function renderArchiveHub() {
   Object.keys(users).forEach(function(name) {
     var u = users[name];
     var mi = members[name] || {};
-    var identity = mi.identity || ROLE_TITLES[u.role] || u.role || '云村民';
+    var identity = mi.identity || (ROLE_TITLES[u.role] ? ROLE_TITLES[u.role].replace(/[^一-龥]/g,'') : '') || u.role || '云村民';
     if (!groups[identity]) groups[identity] = [];
     groups[identity].push({ name: name, nt: calcNtTotal(name), days: u.created ? Math.ceil((new Date() - new Date(u.created)) / 86400000) : 0, season: mi.season || u.season || '' });
   });
   var h = '';
+  var totalPeople = Object.keys(users).length;
+  if (totalPeople === 0) {
+    return '<div style="text-align:center;color:var(--muted);padding:40px 0"><div style="font-size:2.5rem;margin-bottom:8px">📚</div><div>暂无成员档案</div><div style="font-size:.72rem;margin-top:4px">注册用户后将自动出现在这里</div></div>';
+  }
   var order = ['在地成员','原村民','共建者','冒险者','云村民'];
   order.forEach(function(identity) {
     var list = groups[identity] || [];
@@ -4909,8 +4913,15 @@ document.addEventListener('click', function(e) {
 
 // ═══ 常联系侧边栏 ═══
 function showContactSidebar() {
+  var btn = document.getElementById('btnContacts');
+  var sb = document.getElementById('contactSidebar');
+  if (btn && sb) {
+    var br = btn.getBoundingClientRect();
+    sb.style.top = br.bottom + 4 + 'px';
+    sb.style.right = (window.innerWidth - br.right) + 'px';
+  }
   document.getElementById('contactBackdrop').classList.add('show');
-  document.getElementById('contactSidebar').classList.add('show');
+  sb.classList.add('show');
   renderContactSidebar();
 }
 function closeContactSidebar() {
