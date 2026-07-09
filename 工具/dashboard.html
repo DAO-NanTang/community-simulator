@@ -1900,12 +1900,13 @@ function migrateExistingMembers() {
   var users = getUsers();
   var staffNames = getStaffNames();
   (data.staff_cards || []).forEach(function(c) {
-    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10), uid: generateUID() };
+    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10), uid: generateUID(), season_history: [{ role: 'builder', period: '', changed_at: new Date().toISOString().slice(0, 10) }] };
   });
   Object.values(data.members || {}).forEach(function(m) {
     if (users[m.name]) return;
     var isStaff = staffNames.some(function(s) { return m.name === s; });
-    users[m.name] = { name: m.name, role: isStaff ? 'builder' : 'adventurer', password: null, avatar_seed: m.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10), uid: generateUID() };
+    var role = isStaff ? 'builder' : 'adventurer';
+    users[m.name] = { name: m.name, role: role, password: null, avatar_seed: m.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0, 10), uid: generateUID(), season_history: [{ role: role, period: '', changed_at: new Date().toISOString().slice(0, 10) }] };
   });
   saveUsers(users);
 }
@@ -1916,7 +1917,8 @@ function seedAdminAccount() {
   users['砚仁'] = {
     name: '砚仁', role: 'admin',
     password: encodePassword('1500', '砚仁'),
-    avatar_seed: 0, season: '', created: new Date().toISOString().slice(0, 10)
+    avatar_seed: 0, season: '', created: new Date().toISOString().slice(0, 10),
+    season_history: [{ role: 'admin', period: '', changed_at: new Date().toISOString().slice(0, 10) }]
   };
   saveUsers(users);
 }
@@ -2388,7 +2390,6 @@ function showVillageSquare() {
 function showMapInvite(){document.getElementById('mapInviteInput').value='';document.getElementById('mapInviteCard').classList.remove('hidden');}
 function closeMapInvite(){document.getElementById('mapInviteCard').classList.add('hidden');openVillageModal('map');}
 function submitMapInvite(){var code=document.getElementById('mapInviteInput').value.trim().toUpperCase();if(code&&currentUser){var result=changeUserRole(currentUser.name,'npc',{inviteCode:code});if(!result.ok){alert(result.error);}}closeMapInvite();}
-function upgradeToNPC(code){if(!currentUser)return;var result=changeUserRole(currentUser.name,'npc',{inviteCode:code});if(!result.ok){alert(result.error);return;}setStatus('已升级为在地伙伴！');}
 function enterVillagerMain() {
   var role = currentUser ? currentUser.role : '';
   var tab = (role === 'npc' || role === 'visitor') ? 'leaderboard' : 'workspace';
