@@ -1357,14 +1357,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div class="pk-list" id="pickerList"></div>
 </div>
 
-<!-- Contact Card Dropdown -->
-<div class="picker-dropdown hidden" id="contactCardDropdown">
-  <div class="pk-header" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-    <span id="contactCardTitle" style="font-weight:700;font-size:.85rem"></span>
-    <button onclick="closeContactCard()" style="background:none;border:none;font-size:1rem;cursor:pointer;color:var(--muted)">✕</button>
-  </div>
-  <div class="pk-list" id="contactCardBody" style="padding:4px 10px 10px"></div>
-</div>
+<!-- Contact Card --><div class="picker-dropdown hidden" id="contactCardDropdown"><div class="pk-header" style="display:flex;align-items:center;gap:8px;justify-content:space-between"><span id="contactCardTitle" style="font-weight:700;font-size:.85rem"></span><button onclick="closeContactCard()" style="background:none;border:none;font-size:1rem;cursor:pointer;color:var(--muted)">✕</button></div><div class="pk-list" id="contactCardBody" style="padding:4px 10px 10px"></div></div>
 
 <!-- Item Picker (集市选物品，复用 picker-dropdown 样式) -->
 <div class="picker-dropdown hidden" id="itemPickerDropdown">
@@ -1658,7 +1651,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!data.game_sessions) data.game_sessions = [];
     if (!data.auctions) data.auctions = [];
     if (!data.council_meetings) data.council_meetings = [];
-    if (!data.council_room) data.council_room = {};
+    if (!data.council_room) data.council_room = DEFAULT_COUNCIL_ROOM;
     // 种子测试数据：首次加载时自动填充示例物品
     if (!data.inventory || data.inventory.length === 0) {
       data.inventory = [
@@ -2820,7 +2813,6 @@ function switchToPreview(role) {
     document.getElementById('builderTabs').classList.remove('hidden');
     switchTab('workspace');
   } else {
-    // NPC/visitor: show main interface (leaderboard), not village square
     document.body.classList.add('adventurer-mode');
     document.getElementById('builderTabs').classList.add('hidden');
     document.getElementById('builderModeBar').classList.add('hidden');
@@ -3051,16 +3043,6 @@ function renderWorkspace() {
     html += '<div class="card"><h3>⚙️ 设置</h3>';
     html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" disabled style="width:100%"><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
-    var identities = ['在地成员','原村民','共建者','冒险者','云村民'];
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">身份</label><br><select id="wsIdentity" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].identity=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;font-family:var(--font);background:var(--card)"><option value="">未设置</option>';
-    identities.forEach(function(v){ html += '<option value="'+v+'"'+(memInfo.identity===v?' selected':'')+'>'+v+'</option>'; });
-    html += '</select></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">电话</label><br><input class="inline-input" value="'+escAttr(memInfo.phone||'')+'" id="wsPhone" style="width:100%" placeholder="138****6789" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].phone=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">住址</label><br><input class="inline-input" value="'+escAttr(memInfo.address||'')+'" id="wsAddress" style="width:100%" placeholder="福建南平…" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].address=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
-    var skillsStr = (memInfo.skills||[]).join(', ');
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">技能标签（逗号分隔）</label><br><input class="inline-input" value="'+escAttr(skillsStr)+'" id="wsSkills" style="width:100%" placeholder="水墨, 书法, 策展" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].skills=this.value.split(\',\').map(function(s){return s.trim()}).filter(Boolean);localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
-    var _pff = ['identity','phone','address','skills']; var _pfc = _pff.filter(function(f){ return memInfo[f] || (f==='skills' ? memInfo.skills && memInfo.skills.length : false); }).length; var _pct = Math.round(_pfc/_pff.length*100);
-    html += '<div style="margin-bottom:10px;padding:8px;background:#fef9ee;border-radius:6px;border:1px solid #e8d5a0"><div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📋 档案完整度</div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:'+_pct+'%;background:var(--accent);border-radius:3px;transition:.3s"></div></div><div style="font-size:.65rem;color:var(--muted)">'+_pct+'%'+(_pct===100?' 🎉':'')+'</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
     html += '</div>';
@@ -3937,37 +3919,27 @@ function renderCouncilHub() {
   } else { h += '<div style="color:var(--muted);text-align:center;padding:20px">📭 暂无近期会议</div>'; }
   return h;
 }
-window._councilAudience = 'builders';
 function createMeeting() {
   var topic = document.getElementById('councilTopic').value.trim(); if (!topic) { alert('请输入议题'); return; }
   var date = document.getElementById('councilDate').value; if (!date) { alert('请选择日期'); return; }
   var time = document.getElementById('councilTime').value || '20:00';
-  var rn = document.getElementById('councilRoomNumber').value.trim(); if (!rn) { alert('请输入会议号'); return; }
   var note = document.getElementById('councilNote').value.trim();
-  var audience = window._councilAudience || 'builders';
-  var attendees = [];
-  if (audience === 'custom') {
-    var cbs = document.querySelectorAll('.councilCb:checked'); cbs.forEach(function(cb){ attendees.push(cb.value); });
-    if (attendees.length === 0) { alert('请至少勾选一位参会人'); return; }
-  } else if (audience === 'builders') {
-    var users = getUsers(); Object.keys(users).forEach(function(n){ if (users[n].role==='admin'||users[n].role==='builder') attendees.push(n); });
-  } else if (audience === 'all_members') {
-    attendees = Object.keys(data.members||{});
-  }
+  var cbs = document.querySelectorAll('.councilCb:checked');
+  var attendees = []; cbs.forEach(function(cb){ attendees.push(cb.value); });
   var copySelf = document.getElementById('councilCopySelf').checked;
   if (copySelf && currentUser && attendees.indexOf(currentUser.name)===-1) attendees.push(currentUser.name);
+  if (attendees.length === 0) { alert('请至少勾选一位参会人'); return; }
   if (!data.council_meetings) data.council_meetings = [];
-  data.council_meetings.push({ id:'cm_'+Date.now().toString(36), topic:topic, time:date+'T'+time, host:currentUser?currentUser.name:'', room_number:rn, note:note, audience:audience, attendees:attendees, created_at:new Date().toISOString() });
+  data.council_meetings.push({ id:'cm_'+Date.now().toString(36), topic:topic, time:date+'T'+time, host:currentUser?currentUser.name:'', note:note, attendees:attendees, created_at:new Date().toISOString() });
   localStorage.setItem('camp_data',JSON.stringify(data));
-  window._councilFormOpen = false; window._councilAudience = 'builders';
+  window._councilFormOpen = false;
   openHubSub('council');
 }
 function computeCouncilReminders() {
   var msgs = []; if (!currentUser) return msgs;
   var now = new Date(); var today = now.toISOString().slice(0,10);
   (data.council_meetings||[]).forEach(function(m){
-    var isInvited = m.audience==='public' || (m.attendees||[]).indexOf(currentUser.name)!==-1;
-    if (!isInvited) return;
+    if (m.attendees.indexOf(currentUser.name)===-1) return;
     var mt = new Date(m.time); var diff = (mt - now) / 60000;
     if (m.time >= today) {
       if (diff <= 30 && diff > 0) msgs.push({ type:'meeting_soon', topic:m.topic, time:m.time, host:m.host, id:'council_'+m.id, createdAt:m.created_at, jump:null });
@@ -4246,42 +4218,6 @@ function renderHubSlideContent(page) {
 
 // ═══ Hub cascade menus ═══
 window._hubSubPage = '';
-
-function renderArchiveHub() {
-  var users = getUsers();
-  var members = data.members || {};
-  var groups = {};
-  Object.keys(users).forEach(function(name) {
-    var u = users[name];
-    var mi = members[name] || {};
-    var identity = mi.identity || (ROLE_TITLES[u.role] ? ROLE_TITLES[u.role].replace(/[^一-龥]/g,'') : '') || u.role || '云村民';
-    if (!groups[identity]) groups[identity] = [];
-    groups[identity].push({ name: name, nt: calcNtTotal(name), days: u.created ? Math.ceil((new Date() - new Date(u.created)) / 86400000) : 0, season: mi.season || u.season || '' });
-  });
-  var h = '';
-  var totalPeople = Object.keys(users).length;
-  if (totalPeople === 0) {
-    return '<div style="text-align:center;color:var(--muted);padding:40px 0"><div style="font-size:2.5rem;margin-bottom:8px">📚</div><div>暂无成员档案</div><div style="font-size:.72rem;margin-top:4px">注册用户后将自动出现在这里</div></div>';
-  }
-  var order = ['在地成员','原村民','共建者','冒险者','云村民'];
-  order.forEach(function(identity) {
-    var list = groups[identity] || [];
-    if (list.length === 0) return;
-    list.sort(function(a, b) { return b.nt - a.nt; });
-    h += '<div style="margin-bottom:12px"><div style="font-weight:600;font-size:.78rem;margin-bottom:6px;color:var(--text)">📂 '+esc(identity)+'（'+list.length+'人）</div>';
-    list.forEach(function(p) {
-      var si = (members[p.name] && members[p.name].avatar_seed !== undefined) ? members[p.name].avatar_seed : ((users[p.name]||{}).avatar_seed || 0);
-      h += '<div onclick="showContactCard(\''+escAttr(p.name)+'\',this)" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;font-size:.75rem" onmouseover="this.style.background=\'#f8f4ec\'" onmouseout="this.style.background=\'\'">';
-      h += avatarCircle(si, 24, 0);
-      h += '<span style="flex:1;font-weight:500">'+esc(p.name)+'</span>';
-      h += '<span style="color:var(--muted);font-size:.68rem">💎'+p.nt.toLocaleString()+'</span>';
-      h += '<span style="color:var(--muted);font-size:.65rem">'+p.days+'天</span>';
-      h += '</div>';
-    });
-    h += '</div>';
-  });
-  return h;
-}
 
 function renderHubDropdown() {
   var listedCount = (data.inventory || []).filter(function(it) { return it.status === 'listed'; }).length;
@@ -4860,7 +4796,8 @@ function showItemPicker(target, el) {
 }
 function closeItemPicker() { document.getElementById('itemPickerDropdown').classList.add('hidden'); }
 
-// ═══ 名片弹窗 ═══
+// ═══ Phase1: Contact+Sidebar+Archive ═══
+// Phase 1 JS patch: contact card + sidebar + archive hub
 var _contactCardJustOpened = false;
 function showContactCard(name, el) {
   var dd = document.getElementById('contactCardDropdown');
@@ -4874,9 +4811,7 @@ function showContactCard(name, el) {
   dd.classList.remove('hidden');
   _contactCardJustOpened = true;
 }
-function closeContactCard() {
-  document.getElementById('contactCardDropdown').classList.add('hidden');
-}
+function closeContactCard() { document.getElementById('contactCardDropdown').classList.add('hidden'); }
 function renderContactCard(name) {
   var users = getUsers(); var u = users[name] || {};
   var mi = (data.members && data.members[name]) ? data.members[name] : {};
@@ -4888,7 +4823,6 @@ function renderContactCard(name) {
   var season = mi.season || u.season || '';
   var daysSince = u.created ? Math.ceil((new Date() - new Date(u.created)) / 86400000) : 0;
   var avSeed = (mi.avatar_seed !== undefined) ? mi.avatar_seed : (u.avatar_seed || 0);
-
   document.getElementById('contactCardTitle').textContent = name;
   var h = '';
   h += '<div style="text-align:center;margin-bottom:8px">'+avatarCircle(avSeed,48,0)+'</div>';
@@ -4911,7 +4845,6 @@ document.addEventListener('click', function(e) {
   if (!dd.contains(e.target)) { closeContactCard(); }
 });
 
-// ═══ 常联系侧边栏 ═══
 function showContactSidebar() {
   var btn = document.getElementById('btnContacts');
   var sb = document.getElementById('contactSidebar');
@@ -4979,6 +4912,43 @@ function getContacts() {
     return (calcNtTotal(b) || 0) - (calcNtTotal(a) || 0);
   });
 }
+
+function renderArchiveHub() {
+  var users = getUsers();
+  var members = data.members || {};
+  var groups = {};
+  Object.keys(users).forEach(function(name) {
+    var u = users[name];
+    var mi = members[name] || {};
+    var identity = mi.identity || (ROLE_TITLES[u.role] ? ROLE_TITLES[u.role].replace(/[^一-龥]/g,'') : '') || u.role || '云村民';
+    if (!groups[identity]) groups[identity] = [];
+    groups[identity].push({ name: name, nt: calcNtTotal(name), days: u.created ? Math.ceil((new Date() - new Date(u.created)) / 86400000) : 0, season: mi.season || u.season || '' });
+  });
+  var h = '';
+  var totalPeople = Object.keys(users).length;
+  if (totalPeople === 0) {
+    return '<div style="text-align:center;color:var(--muted);padding:40px 0"><div style="font-size:2.5rem;margin-bottom:8px">📚</div><div>暂无成员档案</div><div style="font-size:.72rem;margin-top:4px">注册用户后将自动出现在这里</div></div>';
+  }
+  var order = ['在地成员','原村民','共建者','冒险者','云村民'];
+  order.forEach(function(identity) {
+    var list = groups[identity] || [];
+    if (list.length === 0) return;
+    list.sort(function(a, b) { return b.nt - a.nt; });
+    h += '<div style="margin-bottom:12px"><div style="font-weight:600;font-size:.78rem;margin-bottom:6px;color:var(--text)">📂 '+esc(identity)+'（'+list.length+'人）</div>';
+    list.forEach(function(p) {
+      var si = (members[p.name] && members[p.name].avatar_seed !== undefined) ? members[p.name].avatar_seed : ((users[p.name]||{}).avatar_seed || 0);
+      h += '<div onclick="showContactCard(\''+escAttr(p.name)+'\',this)" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;font-size:.75rem" onmouseover="this.style.background=\'#f8f4ec\'" onmouseout="this.style.background=\'\'">';
+      h += avatarCircle(si, 24, 0);
+      h += '<span style="flex:1;font-weight:500">'+esc(p.name)+'</span>';
+      h += '<span style="color:var(--muted);font-size:.68rem">💎'+p.nt.toLocaleString()+'</span>';
+      h += '<span style="color:var(--muted);font-size:.65rem">'+p.days+'天</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+  return h;
+}
+
 // ═══ 物品渲染共用（集市+工作台同步）═══
 var _CAT_ICONS = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
 
@@ -6236,7 +6206,7 @@ function parseDateStr(s) {
 function avatarCircle(seed, size, styleIdx) {
   var name = typeof seed === 'string' ? seed : CHARACTER_SEEDS[seed % CHARACTER_SEEDS.length];
   var url = 'https://api.dicebear.com/7.x/' + AVATAR_STYLE + '/svg?seed=' + encodeURIComponent(name) + '&size=' + (size*2) + '&radius=50';
-  return '<img src="' + url + '" width="' + size + '" height="' + size + '" style="border-radius:50%;object-fit:cover;display:block;flex-shrink:0" alt="" onerror="this.style.opacity=\'0\'>';
+  return '<span style="display:inline-block;width:'+size+'px;height:'+size+'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + url + '" width="' + (size*2) + '" height="' + (size*2) + '" style="border-radius:50%;object-fit:cover;display:block;width:100%;height:100%" alt="" onerror="this.style.opacity=\'0\'"></span>';
 }
 
 function avatarImg(seed, size, styleIdx) {
