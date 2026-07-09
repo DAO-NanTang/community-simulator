@@ -1053,7 +1053,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <!-- Tab: NT Admin -->
   <div id="tab-ntadmin" class="hidden">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><h2 style="margin:0">🎯 NT 任务管理</h2><button class="btn pri" onclick="showCampTask()">＋ 发布营队任务</button></div>
-    <div class="card" id="ntadminTaskList"></div><div class="card" id="ntadminReviewList"></div><div class="card" id="ntadminPoolStats"></div>
+    <div class="card" id="ntadminTaskList"></div><div class="card" id="ntadminReviewList"></div><div class="card" id="ntadminPoolStats"></div><div id="ntadminClosePeriod"></div>
   </div>
 
   <!-- Tab: Profile (Adventurer) -->
@@ -2047,6 +2047,30 @@ function changeUserRole(name, newRole, opts) {
   }
 
   return { ok: true };
+}
+
+// ═══ 营期完结批量转换 ═══
+function closePeriod() {
+  if (!data.currentPeriod) { alert('未设置当前期数，请在数据中配置 data.currentPeriod'); return; }
+  if (data.periodClosed) { alert('本期已完结（'+data.periodClosed+'），无需重复操作'); return; }
+  var curPeriod = data.currentPeriod;
+  if (!confirm('确定完结 '+curPeriod+'？\n\n所有本期冒险者将转为在地伙伴（NPC），历史保留。\n此操作不可撤销。')) return;
+  var users = getUsers();
+  var count = 0;
+  Object.keys(users).forEach(function(name) {
+    var u = users[name];
+    if (u.role !== 'adventurer') return;
+    // Match by season_history period
+    var history = u.season_history || [];
+    var inPeriod = history.some(function(h) { return h.period === curPeriod; });
+    if (!inPeriod) return;
+    var result = changeUserRole(name, 'npc', { fromRole: 'adventurer', period: curPeriod+'（完结）' });
+    if (result && result.ok) count++;
+  });
+  data.periodClosed = curPeriod;
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  alert('完结完成：共转换 '+count+' 位冒险者为在地伙伴');
+  if (typeof renderNTAdmin === 'function') renderNTAdmin();
 }
 
 // ── Login/Register Flow ──
@@ -3336,7 +3360,7 @@ function renderWorkspace() {
     // ── 我的物品（三卡片布局，与集市同步）──
     var myItems = (data.inventory || []).filter(function(it) { return it.owner === currentUser.name; });
     var listedMine = myItems.filter(function(it) { return it.status === 'listed'; });
-    var unlistedMine = myItems.filter(function(it) { return it.status === 'unlisted' || it.status === 'display'; });
+    var unlistedMine = myItems.filter(function(it) { return it.status === 'unlisted' || it.status === 'display' || it.status === 'reserved'; });
     var addFormOpen = window._invAddFormOpen || false;
 
     // Card 1: 已上架
@@ -4284,9 +4308,24 @@ function renderAuctionHub() {
     active.forEach(function(a){
       h += '<div class="card" style="padding:10px 14px;margin-bottom:8px"><div style="font-weight:600;font-size:.82rem">🔨 '+esc(a.title)+'</div>';
       h += '<div style="font-size:.72rem;color:var(--muted)">主持：'+esc(a.host)+' · 🕐 '+esc(a.time)+' · 📍 '+esc(_locLabel(a.location))+'</div>';
-      h += '<div style="font-size:.72rem;color:var(--muted)">起拍 '+a.start_price+' NT · 保证金 '+a.deposit+' NT · 已报名 '+(a.bidders||[]).length+' 人</div>';
+      h += '<div style="font-size:.72rem;color:var(--muted)">起拍 '+a.start_price+' NT · 保证金 '+a.deposit+' NT · 已报名 '+(a.bidders||[]).length+' 人';
+      var _bidListId = 'aucBidList_'+a.id;
+      h += ' <span onclick="var el=document.getElementById(\''+_bidListId+'\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';var t=this;t.textContent=t.textContent.indexOf(\'展开\')!==-1?\'收起 ▴\':\'展开 ▾\';return false" style="cursor:pointer;color:var(--accent);font-size:.68rem">展开 ▾</span>';
+      h += '</div>';
+      // Expandable bidder list
+      h += '<div id="'+_bidListId+'" style="display:none;font-size:.7rem;color:var(--muted);margin:4px 0 6px 8px;border-left:2px solid var(--border);padding-left:8px">';
+      var _isHostOrAdmin = currentUser && (currentUser.name===a.host||currentUser.role==='admin');
+      (a.bidders||[]).forEach(function(b){
+        if (b.anon && !_isHostOrAdmin) h += '<div>· 匿名#'+(b.anonIndex||'?')+'</div>';
+        else if (b.anon && _isHostOrAdmin) h += '<div>· '+esc(b.name)+'（匿名）</div>';
+        else h += '<div>· '+esc(b.name)+'（实名）</div>';
+      });
+      h += '</div>';
       var isBidder = currentUser && (a.bidders||[]).some(function(b){ return b.name===currentUser.name; });
-      if (isBidder) h += '<span style="font-size:.7rem;color:var(--accent)">✅ 已报名</span> ';
+      if (isBidder) {
+        h += '<span style="font-size:.7rem;color:var(--accent)">✅ 已报名</span> ';
+        if (a.status==='signup') h += '<button class="btn" onclick="cancelAuctionSignup(\''+a.id+'\')" style="font-size:.68rem;padding:1px 6px;color:var(--red)">退出</button> ';
+      }
       else if (currentUser && a.status==='signup') h += '<button class="btn pri" onclick="showAuctionSignup(\''+a.id+'\')" style="font-size:.7rem;padding:3px 10px;margin-top:4px">🙋 报名参拍</button> ';
       var isHost = currentUser && (currentUser.name===a.host||currentUser.role==='admin');
       if (isHost && (a.status==='signup'||a.status==='pending')) h += '<button class="btn green" onclick="showSettleForm(\''+a.id+'\')" style="font-size:.68rem;padding:2px 8px;margin-top:4px">🏁 结算</button> <button class="btn danger" onclick="passAuction(\''+a.id+'\')" style="font-size:.68rem;padding:2px 8px;margin-top:4px">🚫 流拍</button>';
@@ -4314,7 +4353,21 @@ function renderAuctionHub() {
   h += '<button class="btn" onclick="window._auctionFormOpen=!window._auctionFormOpen;openHubSub(\'auction\')" style="font-size:.75rem;padding:5px 12px;width:100%;margin-bottom:8px">'+(showForm?'✕ 收起':'＋ 发起拍卖会')+'</button>';
   if (showForm) {
     h += '<div class="card" style="padding:10px 14px;margin-bottom:10px"><div style="font-weight:600;margin-bottom:6px">＋ 发起拍卖会</div>';
-    h += '<input id="aucTitle" placeholder="拍品名称" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;margin-bottom:6px;box-sizing:border-box">';
+    // ── 拍品来源 ──
+    h += '<div style="font-size:.75rem;font-weight:600;margin-bottom:4px">拍品来源</div>';
+    h += '<div style="display:flex;gap:10px;margin-bottom:8px;font-size:.75rem">';
+    h += '<label style="cursor:pointer"><input type="radio" name="aucItemSrc" value="freeform" checked onchange="document.getElementById(\'aucTitleRow\').style.display=\'\';document.getElementById(\'aucItemPickRow\').style.display=\'none\'"> 自由填写</label>';
+    h += '<label style="cursor:pointer"><input type="radio" name="aucItemSrc" value="inventory" onchange="document.getElementById(\'aucTitleRow\').style.display=\'none\';document.getElementById(\'aucItemPickRow\').style.display=\'\'"> 我的物品</label>';
+    h += '</div>';
+    // ── 自由填写名称（默认显示）──
+    h += '<div id="aucTitleRow"><input id="aucTitle" placeholder="拍品名称" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;margin-bottom:6px;box-sizing:border-box"></div>';
+    // ── 从仓库选择（默认隐藏）──
+    h += '<div id="aucItemPickRow" style="display:none;margin-bottom:6px"><select id="aucItemId" onchange="var s=this.options[this.selectedIndex];document.getElementById(\'aucTitle\').value=s.dataset.name||\'\';document.getElementById(\'aucStartPrice\').value=s.dataset.price||\'\'" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;box-sizing:border-box"><option value="">-- 选择物品 --</option>';
+    var _myInvItems = (data.inventory||[]).filter(function(it){ return it.owner===currentUser.name && it.status==='unlisted'; });
+    _myInvItems.forEach(function(it){
+      h += '<option value="'+escAttr(it.id)+'" data-name="'+escAttr(it.name)+'" data-price="'+(it.price||0)+'">' + (_CAT_ICONS[it.category]||'📦') + ' ' + esc(it.name) + ' · ' + (it.price||0) + ' NT</option>';
+    });
+    h += '</select></div>';
     h += '<div style="display:flex;gap:6px;margin-bottom:6px"><input type="number" id="aucStartPrice" placeholder="起拍价 NT" min="1" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"><input type="number" id="aucDeposit" placeholder="保证金 NT" min="1" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"></div>';
     h += '<div style="display:flex;gap:6px;margin-bottom:6px"><input type="date" id="aucDate" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"><input type="time" id="aucTime" value="20:00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"></div>';
     h += '<select id="aucLocation" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem;margin-bottom:6px">'+getGameLocations().map(function(l){return '<option value="'+escAttr(l.id)+'">'+esc(l.label)+'</option>';}).join('')+'</select>';
@@ -4333,15 +4386,32 @@ function renderAuctionHub() {
   return h;
 }
 function createAuction() {
-  var title = document.getElementById('aucTitle').value.trim(); if (!title) { alert('请输入拍品名称'); return; }
-  var sp = parseInt(document.getElementById('aucStartPrice').value)||0; if (sp<=0) { alert('请输入起拍价'); return; }
+  var srcRadio = document.querySelector('input[name="aucItemSrc"]:checked');
+  var itemSource = srcRadio ? srcRadio.value : 'freeform';
+  var itemId = '';
+  var title = '';
+  var sp = 0;
+  if (itemSource === 'inventory') {
+    var sel = document.getElementById('aucItemId');
+    itemId = sel.value;
+    if (!itemId) { alert('请选择一个物品'); return; }
+    title = (sel.options[sel.selectedIndex].dataset.name||'').trim();
+    if (!title) { alert('物品数据异常'); return; }
+    // Mark inventory item as reserved
+    var invItem = (data.inventory||[]).find(function(it){ return it.id===itemId; });
+    if (invItem) invItem.status = 'reserved';
+  } else {
+    title = document.getElementById('aucTitle').value.trim(); if (!title) { alert('请输入拍品名称'); return; }
+  }
+  // Read price from input (auto-filled for inventory, manual for freeform)
+  sp = parseInt(document.getElementById('aucStartPrice').value)||0; if (sp<=0) { alert('请输入起拍价'); return; }
   var dp = parseInt(document.getElementById('aucDeposit').value)||0; if (dp<=0) { alert('请输入保证金'); return; }
   var date = document.getElementById('aucDate').value; if (!date) { alert('请选择日期'); return; }
   var time = document.getElementById('aucTime').value||'20:00';
   var loc = document.getElementById('aucLocation').value;
   var note = document.getElementById('aucNote').value.trim();
   if (!data.auctions) data.auctions = [];
-  data.auctions.push({ id:'auc_'+Clock.stamp(), title:title, seller:currentUser?currentUser.name:'', host:currentUser?currentUser.name:'', start_price:sp, deposit:dp, time:date+'T'+time, location:loc, note:note, status:'signup', bidders:[], winner:'', final_price:0, created_at:Clock.iso() });
+  data.auctions.push({ id:'auc_'+Clock.stamp(), title:title, item_source:itemSource, item_id:itemId, seller:currentUser?currentUser.name:'', host:currentUser?currentUser.name:'', start_price:sp, deposit:dp, time:date+'T'+time, location:loc, note:note, status:'signup', bidders:[], winner:'', final_price:0, created_at:Clock.iso() });
   localStorage.setItem('camp_data',JSON.stringify(data));
   window._auctionFormOpen = false;
   openHubSub('auction');
@@ -4353,7 +4423,8 @@ function showAuctionSignup(id) {
   var anon = confirm('是否匿名报名？\n\n保证金 '+a.deposit+' NT 将被冻结。\n未中标全额退回，中标则抵扣货款。\n\n点「确定」= 实名报名\n点「取消」= 匿名报名');
   if (!data.auctions) data.auctions = [];
   var tx = recordTransaction({ type:TX_TYPES.AUCTION_DEPOSIT, from:currentUser.name, to:AUCTION_ESCROW, amount:a.deposit, ref_id:id, item_name:'保证金·'+a.title, scope:'personal' });
-  a.bidders.push({ name:currentUser.name, anon:!anon, deposit_tx:tx?tx.id:'' });
+  var anonIdx = !anon ? ((a.bidders||[]).filter(function(b){ return b.anon; }).length + 1) : 0;
+  a.bidders.push({ name:currentUser.name, anon:!anon, anonIndex: anonIdx || 0, deposit_tx:tx?tx.id:'' });
   localStorage.setItem('camp_data',JSON.stringify(data));
   openHubSub('auction');
 }
@@ -4371,6 +4442,11 @@ function settleAuction(id, winner, price) {
   // 中标人付款
   recordTransaction({ type:TX_TYPES.AUCTION_SETTLE, from:winner, to:a.seller, amount:price, ref_id:id, item_name:a.title, scope:'personal' });
   a.winner = winner; a.final_price = price; a.status = 'done';
+  // ── Sync inventory: item sold ──
+  if (a.item_source === 'inventory' && a.item_id) {
+    var _invItem = (data.inventory||[]).find(function(it){ return it.id===a.item_id; });
+    if (_invItem) { _invItem.status = 'sold'; _invItem.sold_to = winner; _invItem.sold_at = new Date().toISOString().slice(0,10); }
+  }
   window._settleAuctionId = null;
   localStorage.setItem('camp_data',JSON.stringify(data));
   openHubSub('auction');
@@ -4384,6 +4460,23 @@ function passAuction(id) {
   if (currentUser && currentUser.name!==a.host && (currentUser.role!=='admin')) { alert('仅主持人可操作'); return; }
   (a.bidders||[]).forEach(function(b){ recordTransaction({ type:TX_TYPES.AUCTION_REFUND, from:AUCTION_ESCROW, to:b.name, amount:a.deposit, ref_id:id, item_name:'退保证金·'+a.title, scope:'personal' }); });
   a.status = 'passed';
+  // ── Sync inventory: restore to unlisted ──
+  if (a.item_source === 'inventory' && a.item_id) {
+    var _invItem2 = (data.inventory||[]).find(function(it){ return it.id===a.item_id; });
+    if (_invItem2) _invItem2.status = 'unlisted';
+  }
+  localStorage.setItem('camp_data',JSON.stringify(data));
+  openHubSub('auction');
+}
+function cancelAuctionSignup(id) {
+  var a = (data.auctions||[]).find(function(x){return x.id===id;}); if (!a||a.status!=='signup') { alert('当前状态不可退出'); return; }
+  if (!currentUser) return;
+  var bi = -1;
+  (a.bidders||[]).forEach(function(b,i){ if (b.name===currentUser.name) bi = i; });
+  if (bi < 0) { alert('你未报名此拍卖会'); return; }
+  var b = a.bidders[bi];
+  recordTransaction({ type:TX_TYPES.AUCTION_REFUND, from:AUCTION_ESCROW, to:currentUser.name, amount:a.deposit, ref_id:id, item_name:'退保证金·'+a.title, scope:'personal' });
+  a.bidders.splice(bi, 1);
   localStorage.setItem('camp_data',JSON.stringify(data));
   openHubSub('auction');
 }
@@ -4418,7 +4511,7 @@ function renderHubSlideContent(page) {
     if (bazaarAddOpen) {
       var myItems = (data.inventory || []).filter(function(it) { return it.owner === (currentUser?currentUser.name:'') && it.status !== 'sold'; });
       var listedMine = myItems.filter(function(it) { return it.status === 'listed'; });
-      var unlistedMine = myItems.filter(function(it) { return it.status === 'unlisted' || it.status === 'display'; });
+      var unlistedMine = myItems.filter(function(it) { return it.status === 'unlisted' || it.status === 'display' || it.status === 'reserved'; });
       var addFormOpen = window._bazaarAddFormOpen || false;
 
       // Card 1: 已上架（紧凑列表）
@@ -4956,6 +5049,13 @@ function renderNTAdmin() {
   var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000;
   var remaining = poolTotal - totalIssued - pendingAmount;
   var el3 = document.getElementById('ntadminPoolStats'); if (el3) el3.innerHTML = '<h3>📊 NT 池统计</h3><div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.82rem"><span>本期总池：<b>' + poolTotal.toLocaleString() + ' NT</b></span><span>已发放：<b>' + totalIssued.toLocaleString() + ' NT</b></span><span>待审核认领：<b>' + pendingClaimAmount.toLocaleString() + ' NT</b></span>' + (pendingCampAmount > 0 ? '<span>待审批任务：<b>' + pendingCampAmount.toLocaleString() + ' NT</b></span>' : '') + '<span style="color:' + (remaining < 0 ? 'var(--red)' : 'var(--green)') + '">剩余：<b>' + remaining.toLocaleString() + ' NT</b></span></div>';
+
+  // ── closePeriod button ──
+  var cpEl = document.getElementById('ntadminClosePeriod');
+  if (cpEl) {
+    var cpLabel = data.periodClosed ? ('✅ 已完结（'+data.periodClosed+'）') : '📦 完结本期';
+    cpEl.innerHTML = '<button class="btn'+(data.periodClosed?'':' pri')+'" onclick="closePeriod()" style="font-size:.75rem;padding:6px 14px;margin-top:12px"'+(data.periodClosed?' disabled':'')+'>'+cpLabel+'</button>';
+  }
 
   // ── Inbox highlight ──
   if (tabHighlight && tabHighlight.type === 'review' && tabHighlight.person) {
@@ -5515,11 +5615,13 @@ function _renderUnlistedGrid(items) {
   if (!items || items.length === 0) { h += '<div style="text-align:center;color:var(--muted);padding:12px;font-size:.72rem">仓库为空</div>'; return h; }
   h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">';
   items.forEach(function(it) {
-    h += '<div onclick="listItemToBazaar(\''+escAttr(it.id)+'\');_refreshItemViews()" style="cursor:pointer;background:#fafaf5;border:1px solid var(--border);border-radius:6px;padding:8px 6px;text-align:center;font-size:.68rem">';
+    var isReserved = it.status === 'reserved';
+    var onclick = isReserved ? '' : 'onclick="listItemToBazaar(\''+escAttr(it.id)+'\');_refreshItemViews()"';
+    h += '<div '+onclick+' style="cursor:'+(isReserved?'default':'pointer')+';background:'+(isReserved?'#f5f0f0':'#fafaf5')+';border:1px solid var(--border);border-radius:6px;padding:8px 6px;text-align:center;font-size:.68rem;opacity:'+(isReserved?'0.7':'1')+'">';
     h += '<div style="font-size:1.2rem">'+(_CAT_ICONS[it.category]||'📦')+'</div>';
     h += '<div style="font-weight:600;margin-top:2px">'+esc(it.name)+'</div>';
     h += '<div style="color:var(--muted)">'+(it.price>0?it.price+' NT':'免费')+'</div>';
-    h += '<div style="font-size:.6rem;color:var(--accent)">点此上架</div></div>';
+    h += '<div style="font-size:.6rem;color:'+(isReserved?'var(--muted)':'var(--accent)')+'">'+(isReserved?'🔨 已挂拍':'点此上架')+'</div></div>';
   });
   h += '</div>';
   return h;
@@ -5608,7 +5710,7 @@ function bazaarQuickList(itemId) {
 }
 function renderItemPickerList() {
   var q = (document.getElementById('itemPickerSearch').value || '').trim().toLowerCase();
-  var items = (data.inventory || []).filter(function(it) { return it.owner === (currentUser?currentUser.name:'') && it.status !== 'sold'; });
+  var items = (data.inventory || []).filter(function(it) { return it.owner === (currentUser?currentUser.name:'') && it.status !== 'sold' && it.status !== 'reserved'; });
   if (q) { items = items.filter(function(it) { return it.name.toLowerCase().indexOf(q) !== -1 || it.category.toLowerCase().indexOf(q) !== -1; }); }
   var list = document.getElementById('itemPickerList');
   if (items.length === 0) {
@@ -7173,6 +7275,21 @@ function renderBudget() {
   data.financeTypes.forEach(function(t) {
     if (!typeSet[t]) typeSet[t] = [];
   });
+  // ── Pull auction NT types from data.finance into typeSet ──
+  (data.finance || []).forEach(function(tx) {
+    var t = tx.type || '';
+    if (t.indexOf('auction_') === 0) {
+      if (!typeSet[t]) typeSet[t] = [];
+      typeSet[t].push({ type: tx.type, person: tx.from||'', desc: tx.item_name||tx.type, rmb: null, nt: tx.amount||0, date: tx.date });
+    }
+  });
+  // ── Merge auction_* types into one 🔨拍卖 button ──
+  var _aucTypes = Object.keys(typeSet).filter(function(k) { return k.indexOf('auction_') === 0; });
+  if (_aucTypes.length > 0) {
+    var _aucMerged = [];
+    _aucTypes.forEach(function(k) { _aucMerged = _aucMerged.concat(typeSet[k]); delete typeSet[k]; });
+    typeSet['🔨拍卖'] = _aucMerged;
+  }
 
   var typeIcons = { '宣传':'📢','物料':'📦','课程物料':'🎨','食宿':'🏠','活动':'🎉','人工费':'💼','资助收入':'💰','其他':'📋' };
   document.getElementById('financeTypeBlocks').innerHTML =
