@@ -6096,7 +6096,7 @@ function renderMemberDetailFor(type, name, m) {
           if (cl && cl.status==='completed') { doneT.push(t); }
           else if (cl && cl.status==='submitted') { submittedT.push(t); }
           else if (t.status==='已完成'||t.status==='已确认') { doneT.push(t); }
-          else { activeT.push(t); }
+          else if (cl) { activeT.push(t); }
         });
         activeT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
         submittedT.sort(function(a,b){return parseDate(a.deadline)-parseDate(b.deadline)});
