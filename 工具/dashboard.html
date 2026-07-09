@@ -3057,8 +3057,10 @@ function renderWorkspace() {
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">身份</label><br><input class="inline-input" value="'+escAttr(_getIdentityLabel(user, memInfo)) +'" disabled style="width:100%;background:#f8f4ec;color:var(--text)"><div style="font-size:.65rem;color:var(--muted);margin-top:2px">身份由系统记录，不可手动修改</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">电话</label><br><input class="inline-input" value="'+escAttr(memInfo.phone||'')+'" id="wsPhone" style="width:100%" placeholder="138****6789" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].phone=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))"></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">住址</label><br><input class="inline-input" value="'+escAttr(memInfo.address||'')+'" id="wsAddress" style="width:100%" placeholder="福建南平…" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].address=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))"></div>';
-    var _skillsStr = (memInfo.skills||[]).join(", ");
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">技能标签（逗号分隔）</label><br><input class="inline-input" value="'+escAttr(_skillsStr)+'" id="wsSkills" style="width:100%" placeholder="水墨, 书法, 策展" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].skills=this.value.split(\x27,\x27).map(function(s){return s.trim()}).filter(Boolean);localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))"></div>';
+    var _skillsArr = memInfo.skills||[];
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">技能标签</label><br><div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px" id="wsSkillsTags">';
+    _skillsArr.forEach(function(s){ html += '<span style="background:var(--accent);color:#fff;padding:3px 8px;border-radius:12px;font-size:.7rem;display:inline-flex;align-items:center;gap:4px">'+esc(s)+' <span onclick="event.stopPropagation();_removeSkill(\x27'+escAttr(s)+'\x27)" style="cursor:pointer;opacity:.7;font-size:.8rem">&times;</span></span>'; });
+    html += '</div><div style="display:flex;gap:4px"><input id="wsSkillsInput" placeholder="输入技能后回车添加" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.72rem;font-family:var(--font);background:var(--card)" onkeydown="if(event.key===\x27Enter\x27){event.preventDefault();_addSkill()}"><button class="btn" onclick="_addSkill()" style="font-size:.7rem;padding:3px 8px">＋</button></div></div>';
     var _pff = ["phone","address","skills"]; var _pfc = _pff.filter(function(f){ return memInfo[f] || (f==="skills" ? memInfo.skills && memInfo.skills.length : false); }).length; var _pct = Math.round(_pfc/_pff.length*100);
     html += '<div style="margin-bottom:10px;padding:8px;background:#fef9ee;border-radius:6px;border:1px solid #e8d5a0"><div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📋 档案完整度</div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:'+_pct+'%;background:var(--accent);border-radius:3px;transition:.3s"></div></div><div style="font-size:.65rem;color:var(--muted)">'+_pct+'%'+(_pct===100?' 🎉':'')+'</div></div>';
 
@@ -5017,6 +5019,24 @@ function _addItemToWarehouse(source) {
   renderHubDropdown();
   setStatus('已添加到仓库：'+n.trim());
 }
+function _addSkill() {
+  if (!currentUser) return;
+  var inp = document.getElementById('wsSkillsInput'); if (!inp) return;
+  var val = inp.value.trim(); if (!val) return;
+  var m = data.members || {}; if (!m[currentUser.name]) m[currentUser.name] = {};
+  if (!m[currentUser.name].skills) m[currentUser.name].skills = [];
+  if (m[currentUser.name].skills.indexOf(val) === -1) m[currentUser.name].skills.push(val);
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  inp.value = ''; renderWorkspace();
+}
+function _removeSkill(skill) {
+  if (!currentUser) return;
+  var m = data.members || {}; if (!m[currentUser.name]) return;
+  if (!m[currentUser.name].skills) return;
+  m[currentUser.name].skills = m[currentUser.name].skills.filter(function(s){ return s !== skill; });
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  renderWorkspace();
+}
 function _getIdentityLabel(user, mi) {
   var u = user || {}; var role = u.role || '';
   if (role === 'admin') return '🧙 管理员';
@@ -6424,12 +6444,14 @@ function renderTimeline() {
       return false;
     });
   }
-  // Hide calendar toggle for NPC/visitor
+  // Hide calendar toggle + progress bars for NPC/visitor
   var isStaff = role === 'admin' || role === 'builder';
   var calBtn = document.getElementById('btnCalendarView');
   var tlBtn = document.getElementById('btnTimelineView');
+  var progBar = document.getElementById('progressBars');
   if (calBtn) calBtn.style.display = isStaff ? '' : 'none';
   if (tlBtn) tlBtn.style.display = isStaff ? '' : 'none';
+  if (progBar) progBar.style.display = isStaff ? '' : 'none';
 
   if (tasks.length === 0) {
     container.innerHTML = '';
