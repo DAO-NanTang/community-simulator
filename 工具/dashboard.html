@@ -1169,9 +1169,28 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 
 <!-- Hub Quest Hall Modal -->
 <div id="hubQuestHallModal" class="village-modal hidden" onclick="if(event.target===this)closeHubQuestHall()">
-  <div class="vm-inner" style="max-width:900px">
-    <button onclick="closeHubQuestHall()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);z-index:10">✕</button>
-    <div id="hubQuestHallContent"></div>
+  <div id="hubQuestHallBg" style="position:fixed;inset:0;background:url(ai_expand_image1783014990973.png) center/cover no-repeat;filter:blur(3px) brightness(.45);z-index:-1"></div>
+  <div class="vm-inner" style="max-width:960px;background:rgba(255,252,248,.94);border-radius:18px;padding:0;overflow:hidden">
+    <button onclick="closeHubQuestHall()" style="position:absolute;top:14px;right:18px;background:rgba(0,0,0,.08);border:none;font-size:1.3rem;cursor:pointer;color:var(--muted);z-index:10;width:32px;height:32px;border-radius:50%">✕</button>
+    <!-- NPC Area -->
+    <div style="background:linear-gradient(135deg,#f8f2e8,#f0e8d8);padding:18px 22px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)">
+      <div id="hubNpcAvatar" style="width:64px;height:64px;border-radius:50%;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#e8c8a0,#d4a878);border:2px solid #d8c0a0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.9rem">小云 · 任务大厅接待员</div>
+        <div style="font-size:.8rem;color:var(--muted)" id="hubNpcText">你好！欢迎来到任务大厅～</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <input id="hubSearch" placeholder="🔍 搜索任务…" oninput="renderHubQuestHall()" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;width:160px;background:var(--bg)">
+        <div style="font-size:.65rem;color:var(--accent);margin-top:4px;cursor:pointer" onclick="alert('📦 往期档案功能即将开放')">📦 往期档案</div>
+      </div>
+    </div>
+    <!-- Main: left user card + right task list -->
+    <div style="display:flex;gap:16px;padding:16px 22px 22px;min-height:400px">
+      <!-- LEFT: User Card -->
+      <div id="hubUserCard" style="flex:0 0 200px;text-align:center"></div>
+      <!-- RIGHT: Task list -->
+      <div id="hubQuestList" style="flex:1;min-width:0;max-height:60vh;overflow-y:auto"></div>
+    </div>
   </div>
 </div>
 
@@ -2144,28 +2163,79 @@ function toggleVillageDone(el, cnt) {
   el.textContent = isHide ? '📦 已完成/已领满（'+cnt+'项）▴' : '📦 已完成/已领满（'+cnt+'项）▾';
 }
 function openHubQuestHall() {
-  var modal = document.getElementById('hubQuestHallModal');
-  var content = document.getElementById('hubQuestHallContent');
-  modal.classList.remove('hidden');
-  // Render village quest hall content into the modal
-  var oldVQH = document.getElementById('villageQuestList');
-  var oldVQB = document.getElementById('villageQuickBar');
-  content.innerHTML = '<div id="hubVillageQuickBar"></div><div id="hubVillageQuestList"></div>';
-  // Temporarily redirect village rendering to hub modal
-  var origVQB = document.getElementById('villageQuickBar');
-  var origVQL = document.getElementById('villageQuestList');
-  // Override getElementById for the duration of renderVillageQuestHall
-  var origGetEl = document.getElementById;
-  // Render directly to hub content
-  renderVillageQuestHall();
-  // Copy rendered content to hub
-  var vqb = document.getElementById('villageQuickBar');
-  var vql = document.getElementById('villageQuestList');
-  if (vqb) document.getElementById('hubVillageQuickBar').innerHTML = vqb.innerHTML;
-  if (vql) document.getElementById('hubVillageQuestList').innerHTML = vql.innerHTML;
+  document.getElementById('hubQuestHallModal').classList.remove('hidden');
+  var av = document.getElementById('hubNpcAvatar');
+  if (av) av.innerHTML = avatarCircle(42, 64, 0);
+  renderHubQuestHall();
 }
 function closeHubQuestHall() {
   document.getElementById('hubQuestHallModal').classList.add('hidden');
+}
+
+var _hubQHFilter = ''; // '' | 'camp' | 'personal'
+var _hubQHSearch = '';
+
+function renderHubQuestHall() {
+  if (!currentUser) return;
+  var tasks = data.tasks || []; var name = currentUser.name; var today = new Date().toISOString().slice(0,10);
+  var isMember = currentUser.role==='admin'||currentUser.role==='builder'||currentUser.role==='adventurer';
+  var si = document.getElementById('hubSearch'); if (si) _hubQHSearch = si.value.trim().toLowerCase();
+
+  // ── LEFT: User card ──
+  var users = getUsers(); var u = users[name] || {};
+  var mi = (data.members||{})[name] || {};
+  var avatarSi = mi.avatar_seed !== undefined ? mi.avatar_seed : (u.avatar_seed||0);
+  var totalNT = calcNtTotal(name);
+  var myActive = tasks.filter(function(t){var cl=(t.claimants||[]).find(function(c){return c.name===name&&c.status!=='dropped';});return cl&&cl.status==='in_progress';}).length;
+  var mySubmit = tasks.filter(function(t){var cl=(t.claimants||[]).find(function(c){return c.name===name&&c.status!=='dropped';});return cl&&cl.status==='submitted';}).length;
+  var myDone = tasks.filter(function(t){var cl=(t.claimants||[]).find(function(c){return c.name===name&&c.status!=='dropped';});return cl&&cl.status==='completed';}).length;
+  var uc = document.getElementById('hubUserCard');
+  if (uc) uc.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 12px;position:sticky;top:10px">'+
+    '<div style="margin-bottom:8px">'+avatarCircle(avatarSi,64,0)+'</div>'+
+    '<div style="font-weight:700;font-size:.85rem;margin-bottom:2px">'+esc(name)+'</div>'+
+    '<div style="font-size:.7rem;color:var(--muted);margin-bottom:10px">'+(ROLE_TITLES[u.role]||u.role||'')+'</div>'+
+    '<div style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:8px">💎 '+totalNT.toLocaleString()+' NT</div>'+
+    '<div style="font-size:.7rem;color:var(--muted);line-height:1.8;border-top:1px dotted var(--border);padding-top:8px">'+
+    '<div>📋 接了 <b>'+myActive+'</b> 项</div>'+
+    '<div>⏳ 待交 <b>'+mySubmit+'</b> 项</div>'+
+    '<div>✅ 完成 <b>'+myDone+'</b> 项</div></div></div>';
+
+  // ── RIGHT: Task cards ──
+  var hubFiltered = tasks.filter(function(t){ return t.status==='active'&&t.claimants; });
+  if (_hubQHFilter==='camp') hubFiltered = hubFiltered.filter(function(t){return (t.scope||'camp')==='camp';});
+  if (_hubQHFilter==='personal') hubFiltered = hubFiltered.filter(function(t){return (t.scope||'camp')==='personal';});
+  if (_hubQHSearch) hubFiltered = hubFiltered.filter(function(t){return t.name.toLowerCase().indexOf(_hubQHSearch)!==-1;});
+
+  var canClaim=[], myTasks=[], doneTasks=[];
+  hubFiltered.forEach(function(t){
+    var ac=(t.claimants||[]).filter(function(c){return c.status!=='dropped';});
+    var mc=(t.claimants||[]).find(function(c){return c.name===name&&c.status!=='dropped';});
+    var isFull=t.max_slots>0&&ac.length>=t.max_slots;
+    if(mc&&mc.status==='completed'){doneTasks.push(t);}
+    else if(mc){myTasks.push(t);}
+    else if(isFull||((t.scope||'camp')==='camp'&&!isMember)){doneTasks.push(t);}
+    else{canClaim.push(t);}
+  });
+
+  var ql = document.getElementById('hubQuestList');
+  var h = '';
+  // Scope filter
+  h += '<div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap">';
+  [{v:'',l:'全部'},{v:'camp',l:'🏕️营地'},{v:'personal',l:'👤私人'}].forEach(function(s){
+    h += '<button class="btn'+(_hubQHFilter===s.v?' pri':'')+'" onclick="_hubQHFilter=\''+s.v+'\';renderHubQuestHall()" style="font-size:.7rem;padding:3px 10px">'+s.l+'</button>';
+  });
+  h += '</div>';
+
+  var opts={context:'questboard',userName:name,isMember:true};
+  if(canClaim.length>0){h+='<div style="font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--accent)">📋 可领取（'+canClaim.length+'项）</div>';canClaim.forEach(function(t){h+=renderQuestCard(t,opts);});}
+  if(myTasks.length>0){h+='<div style="font-size:.78rem;font-weight:600;margin:8px 0 4px">📋 我已领取（'+myTasks.length+'项）</div>';myTasks.forEach(function(t){h+=renderQuestCard(t,opts);});}
+  if(doneTasks.length>0){h+='<div style="font-size:.78rem;font-weight:600;margin:8px 0 4px;color:var(--muted);cursor:pointer" onclick="var el=document.getElementById(\'hubDoneList\');el.style.display=el.style.display===\'none\'?\'\':\'none\';this.textContent=el.style.display===\'none\'?\'📦 已完成/已领满（'+doneTasks.length+'项）▴\':\'📦 已完成/已领满（'+doneTasks.length+'项）▾\'">📦 已完成/已领满（'+doneTasks.length+'项）▾</div>';h+='<div id="hubDoneList" style="display:none">';doneTasks.forEach(function(t){h+=renderQuestCard(t,opts);});h+='</div>';}
+  if(canClaim.length+myTasks.length+doneTasks.length===0)h+='<div style="color:var(--muted);text-align:center;padding:40px">暂无委托</div>';
+  ql.innerHTML = h;
+
+  // NPC dialogue
+  var npc = document.getElementById('hubNpcText');
+  if (npc) npc.textContent = '你好！这里有 '+hubFiltered.length+' 个委托。'+(mySubmit>0?'你有 '+mySubmit+' 项等待审核～':myActive>0?'你有 '+myActive+' 项进行中，加油！':'看看有什么可以接的吧！');
 }
 
 function toggleWSDone(el, cnt) { window._wsDoneOpen=!window._wsDoneOpen; var list=document.getElementById('wsDoneList'); if(list)list.style.display=window._wsDoneOpen?'':'none'; el.textContent=window._wsDoneOpen?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
@@ -2209,15 +2279,27 @@ function submitMapInvite(){var code=document.getElementById('mapInviteInput').va
 function upgradeToNPC(code){if(!currentUser)return;currentUser.role='npc';currentUser.world_id=code;var users=getUsers();if(users[currentUser.name]){users[currentUser.name].role='npc';users[currentUser.name].world_id=code;saveUsers(users);}refreshUserHUD();var vi=document.getElementById('villageUserInfo');if(vi)vi.textContent='👤 '+currentUser.name+' · '+getUserTitle(currentUser);setStatus('已升级为在地伙伴！');}
 function enterVillagerMain() {
   hidePlazaPlaceholder();
-  document.body.classList.add('adventurer-mode');
-  document.getElementById('builderTabs').classList.add('hidden');
-  document.getElementById('builderModeBar').classList.add('hidden');
-  document.getElementById('adventurerTabs').classList.remove('hidden');
   document.getElementById('worldHUD').classList.remove('hidden');
-  var qb = document.querySelector('#adventurerTabs .tab[data-tab="questboard"]');
-  if (qb) { if (currentUser && currentUser.role === 'visitor') qb.classList.add('hidden'); else qb.classList.remove('hidden'); }
-  localStorage.setItem('nt_npc_in_main', '1');
-  switchTab('leaderboard');
+  var role = currentUser ? currentUser.role : '';
+  if (role === 'admin' || role === 'builder') {
+    document.body.classList.add('builder-mode');
+    document.getElementById('builderTabs').classList.remove('hidden');
+    if (role === 'admin') { document.getElementById('builderModeBar').classList.remove('hidden'); }
+    switchTab('workspace');
+  } else if (role === 'adventurer') {
+    document.body.classList.add('adventurer-mode');
+    document.getElementById('adventurerTabs').classList.remove('hidden');
+    switchTab('workspace');
+  } else {
+    document.body.classList.add('adventurer-mode');
+    document.getElementById('builderTabs').classList.add('hidden');
+    document.getElementById('builderModeBar').classList.add('hidden');
+    document.getElementById('adventurerTabs').classList.remove('hidden');
+    var qb = document.querySelector('#adventurerTabs .tab[data-tab=\"questboard\"]');
+    if (qb) qb.classList.toggle('hidden', role === 'visitor');
+    localStorage.setItem('nt_npc_in_main', '1');
+    switchTab('leaderboard');
+  }
 }
 
 // ── Village modals ──
