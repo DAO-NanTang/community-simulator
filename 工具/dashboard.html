@@ -2369,7 +2369,8 @@ function renderVillageQuestHall() {
     var isFull = t.max_slots>0 && activeC.length>=t.max_slots;
     if (myClaim && myClaim.status==='completed') { doneTasks.push(t); }
     else if (myClaim) { myTasks.push(t); }
-    else if (isFull || (t.scope||'camp')==='camp'&&!isMember) { doneTasks.push(t); }
+    else if (isFull) { myTasks.push(t); }
+    else if ((t.scope||'camp')==='camp'&&!isMember) { doneTasks.push(t); }
     else { canClaim.push(t); }
   });
   // ── Sorting ──
@@ -2445,9 +2446,22 @@ function renderVillageQuestHall() {
   }
 
   document.getElementById('villageQuestList').innerHTML = cardHTML + publishHTML + feedHTML;
-  document.getElementById('npcDialogue').textContent = isMember ?
+  var myInProgress = tasks.filter(function(t){ return (t.claimants||[]).some(function(c){return c.name===name&&c.status==='in_progress';}); });
+  var npcHTML = isMember ?
     (filtered.length>0 ? '欢迎回来！这里有 '+filtered.length+' 个委托。营队任务可以直接领取～' : '今天还没有新委托，去发布一个吧！') :
     (filtered.length>0 ? '这里有 '+filtered.length+' 个公开委托！私人委托可以直接领，营队任务需要先加入营队哦～' : '今天还没有公开的委托，过会儿再来看看吧～');
+  if (myInProgress.length > 0) npcHTML += ' <button class="btn green" onclick="showVillageSubmit()" style="font-size:.7rem;padding:3px 8px;margin-left:8px">📤 提交任务 ('+myInProgress.length+')</button>';
+  document.getElementById('npcDialogue').innerHTML = npcHTML;
+}
+
+function showVillageSubmit() {
+  var tasks = data.tasks || []; var name = currentUser?currentUser.name:'';
+  var myTasks = tasks.filter(function(t,i){ return (t.claimants||[]).some(function(c){return c.name===name&&c.status==='in_progress';}); });
+  if (myTasks.length === 0) { alert('没有可提交的任务'); return; }
+  if (myTasks.length === 1) { showSubmitModal(tasks.indexOf(myTasks[0])); return; }
+  var h = '<h3>📤 选择要提交的任务</h3>';
+  myTasks.forEach(function(t){ var idx=tasks.indexOf(t); h += '<div style="cursor:pointer;padding:8px;margin:4px 0;border:1px solid var(--border);border-radius:6px" onclick="showSubmitModal('+idx+');document.getElementById(\'villageSubmitPicker\').remove()">'+esc(t.name)+' · NT'+(t.points||0)+' · '+esc(t.deadline||'')+'</div>'; });
+  var div = document.createElement('div'); div.id='villageSubmitPicker'; div.innerHTML = '<div class="modal-overlay show" onclick="this.remove()"><div class="modal" style="max-width:400px">'+h+'<button class="btn" onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%">取消</button></div></div>'; document.body.appendChild(div);
 }
 
 function renderVillageActivityList() {
@@ -4519,7 +4533,10 @@ function renderQuestCard(t, opts) {
   h += '</div>';
   // Meta row
   h += '<div style="display:flex;gap:8px;font-size:.72rem;color:var(--muted);flex-wrap:wrap;margin-top:3px">';
-  h += '<span>🧙 '+esc(t.poster||'?')+'</span><span>📅 '+(t.posted_at||t.deadline||'—')+'</span><span>⏰ '+(t.deadline||'—')+'</span><span>👥 '+slots+'</span>';
+  h += '<span>🧙 '+esc(t.poster||'?')+'</span>';
+  if (activeC.length>0) h += '<span>👤 '+activeC.map(function(c){return esc(c.name)}).join(' ')+'</span>';
+  if (t.reviewer) h += '<span>✅ '+esc(t.reviewer)+'</span>';
+  h += '<span>📅 '+(t.posted_at||t.deadline||'—')+'</span><span>⏰ '+(t.deadline||'—')+'</span><span>👥 '+slots+'</span>';
   if (opts.showAssignee) h += '<span>👤 '+esc(t.assignee||'—')+'</span>';
   h += '<span style="color:var(--accent);font-weight:600">💎 '+(t.points||0)+' NT</span></div>';
   // Progress
@@ -4576,13 +4593,16 @@ function renderQuestCard(t, opts) {
   } else if (isDone || (grey && !isMine)) {
     h += '<span style="font-size:.7rem;color:var(--muted)">✅ '+(isDone?'你已完成':'已领满')+'</span>';
   } else if (myClaim) {
+    var isBoard = ctx==='village'||ctx==='questboard';
     if (myClaim.status==='in_progress'||myClaim.status==='triggered') {
-      h += '<button class="btn green" onclick="showSubmitModal('+idx+');" style="font-size:.68rem;padding:2px 8px">📤 提交</button>';
-      h += '<button class="btn" onclick="dropTask('+idx+');" style="font-size:.68rem;padding:2px 8px">🏳️ 放弃</button>';
+      if (!isBoard) h += '<button class="btn green" onclick="showSubmitModal('+idx+');" style="font-size:.68rem;padding:2px 8px">📤 提交</button>';
+      if (!isBoard) h += '<button class="btn" onclick="dropTask('+idx+');" style="font-size:.68rem;padding:2px 8px">🏳️ 放弃</button>';
+      if (isBoard) h += '<span style="font-size:.7rem;color:var(--accent)">🔄 进行中</span>';
     } else if (myClaim.status==='submitted') {
       h += '<span style="font-size:.7rem;color:var(--accent)">⏳ 审核中</span>';
     } else if (myClaim.status==='rejected') {
-      h += '<button class="btn green" onclick="showSubmitModal('+idx+');" style="font-size:.68rem;padding:2px 8px">🔄 重新提交</button>';
+      if (!isBoard) h += '<button class="btn green" onclick="showSubmitModal('+idx+');" style="font-size:.68rem;padding:2px 8px">🔄 重新提交</button>';
+      if (isBoard) h += '<span style="font-size:.7rem;color:var(--muted)">❌ 已退回</span>';
     }
   } else if (!grey) {
     h += '<button class="btn pri" onclick="claimTask('+idx+');" style="font-size:.68rem;padding:2px 10px">⚔️ 领取</button>';
