@@ -5510,7 +5510,7 @@ function switchTab(name, opts) {
   if (name === 'taskhall') { renderDailyView('staff'); renderTasks(); renderCompleteness(); }
   if (name === 'ntadmin') { renderNTAdmin(); }
   if (name === 'profile') renderMyProfile();
-  if (name === 'questboard') { if (currentUser && (currentUser.role==='npc'||currentUser.role==='visitor')) { renderVillageQuestHall(); document.getElementById('villageModalQuesthall').classList.remove('hidden'); } else { renderQuestBoard(); } refreshMemberView(); }
+  if (name === 'questboard') { renderVillageQuestHall(); document.getElementById('villageModalQuesthall').classList.remove('hidden'); refreshMemberView(); }
   if (name === 'leaderboard') renderLeaderboard();
   if (name === 'map') renderDailyView('player'); // backward compat
   if (name === 'workspace') renderWorkspace();
