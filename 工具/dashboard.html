@@ -1264,8 +1264,12 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <label>任务名称 *</label>
     <input type="text" id="postTaskName" placeholder="例如：工笔画临摹练习">
     <div style="display:flex;gap:10px">
-      <div style="flex:1"><label>类型</label><select id="postTaskType"><option value="支线">支线</option><option value="主线">主线</option><option value="共创">共创</option><option value="隐藏">隐藏</option><option value="身份">身份</option></select></div>
+      <div style="flex:1"><label>类型 <span class="btn" onclick="addCustomType()" title="添加自定义类型" style="font-size:.65rem;padding:1px 6px;margin-left:4px;cursor:pointer">＋</span></label><select id="postTaskType"><option value="支线">支线</option><option value="主线">主线</option><option value="共创">共创</option><option value="隐藏">隐藏</option><option value="身份">身份</option></select></div>
       <div style="flex:1"><label>范围</label><select id="postTaskScope"><option value="camp">🏕️ 营地</option><option value="personal">✏️ 私人</option></select></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1"><label>谁能领</label><select id="postTaskVisibility" onchange="onVisibilityChange()"><option value="all">🌐 所有人</option><option value="adventurer">⚔️ 冒险者</option><option value="builder">🧱 共建者</option><option value="npc">👥 在地伙伴</option><option value="visitor">🏕️ 云村民</option><option value="specific">🎯 指定某人…</option></select></div>
+      <div id="postTaskTargetRow" class="hidden" style="flex:1"><label>指定领取人</label><div style="display:flex;gap:4px"><input type="text" id="postTaskTarget" placeholder="点击选择…" readonly style="flex:1;cursor:pointer;background:var(--bg);font-size:.82rem" onclick="showReviewerPicker('postTaskTarget')"><button class="btn" onclick="showReviewerPicker('postTaskTarget')" style="font-size:.7rem;padding:2px 8px">👤</button></div></div>
     </div>
     <div style="display:flex;gap:10px">
       <div style="flex:1"><label>NT 奖励</label><input type="number" id="postTaskPoints" value="5" min="1"></div>
@@ -3054,10 +3058,14 @@ function renderWorkspace() {
 
   // ── Tasks I posted (pending review) ──
   var myPosted = [];
+  var myWithdrawing = [];
   tasks.forEach(function(t, i) {
     if (t.poster === name || t.reviewer === name) {
       var pending = (t.claimants || []).filter(function(c) { return c.status === 'submitted'; });
       if (pending.length > 0) myPosted.push({ task: t, idx: i, pending: pending });
+    }
+    if (t.status === 'withdrawing' && (currentUser.role === 'admin' || hasNTRole() || t.poster === name)) {
+      myWithdrawing.push({ task: t, idx: i });
     }
   });
 
@@ -3188,6 +3196,18 @@ function renderWorkspace() {
             ' <button class="btn danger" onclick="reviewTask('+p.idx+',\''+escAttr(c.name)+'\',\'reject\');renderWorkspace()" style="font-size:.65rem;padding:2px 8px">❌ 退回</button>'+
             '</div>';
         });
+      });
+      html += '</div>';
+    }
+    // Withdrawing tasks review
+    if (myWithdrawing.length > 0) {
+      html += '<div class="card" style="background:#fef5f0;border-color:#e8a080;margin-bottom:12px"><h3>🏳️ 撤回审核（' + myWithdrawing.length + '项）</h3>';
+      myWithdrawing.forEach(function(w) {
+        html += '<div style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:4px;font-size:.78rem;background:#fffdf5">'+
+          esc(w.task.poster)+' 撤回 <b>'+esc(w.task.name)+'</b> · NT'+(w.task.points||0)+
+          ' <button class="btn green" onclick="reviewWithdrawal('+w.idx+',\'approve\');renderWorkspace()" style="font-size:.65rem;padding:2px 8px">✅ 通过撤回</button>'+
+          ' <button class="btn danger" onclick="reviewWithdrawal('+w.idx+',\'reject\');renderWorkspace()" style="font-size:.65rem;padding:2px 8px">❌ 拒绝</button>'+
+          '</div>';
       });
       html += '</div>';
     }
@@ -4510,6 +4530,24 @@ function renderQuestCard(t, opts) {
   }
   // Actions
   h += '<div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">';
+  // ── 撤回按钮（发布者可见，仅 active 且无人审核通过时）──
+  if (ctx !== 'village' && t.status === 'active' && currentUser && currentUser.name === t.poster) {
+    var hasCompletedClaim = (t.claimants || []).some(function(c) { return c.status === 'completed'; });
+    if (!hasCompletedClaim) {
+      h += '<button class="btn" onclick="withdrawTask('+idx+')" style="font-size:.68rem;padding:2px 8px;color:var(--red)" title="申请撤回任务，审核通过后退回 NT">🏳️ 撤回</button>';
+    }
+  }
+  if (t.status === 'withdrawing') {
+    h += '<span style="font-size:.68rem;color:var(--yellow)">⏳ 撤回审核中</span>';
+    // 管理员/NT管理可审核撤回
+    if (currentUser && (currentUser.role === 'admin' || hasNTRole())) {
+      h += '<button class="btn green" onclick="reviewWithdrawal('+idx+',\'approve\')" style="font-size:.68rem;padding:2px 8px">✅ 通过撤回</button>';
+      h += '<button class="btn danger" onclick="reviewWithdrawal('+idx+',\'reject\')" style="font-size:.68rem;padding:2px 8px">❌ 拒绝</button>';
+    }
+  }
+  if (t.status === 'withdrawn') {
+    h += '<span style="font-size:.68rem;color:var(--muted)">🚫 已撤回</span>';
+  }
   if (opts.showStatusEdit) {
     var statuses = ['待开始','进行中','已完成'];
     h += '<select onchange="data.tasks['+idx+'].status=this.value;localStorage.setItem(\"camp_data\",JSON.stringify(data));updateAll();'+(_refreshFn[ctx]||'')+'" style="font-size:.68rem;padding:1px 4px;border:1px solid var(--border);border-radius:4px;margin-right:4px">';
@@ -4745,6 +4783,46 @@ function confirmSubmit() {
 function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; showSubmitModal(idx); }
 function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard();refreshMemberView(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace();var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();var hm=document.getElementById('hubQuestHallModal');if(hm&&!hm.classList.contains('hidden'))openHubQuestHall();setStatus('已放弃：' + t.name); }
 function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var targetName = prompt('输入要触发的冒险者姓名：'); if (!targetName) return; if (!t.claimants) t.claimants = []; var alreadyThere = t.claimants.find(function(c) { return c.name === targetName; }); if (alreadyThere) { alert('该冒险者已被触发'); return; } t.claimants.push({ name: targetName, claimed_at: new Date().toISOString().slice(0,10), status: 'triggered' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已触发隐藏任务给：' + targetName); }
+// ═══ 撤回任务 ═══
+function withdrawTask(idx) {
+  if (!currentUser) return;
+  var t = data.tasks[idx];
+  if (!t) return;
+  if (t.poster !== currentUser.name) { alert('只能撤回自己发布的任务'); return; }
+  // 检查是否有人已审核通过
+  var hasCompleted = (t.claimants || []).some(function(c) { return c.status === 'completed'; });
+  if (hasCompleted) { alert('已有领取者审核通过，无法撤回'); return; }
+  if (!confirm('撤回「' + t.name + '」？审核通过后 NT 将退回。')) return;
+  t.status = 'withdrawing';
+  t.withdraw_requested_at = new Date().toISOString().slice(0,10);
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  updateAll();
+  setStatus('已申请撤回：' + t.name);
+}
+
+function reviewWithdrawal(idx, action) {
+  var t = data.tasks[idx];
+  if (!t || t.status !== 'withdrawing') return;
+  if (currentUser.role !== 'admin' && !hasNTRole()) { alert('仅管理员/NT管理员可审核撤回'); return; }
+  if (action === 'approve') {
+    t.status = 'withdrawn';
+    // 标记未完成的领取者
+    (t.claimants || []).forEach(function(c) {
+      if (c.status !== 'completed') c.status = 'withdrawn_by_poster';
+    });
+    // NT 退款审计
+    var taskScope = t.scope || 'camp';
+    recordTransaction({ type: 'task_refund', from: taskScope === 'personal' ? (t.poster || '委托方') : '系统',
+      to: t.poster, amount: t.points || 0, task_name: t.name, scope: taskScope, confirmed_by: currentUser.name });
+  } else {
+    t.status = 'active';
+    t.withdraw_requested_at = '';
+  }
+  localStorage.setItem('camp_data', JSON.stringify(data));
+  updateAll();
+  setStatus(action === 'approve' ? '已通过撤回：' + t.name : '已拒绝撤回：' + t.name);
+}
+
 function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; if (t.reviewer && currentUser.name !== t.reviewer && currentUser.name !== t.poster) { alert('该任务指定由 ' + t.reviewer + ' 审核'); return; } if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); recordTransaction({ type: TX_TYPES.TASK_REWARD, from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
 function showPostTask() {
   if (!currentUser) { alert('请先登录'); return; }
@@ -4761,11 +4839,53 @@ function showPostTask() {
   document.getElementById('postReqPhotoCount').value = '1';
   document.getElementById('postReqFileCount').value = '1';
   document.getElementById('postTaskNote').value = '';
+  document.getElementById('postTaskVisibility').value = 'all';
+  document.getElementById('postTaskTarget').value = '';
+  document.getElementById('postTaskTargetRow').classList.add('hidden');
+  refreshTypeOptions(); // 刷新类型下拉（含自定义标签）
   var myNT = calcNtTotal(currentUser.name);
   document.getElementById('postTaskNTInfo').textContent = '💡 将从你的个人 NT 扣除 · 当前余额：' + myNT.toLocaleString() + ' NT';
   document.getElementById('postTaskModal').classList.add('show');
 }
 function closePostTaskModal() { document.getElementById('postTaskModal').classList.remove('show'); }
+
+// ═══ 发布表单：类型标签 ═══
+function addCustomType() {
+  if (!currentUser || currentUser.role === 'visitor') return; // Step 3: 云村民不可加
+  var label = prompt('输入新类型名称：');
+  if (!label || !label.trim()) return;
+  label = label.trim();
+  if (!data.custom_tags) data.custom_tags = [];
+  if (data.custom_tags.indexOf(label) < 0) {
+    data.custom_tags.push(label);
+    localStorage.setItem('camp_data', JSON.stringify(data));
+  }
+  refreshTypeOptions();
+  document.getElementById('postTaskType').value = label;
+}
+function refreshTypeOptions() {
+  var sel = document.getElementById('postTaskType');
+  if (!sel) return;
+  var curVal = sel.value;
+  var baseTypes = ['支线','主线','共创','隐藏','身份'];
+  var customTags = (data.custom_tags || []).filter(function(ct) { return baseTypes.indexOf(ct) < 0; });
+  var html = '';
+  baseTypes.forEach(function(t) { html += '<option value="'+t+'">'+t+'</option>'; });
+  if (customTags.length > 0) {
+    html += '<option disabled>─────</option>';
+    customTags.forEach(function(ct) { html += '<option value="'+escAttr(ct)+'">🏷️ '+esc(ct)+'</option>'; });
+  }
+  sel.innerHTML = html;
+  sel.value = curVal;
+}
+
+// visibility 选择器：指定某人时显示选人框
+function onVisibilityChange() {
+  var v = document.getElementById('postTaskVisibility').value;
+  var row = document.getElementById('postTaskTargetRow');
+  if (v === 'specific') { row.classList.remove('hidden'); }
+  else { row.classList.add('hidden'); document.getElementById('postTaskTarget').value = ''; }
+}
 function confirmPostTask() {
   var name = document.getElementById('postTaskName').value.trim();
   if (!name) { alert('请输入任务名称'); return; }
@@ -4782,6 +4902,12 @@ function confirmPostTask() {
   if (reqPhoto) submitReqs.push({ type: 'photo', min: photoCount });
   if (reqFile) submitReqs.push({ type: 'file', min: fileCount });
   var reviewer = document.getElementById('postTaskReviewer').value.trim();
+  var visibility = document.getElementById('postTaskVisibility').value;
+  var targetClaimant = '';
+  if (visibility === 'specific') {
+    targetClaimant = document.getElementById('postTaskTarget').value.trim();
+    if (!targetClaimant) { alert('请选择指定领取人'); return; }
+  }
   var task = {
     name: name, scope: document.getElementById('postTaskScope').value, type: document.getElementById('postTaskType').value, category: '其他',
     points: points || 5, max_slots: parseInt(document.getElementById('postTaskSlots').value) || 0,
@@ -4790,7 +4916,7 @@ function confirmPostTask() {
     note: document.getElementById('postTaskNote').value.trim(),
     source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '',
     posted_at: new Date().toISOString().slice(0,10), claimants: [], status: 'active',
-    visibility: 'all', reviewer: reviewer, submit_requirements: submitReqs, min_season: 0
+    visibility: visibility, target_claimant: targetClaimant, reviewer: reviewer, submit_requirements: submitReqs, min_season: 0
   };
   if (!data.tasks) data.tasks = [];
   data.tasks.push(task);
