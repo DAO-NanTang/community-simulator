@@ -432,7 +432,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
       <button class="btn" onclick="showLoginEntry()" style="margin-top:16px">← 返回</button>
     </div>
-    <div id="registerForm" class="hidden login-card" style="text-align:center;max-width:380px;padding:18px 20px">
+    <div id="registerForm" class="hidden login-card" style="text-align:center;max-width:320px;padding:18px 20px">
       <h2 id="registerTitle" style="font-size:1rem;margin-bottom:4px"></h2>
       <div style="margin:4px 0;cursor:pointer" id="regAvatarPreview"></div>
       <button class="btn" onclick="cycleRegAvatar()" style="font-size:.65rem;padding:2px 8px">🎨 换头像</button>
@@ -1104,7 +1104,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <button class="btn pri" style="font-size:.78rem;margin-top:8px">进入大厅</button>
         </div>
         <!-- 卡片3: 实景地图 -->
-        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('map')">
+        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="showMapInvite()">
           <div style="font-size:2.5rem;margin-bottom:8px">🗺️</div>
           <h3 style="margin:4px 0">实景地图</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">成为在地伙伴<br>或浏览地图</p>
@@ -1121,6 +1121,19 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     </div>
   </div>
 </main>
+
+<!-- Map Invite Card -->
+<div id="mapInviteCard" class="hidden" style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
+  <div class="login-card" style="text-align:center;max-width:320px">
+    <h3>🗺️ 实景地图</h3>
+    <p style="font-size:.8rem;color:var(--muted);margin:8px 0">输入 NPC 邀请码成为在地伙伴<br>或跳过直接浏览</p>
+    <input id="mapInviteInput" placeholder="邀请码（选填）" style="text-align:center">
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+      <button class="btn" onclick="closeMapInvite()">跳过</button>
+      <button class="btn pri" onclick="submitMapInvite()">确认</button>
+    </div>
+  </div>
+</div>
 
 <!-- Village Modal: Activity Info -->
 <div id="villageModalActivity" class="village-modal hidden" onclick="if(event.target===this)closeVillageModal('activity')">
@@ -1885,7 +1898,7 @@ function showRegister(role) {
   updateRegAvatarPreview();
 }
 function cycleRegAvatar() { regAvatarSeed = (regAvatarSeed + 1) % 60; updateRegAvatarPreview(); }
-function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 120, 0); }
+function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 200, 0); }
 function doRegister() {
   var name = document.getElementById('regName').value.trim();
   var password = document.getElementById('regPassword').value;
@@ -2167,6 +2180,37 @@ function showVillageSquare() {
   if (!currentUser) return;
   showPlazaPlaceholder(currentUser);
 }
+function showMapInvite() {
+  document.getElementById('mapInviteInput').value = '';
+  document.getElementById('mapInviteCard').classList.remove('hidden');
+}
+function closeMapInvite() {
+  document.getElementById('mapInviteCard').classList.add('hidden');
+  openVillageModal('map');
+}
+function submitMapInvite() {
+  var code = document.getElementById('mapInviteInput').value.trim();
+  if (code) {
+    var worldCodes = getWorldCodes();
+    var inviteCodes = getInviteCodes();
+    var allCodes = worldCodes.concat(inviteCodes);
+    if (allCodes.includes(code)) {
+      // 消耗邀请码
+      if (worldCodes.includes(code)) saveWorldCodes(worldCodes.filter(function(c) { return c !== code; }));
+      if (inviteCodes.includes(code)) saveInviteCodes(inviteCodes.filter(function(c) { return c !== code; }));
+      if (currentUser) {
+        currentUser.role = 'npc'; currentUser.world_id = code;
+        var users = getUsers(); if (users[currentUser.name]) { users[currentUser.name].role = 'npc'; users[currentUser.name].world_id = code; saveUsers(users); }
+        refreshUserHUD();
+        setStatus('已升级为在地伙伴！');
+      }
+    } else if (code.length > 0) {
+      alert('邀请码无效，将跳过');
+    }
+  }
+  closeMapInvite();
+}
+
 function enterVillagerMain() {
   hidePlazaPlaceholder();
   document.body.classList.add('adventurer-mode');
@@ -2174,6 +2218,9 @@ function enterVillagerMain() {
   document.getElementById('builderModeBar').classList.add('hidden');
   document.getElementById('adventurerTabs').classList.remove('hidden');
   document.getElementById('worldHUD').classList.remove('hidden');
+  // 云村民隐藏任务大厅按钮
+  var qb = document.querySelector('#adventurerTabs .tab[data-tab=\"questboard\"]');
+  if (qb) { if (currentUser && currentUser.role === 'visitor') qb.classList.add('hidden'); else qb.classList.remove('hidden'); }
   switchTab('leaderboard');
 }
 
@@ -2818,6 +2865,8 @@ function switchToPreview(role) {
     document.getElementById('builderModeBar').classList.add('hidden');
     document.getElementById('adventurerTabs').classList.remove('hidden');
     document.getElementById('worldHUD').classList.remove('hidden');
+    var qb = document.querySelector('#adventurerTabs .tab[data-tab=\"questboard\"]');
+    if (qb) qb.classList.toggle('hidden', role === 'visitor');
     switchTab('leaderboard');
   }
   showPreviewBanner(role);
@@ -5157,7 +5206,7 @@ function switchTab(name, opts) {
     admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map','leaderboard'],
     builder: ['workspace','questboard','taskhall','ntadmin','timeline','budget','settlement','leaderboard'],
     adventurer: ['workspace','questboard','timeline','leaderboard'],
-    npc: ['workspace','leaderboard'], visitor: ['workspace','leaderboard']
+    npc: ['workspace','questboard','timeline','leaderboard'], visitor: ['workspace','timeline','leaderboard']
   };
   if (currentUser && !previewMode) {
     var allowed = roleTabs[currentUser.role];
