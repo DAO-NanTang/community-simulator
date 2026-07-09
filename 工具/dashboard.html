@@ -2189,26 +2189,29 @@ function closeMapInvite() {
   openVillageModal('map');
 }
 function submitMapInvite() {
-  var code = document.getElementById('mapInviteInput').value.trim();
+  var code = document.getElementById('mapInviteInput').value.trim().toUpperCase();
   if (code) {
     var worldCodes = getWorldCodes();
     var inviteCodes = getInviteCodes();
-    var allCodes = worldCodes.concat(inviteCodes);
-    if (allCodes.includes(code)) {
-      // 消耗邀请码
-      if (worldCodes.includes(code)) saveWorldCodes(worldCodes.filter(function(c) { return c !== code; }));
-      if (inviteCodes.includes(code)) saveInviteCodes(inviteCodes.filter(function(c) { return c !== code; }));
-      if (currentUser) {
-        currentUser.role = 'npc'; currentUser.world_id = code;
-        var users = getUsers(); if (users[currentUser.name]) { users[currentUser.name].role = 'npc'; users[currentUser.name].world_id = code; saveUsers(users); }
-        refreshUserHUD();
-        setStatus('已升级为在地伙伴！');
-      }
-    } else if (code.length > 0) {
-      alert('邀请码无效，将跳过');
+    if (worldCodes.includes(code)) {
+      saveWorldCodes(worldCodes.filter(function(c) { return c !== code; }));
+      upgradeToNPC(code);
+    } else if (inviteCodes.includes(code)) {
+      saveInviteCodes(inviteCodes.filter(function(c) { return c !== code; }));
+      upgradeToNPC(code);
+    } else {
+      alert('邀请码无效（冒险者池'+worldCodes.length+'个，NBC池'+inviteCodes.length+'个）');
     }
   }
   closeMapInvite();
+}
+function upgradeToNPC(code) {
+  if (!currentUser) return;
+  currentUser.role = 'npc'; currentUser.world_id = code;
+  var users = getUsers();
+  if (users[currentUser.name]) { users[currentUser.name].role = 'npc'; users[currentUser.name].world_id = code; saveUsers(users); }
+  refreshUserHUD();
+  setStatus('已升级为在地伙伴！');
 }
 
 function enterVillagerMain() {
