@@ -1632,6 +1632,26 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!data.inn_bookings) data.inn_bookings = [];
     if (!data.teahouse_posts) data.teahouse_posts = [];
     if (!data.game_sessions) data.game_sessions = [];
+    // 种子测试数据：首次加载时自动填充示例物品
+    if (!data.inventory || data.inventory.length === 0) {
+      data.inventory = [
+        { id:'bi_demo1', owner:'若雨', name:'工笔花鸟画', category:'艺术品', price:200, description:'第四期共创营创作', status:'listed', created_at:'2026-07-05', listed_at:'2026-07-06', sold_to:'', sold_at:'' },
+        { id:'bi_demo2', owner:'若雨', name:'宣纸 10刀', category:'文具', price:50, description:'安徽生宣，四尺对开', status:'listed', created_at:'2026-07-03', listed_at:'2026-07-05', sold_to:'', sold_at:'' },
+        { id:'bi_demo3', owner:'朝林', name:'手工编织挂毯', category:'手工', price:100, description:'纯棉手工编织', status:'listed', created_at:'2026-07-06', listed_at:'2026-07-07', sold_to:'', sold_at:'' },
+        { id:'bi_demo4', owner:'朝林', name:'旧画框 3个', category:'交换', price:0, description:'需要2-3个A4大小画框，求购', status:'listed', created_at:'2026-07-04', listed_at:'2026-07-06', sold_to:'', sold_at:'' },
+        { id:'bi_demo5', owner:'小明', name:'水彩颜料套装', category:'文具', price:80, description:'温莎牛顿24色，只用过两次', status:'unlisted', created_at:'2026-07-02', listed_at:'', sold_to:'', sold_at:'' },
+        { id:'bi_demo6', owner:'小明', name:'手绘明信片', category:'艺术品', price:15, description:'洱海风景系列', status:'listed', created_at:'2026-07-07', listed_at:'2026-07-08', sold_to:'', sold_at:'' },
+        { id:'bi_demo7', owner:'niya', name:'手工陶杯', category:'手工', price:60, description:'柴烧，每个独一无二', status:'listed', created_at:'2026-07-05', listed_at:'2026-07-06', sold_to:'', sold_at:'' }
+      ];
+      localStorage.setItem('camp_data', JSON.stringify(data));
+    }
+    // 种子食堂示例菜单
+    if (!data.canteen_menus || Object.keys(data.canteen_menus).length === 0) {
+      var today = new Date().toISOString().slice(0,10);
+      data.canteen_menus = {};
+      data.canteen_menus[today] = { lunch: ['糙米饭','清炒时蔬','菌菇汤','麻婆豆腐','凉拌黄瓜','菊花茶'], dinner: ['素汤面','田园沙拉','鱼香茄子','花生米','蒸红薯','普洱茶'] };
+      localStorage.setItem('camp_data', JSON.stringify(data));
+    }
   }
   // 清理旧版 budget 废弃字段
   var DEAD_BUDGET_KEYS = ['salary_base_rmb','salary','buyback_nt','buyback_nt_total',
@@ -3836,7 +3856,7 @@ function renderHubSlideContent(page) {
     var listed = (data.inventory || []).filter(function(it) { return it.status === 'listed'; });
     var byOwner = {}; listed.forEach(function(it) { if (!byOwner[it.owner]) byOwner[it.owner] = []; byOwner[it.owner].push(it); });
     var owners = Object.keys(byOwner).sort();
-    if (currentUser) h += '<div style="margin-bottom:10px"><button class="btn pri" onclick="showItemPicker(\'bazaar\')" style="font-size:.72rem;padding:4px 12px">＋ 发布物品</button></div>';
+    if (currentUser) h += '<div style="margin-bottom:10px"><button class="btn pri" onclick="showItemPicker(\'bazaar\',this)" style="font-size:.72rem;padding:4px 12px">＋ 发布物品</button></div>';
     if (owners.length === 0) {
       h += '<div style="text-align:center;color:var(--muted);padding:30px 0">📭 暂无物品在售</div>';
     } else {
@@ -3989,19 +4009,15 @@ function openHubSub(page, el) {
   // Render content first (so panel gets correct height)
   renderHubSlideContent(page);
 
-  // Position sub-panel: 一级菜单左侧, 固定位置不跳动
-  // Only reposition if not already visible (prevent jumping on content switch)
-  var isVisible = sp && sp.classList.contains('show');
-  if (!isVisible) {
-    var menu = document.getElementById('hubMenu');
-    if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
-    if (menu && sp) {
-      var mr = menu.getBoundingClientRect();
-      sp.style.top = mr.top + 'px';
-      sp.style.left = Math.max(4, mr.left - 332) + 'px';
-      sp.style.right = 'auto';
-      sp.style.maxHeight = Math.min(500, window.innerHeight - mr.top - 20) + 'px';
-    }
+  // Position sub-panel: 一级菜单左侧, 始终跟随(缩放安全)
+  var menu = document.getElementById('hubMenu');
+  if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
+  if (menu && sp) {
+    var mr = menu.getBoundingClientRect();
+    sp.style.top = mr.top + 'px';
+    sp.style.left = Math.max(4, mr.left - 332) + 'px';
+    sp.style.right = 'auto';
+    sp.style.maxHeight = Math.min(500, window.innerHeight - mr.top - 20) + 'px';
   }
 
   // Show sub panel + backdrop, keep dropdown visible
@@ -4024,7 +4040,7 @@ function renderBazaarContent() {
   var byOwner = {}; listed.forEach(function(it) { if (!byOwner[it.owner]) byOwner[it.owner] = []; byOwner[it.owner].push(it); });
   var owners = Object.keys(byOwner).sort();
   var h = '';
-  if (currentUser) h += '<button class="btn pri" onclick="showItemPicker(\'bazaar\')" style="font-size:.75rem;margin-bottom:10px">＋ 发布物品</button>';
+  if (currentUser) h += '<button class="btn pri" onclick="showItemPicker(\'bazaar\',this)" style="font-size:.75rem;margin-bottom:10px">＋ 发布物品</button>';
   if (owners.length === 0) {
     h += '<div class="card" style="text-align:center;padding:40px"><div style="font-size:2rem">📭</div><div style="color:var(--muted)">暂无物品在售</div></div>';
   } else {
@@ -4484,16 +4500,23 @@ function closeReviewerPicker() { document.getElementById('pickerDropdown').class
 
 // ═══ 物品选择器（集市发布，复用审核人选择器模式）═══
 var _itemPickTarget = '';
-function showItemPicker(target) {
+function showItemPicker(target, el) {
   _itemPickTarget = target;
   var dd = document.getElementById('itemPickerDropdown');
-  var sp = document.getElementById('hubSubPanel');
-  if (sp) {
-    var r = sp.getBoundingClientRect();
-    dd.style.top = Math.max(8, r.top) + 'px';
-    dd.style.left = Math.max(8, r.left - 272) + 'px';
-    dd.style.width = '260px';
+  // Position: below the triggering element (or below hub sub panel if anchored)
+  if (el) {
+    var r = el.getBoundingClientRect();
+    dd.style.top = Math.max(8, r.bottom + 4) + 'px';
+    dd.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 280)) + 'px';
+  } else {
+    var sp = document.getElementById('hubSubPanel');
+    if (sp) {
+      var sr = sp.getBoundingClientRect();
+      dd.style.top = Math.max(8, sr.top) + 'px';
+      dd.style.left = Math.max(8, sr.right - 268) + 'px';
+    }
   }
+  dd.style.width = '260px';
   dd.classList.remove('hidden');
   _itemPickerJustOpened = true;
   document.getElementById('itemPickerSearch').value = '';
