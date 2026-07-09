@@ -501,12 +501,12 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button class="tab" data-tab="members" onclick="switchTab('members')">👥 成员档案</button>
     <button class="tab" data-tab="taskhall" onclick="switchTab('taskhall')">🏛️ 工会大厅</button>
     <button class="tab" data-tab="ntadmin" onclick="switchTab('ntadmin')">🎯 NT管理</button>
-    <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务大厅</button>
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="budget" onclick="switchTab('budget')">💰 资源金库</button>
     <button class="tab" data-tab="settlement" onclick="switchTab('settlement')">🧾 通关结算</button>
     <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
     <span style="flex:1"></span>
+    <button class="tab" data-tab="questboard" onclick="openHubQuestHall()" style="margin-right:4px">📋 任务大厅</button>
     <span class="dropdown" style="position:relative;align-self:center">
       <button class="tab" onclick="if(!document.getElementById('hubSubPanel').classList.contains('show'))toggleDropdown('hubMenu');renderHubDropdown()" style="cursor:pointer">🗺️ 南塘云村</button>
       <div id="hubMenu" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px"></div>
@@ -531,7 +531,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
     <span style="flex:1"></span>
-    <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务大厅</button>
+    <button class="tab" data-tab="questboard" onclick="openHubQuestHall()">📋 任务大厅</button>
     <span class="dropdown" style="position:relative;align-self:center">
       <button class="tab" onclick="toggleDropdown('hubMenu2');renderHubDropdown()" style="cursor:pointer">🗺️ 南塘云村</button>
       <div id="hubMenu2" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px"></div>
@@ -1164,6 +1164,14 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <h2>实景地图</h2>
     <p style="color:var(--muted)">🔒 建设中，敬请期待</p>
     <p style="font-size:.82rem;color:var(--muted)">开放后可以在这里探索南塘村、成为在地伙伴</p>
+  </div>
+</div>
+
+<!-- Hub Quest Hall Modal -->
+<div id="hubQuestHallModal" class="village-modal hidden" onclick="if(event.target===this)closeHubQuestHall()">
+  <div class="vm-inner" style="max-width:900px">
+    <button onclick="closeHubQuestHall()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);z-index:10">✕</button>
+    <div id="hubQuestHallContent"></div>
   </div>
 </div>
 
@@ -2135,6 +2143,31 @@ function toggleVillageDone(el, cnt) {
   if (list) list.style.display = isHide ? '' : 'none';
   el.textContent = isHide ? '📦 已完成/已领满（'+cnt+'项）▴' : '📦 已完成/已领满（'+cnt+'项）▾';
 }
+function openHubQuestHall() {
+  var modal = document.getElementById('hubQuestHallModal');
+  var content = document.getElementById('hubQuestHallContent');
+  modal.classList.remove('hidden');
+  // Render village quest hall content into the modal
+  var oldVQH = document.getElementById('villageQuestList');
+  var oldVQB = document.getElementById('villageQuickBar');
+  content.innerHTML = '<div id="hubVillageQuickBar"></div><div id="hubVillageQuestList"></div>';
+  // Temporarily redirect village rendering to hub modal
+  var origVQB = document.getElementById('villageQuickBar');
+  var origVQL = document.getElementById('villageQuestList');
+  // Override getElementById for the duration of renderVillageQuestHall
+  var origGetEl = document.getElementById;
+  // Render directly to hub content
+  renderVillageQuestHall();
+  // Copy rendered content to hub
+  var vqb = document.getElementById('villageQuickBar');
+  var vql = document.getElementById('villageQuestList');
+  if (vqb) document.getElementById('hubVillageQuickBar').innerHTML = vqb.innerHTML;
+  if (vql) document.getElementById('hubVillageQuestList').innerHTML = vql.innerHTML;
+}
+function closeHubQuestHall() {
+  document.getElementById('hubQuestHallModal').classList.add('hidden');
+}
+
 function toggleWSDone(el, cnt) { window._wsDoneOpen=!window._wsDoneOpen; var list=document.getElementById('wsDoneList'); if(list)list.style.display=window._wsDoneOpen?'':'none'; el.textContent=window._wsDoneOpen?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
 function toggleQuestSection(sec, cnt, el) {var key='_questFold'+sec.charAt(0).toUpperCase()+sec.slice(1);var ids={urgent:'qsUrgent',normal:'qsNormal',claimed:'qsClaimed'};window[key]=!window[key];var div=document.getElementById(ids[sec]);if(div)div.style.display=window[key]?'none':'';if(el)el.textContent=el.textContent.replace(/[▾▴]/,'')+(window[key]?' ▾':' ▴');}
 function toggleCardExpand(name, ctx) { if(!window._cardExpanded)window._cardExpanded={}; window._cardExpanded[name+'_'+ctx]=!window._cardExpanded[name+'_'+ctx]; var m={village:'renderVillageQuestHall',questboard:'renderQuestBoard',workspace:'renderWorkspace',member:null,taskhall:null}; var fn=m[ctx]; if(fn&&typeof window[fn]==='function')window[fn](); }
