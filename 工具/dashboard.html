@@ -3007,36 +3007,26 @@ function renderWorkspace() {
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
     html += '</div>';
   } else if (workspacePanel === 'items') {
-    // ── Inventory ──
+    // ── 我的物品（三卡片布局，与集市同步）──
     var myItems = (data.inventory || []).filter(function(it) { return it.owner === currentUser.name; });
-    var invFilter = window._invFilter || 'all';
-    var filteredItems = invFilter === 'all' ? myItems : myItems.filter(function(it) { return it.status === invFilter; });
-    var invCounts = { all: myItems.length, unlisted: 0, listed: 0, sold: 0, display: 0 };
-    myItems.forEach(function(it) { invCounts[it.status] = (invCounts[it.status] || 0) + 1; });
-    html += '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">🎒 我的物品</h3><button class="btn pri" onclick="showAddItem()" style="font-size:.75rem;padding:4px 12px">＋ 添加物品</button></div>';
-    html += '<div style="display:flex;gap:3px;margin-bottom:12px;flex-wrap:wrap">';
-    [{v:'all',l:'全部'},{v:'unlisted',l:'⚪未上架'},{v:'listed',l:'🟢上架中'},{v:'sold',l:'📦已售'},{v:'display',l:'👁️展示'}].forEach(function(f) {
-      html += '<button class="btn'+(invFilter===f.v?' pri':'')+'" onclick="window._invFilter=\''+f.v+'\';renderWorkspace()" style="font-size:.7rem;padding:3px 8px">'+f.l+(invCounts[f.v]>0?' <b>'+invCounts[f.v]+'</b>':'')+'</button>';
-    });
+    var listedMine = myItems.filter(function(it) { return it.status === 'listed'; });
+    var unlistedMine = myItems.filter(function(it) { return it.status === 'unlisted' || it.status === 'display'; });
+    var addFormOpen = window._invAddFormOpen || false;
+
+    // Card 1: 已上架
+    html += '<div class="card" style="padding:10px 12px"><div style="font-weight:600;font-size:.8rem;margin-bottom:6px">🟢 已上架（'+listedMine.length+'件）</div>';
+    html += _renderListedItems(listedMine);
     html += '</div>';
-    if (filteredItems.length === 0) {
-      html += '<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:2rem;margin-bottom:8px">🎒</div><div>还没有物品，点上方按钮添加吧</div></div>';
-    } else {
-      filteredItems.forEach(function(it) {
-        var catIcons = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
-        var statusBadge = {unlisted:'<span style="font-size:.65rem;background:#f0ece4;padding:2px 6px;border-radius:4px">⚪ 未上架</span>',listed:'<span style="font-size:.65rem;background:#e0f0e0;padding:2px 6px;border-radius:4px">🟢 上架中</span>',sold:'<span style="font-size:.65rem;background:#e8e0f0;padding:2px 6px;border-radius:4px">📦 已售</span>',display:'<span style="font-size:.65rem;background:#e0e8f8;padding:2px 6px;border-radius:4px">👁️ 展示</span>'};
-        html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.82rem">';
-        html += '<span style="font-size:1.3rem">'+(catIcons[it.category]||'📦')+'</span>';
-        html += '<div style="flex:1;min-width:0"><div style="font-weight:600">'+esc(it.name)+'</div><div style="font-size:.7rem;color:var(--muted)">'+esc(it.category)+' · '+(it.price>0?'💎 '+it.price+' NT':'免费')+' · '+esc(it.created_at||'')+'</div></div>';
-        html += statusBadge[it.status||'unlisted']+'';
-        html += '<div style="display:flex;gap:3px;flex-shrink:0">';
-        if (it.status === 'unlisted' || it.status === 'display') html += '<button class="btn green" onclick="listItemToBazaar(\''+escAttr(it.id)+'\')" style="font-size:.65rem;padding:2px 6px">🔼上架</button>';
-        if (it.status === 'listed') html += '<button class="btn" onclick="unlistItemFromBazaar(\''+escAttr(it.id)+'\')" style="font-size:.65rem;padding:2px 6px">⬇️下架</button>';
-        html += '<button class="btn" onclick="editItemUI(\''+escAttr(it.id)+'\')" style="font-size:.65rem;padding:2px 6px">📝</button>';
-        html += '</div></div>';
-      });
-    }
+
+    // Card 2: 未上架
+    html += '<div class="card" style="padding:10px 12px"><div style="font-weight:600;font-size:.8rem;margin-bottom:6px">📦 未上架（'+unlistedMine.length+'件）</div>';
+    html += '<input placeholder="🔍 搜索…" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card);margin-bottom:6px" oninput="var q=this.value.toLowerCase();var els=document.querySelectorAll(\'.ws-wh-item\');els.forEach(function(e){e.style.display=(!q||(e.dataset.n||\'\').indexOf(q)!==-1)?\'\':\'none\'})">';
+    html += _renderUnlistedGrid(unlistedMine);
     html += '</div>';
+
+    // Card 3: 添加物品
+    html += '<button class="btn" onclick="window._invAddFormOpen=!window._invAddFormOpen;renderWorkspace()" style="font-size:.72rem;padding:4px 12px;width:100%;margin-bottom:6px">'+(addFormOpen?'✕ 收起':'＋ 添加物品')+'</button>';
+    if (addFormOpen) html += _renderAddItemForm('workspace');
   } else {
     // ── Tasks (default) ──
     // Pending reviews on top
@@ -3865,37 +3855,25 @@ function renderHubSlideContent(page) {
 
     // ── 仓库面板（toggle打开时）──
     if (bazaarAddOpen) {
-      var warehouseItems = (data.inventory || []).filter(function(it) { return it.owner === (currentUser?currentUser.name:'') && (it.status === 'unlisted' || it.status === 'display'); });
+      var myItems = (data.inventory || []).filter(function(it) { return it.owner === (currentUser?currentUser.name:'') && it.status !== 'sold'; });
+      var listedMine = myItems.filter(function(it) { return it.status === 'listed'; });
+      var unlistedMine = myItems.filter(function(it) { return it.status === 'unlisted' || it.status === 'display'; });
       var addFormOpen = window._bazaarAddFormOpen || false;
 
-      // 仓库网格
-      h += '<div style="font-weight:600;font-size:.76rem;margin-bottom:6px">📦 我的仓库（' + warehouseItems.length + '件未上架）</div>';
-      h += '<input placeholder="🔍 搜索我的物品…" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-size:.75rem;font-family:var(--font);background:var(--card);margin-bottom:8px" oninput="var q=this.value.toLowerCase();var els=document.querySelectorAll(\'.bz-wh-item\');els.forEach(function(e){e.style.display=(!q||(e.dataset.name||\'\').indexOf(q)!==-1)?\'\':\'none\'})">';
-      if (warehouseItems.length === 0) {
-        h += '<div style="text-align:center;color:var(--muted);padding:20px 0;font-size:.75rem">仓库为空</div>';
-      } else {
-        h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px">';
-        warehouseItems.forEach(function(it) {
-          h += '<div class="bz-wh-item" data-name="'+escAttr(it.name.toLowerCase())+'" onclick="bazaarQuickList(\''+escAttr(it.id)+'\')" style="cursor:pointer;background:#fafaf5;border:1px solid var(--border);border-radius:6px;padding:8px 6px;text-align:center;font-size:.68rem;transition:.1s">';
-          h += '<div style="font-size:1.2rem">'+(catIcons[it.category]||'📦')+'</div>';
-          h += '<div style="font-weight:600;margin-top:2px">'+esc(it.name)+'</div>';
-          h += '<div style="color:var(--muted)">'+(it.price>0?it.price+' NT':'免费')+'</div>';
-          h += '<div style="font-size:.6rem;color:var(--accent)">点此上架</div>';
-          h += '</div>';
-        });
-        h += '</div>';
-      }
+      // Card 1: 已上架（紧凑列表）
+      h += '<div class="card" style="padding:8px 10px;margin-bottom:8px"><div style="font-weight:600;font-size:.76rem;margin-bottom:4px">🟢 已上架（'+listedMine.length+'件）</div>';
+      h += _renderListedItems(listedMine);
+      h += '</div>';
 
-      // [＋ 添加物品] 按钮（仓库下方）
-      h += '<button class="btn" onclick="window._bazaarAddFormOpen=!window._bazaarAddFormOpen;openHubSub(\'bazaar\')" style="font-size:.72rem;padding:4px 12px;width:100%;margin-bottom:6px">'+(addFormOpen?'✕ 收起添加':'＋ 添加物品到仓库')+'</button>';
+      // Card 2: 未上架（图标网格）
+      h += '<div class="card" style="padding:8px 10px;margin-bottom:8px"><div style="font-weight:600;font-size:.76rem;margin-bottom:4px">📦 未上架（'+unlistedMine.length+'件）</div>';
+      h += '<input placeholder="🔍 搜索…" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card);margin-bottom:6px" oninput="var q=this.value.toLowerCase();var els=document.querySelectorAll(\'.bz-wh-item\');els.forEach(function(e){e.style.display=(!q||(e.dataset.n||\'\').indexOf(q)!==-1)?\'\':\'none\'})">';
+      h += _renderUnlistedGrid(unlistedMine);
+      h += '</div>';
 
-      // 第三层：添加物品表单
-      if (addFormOpen) {
-        h += '<div style="background:#fef9ee;border:1px solid #e8d5a0;border-radius:8px;padding:10px 12px;margin-bottom:10px">';
-        h += '<div style="font-weight:600;font-size:.74rem;margin-bottom:6px">＋ 添加物品（添加到仓库后需点击上架）</div>';
-        h += '<div style="display:flex;gap:4px;margin-bottom:4px"><input id="bazaarQuickName" placeholder="物品名称" style="flex:1;padding:5px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card)"><select id="bazaarQuickCat" style="width:80px;padding:5px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card)">'+['艺术品','文具','手工','书籍','工具','食材','交换','其他'].map(function(c){return '<option>'+c+'</option>';}).join('')+'</select><input id="bazaarQuickPrice" type="number" value="0" placeholder="价格" style="width:60px;padding:5px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card)"></div>';
-        h += '<button class="btn pri" onclick="bazaarWarehouseAdd()" style="font-size:.7rem;padding:3px 12px;width:100%">确认添加到仓库</button></div>';
-      }
+      // Card 3: 添加物品
+      h += '<button class="btn" onclick="window._bazaarAddFormOpen=!window._bazaarAddFormOpen;openHubSub(\'bazaar\')" style="font-size:.72rem;padding:4px 12px;width:100%;margin-bottom:6px">'+(addFormOpen?'✕ 收起':'＋ 添加物品')+'</button>';
+      if (addFormOpen) h += _renderAddItemForm('bazaar');
     }
 
     // ── 买卖列表（toggle收起时）──
@@ -4592,7 +4570,63 @@ function showItemPicker(target, el) {
   setTimeout(function() { document.getElementById('itemPickerSearch').focus(); }, 100);
 }
 function closeItemPicker() { document.getElementById('itemPickerDropdown').classList.add('hidden'); }
-// 集市快速操作
+// ═══ 物品渲染共用（集市+工作台同步）═══
+var _CAT_ICONS = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
+
+function _renderListedItems(items) {
+  var h = '';
+  if (!items || items.length === 0) { h += '<div style="text-align:center;color:var(--muted);padding:12px;font-size:.72rem">暂无已上架物品</div>'; return h; }
+  items.forEach(function(it) {
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px dotted var(--border);font-size:.75rem">';
+    h += '<span>'+(_CAT_ICONS[it.category]||'📦')+' <b>'+esc(it.name)+'</b><span style="color:var(--muted);margin-left:4px;font-size:.65rem">'+esc(it.category)+'</span></span>';
+    h += '<span style="display:flex;align-items:center;gap:4px"><span style="color:var(--accent);font-weight:600">'+it.price+' NT</span>';
+    h += '<button class="btn" onclick="unlistItemFromBazaar(\''+escAttr(it.id)+'\');_refreshItemViews()" style="font-size:.62rem;padding:2px 6px">⬇️下架</button></span></div>';
+  });
+  return h;
+}
+function _renderUnlistedGrid(items) {
+  var h = '';
+  if (!items || items.length === 0) { h += '<div style="text-align:center;color:var(--muted);padding:12px;font-size:.72rem">仓库为空</div>'; return h; }
+  h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">';
+  items.forEach(function(it) {
+    h += '<div onclick="listItemToBazaar(\''+escAttr(it.id)+'\');_refreshItemViews()" style="cursor:pointer;background:#fafaf5;border:1px solid var(--border);border-radius:6px;padding:8px 6px;text-align:center;font-size:.68rem">';
+    h += '<div style="font-size:1.2rem">'+(_CAT_ICONS[it.category]||'📦')+'</div>';
+    h += '<div style="font-weight:600;margin-top:2px">'+esc(it.name)+'</div>';
+    h += '<div style="color:var(--muted)">'+(it.price>0?it.price+' NT':'免费')+'</div>';
+    h += '<div style="font-size:.6rem;color:var(--accent)">点此上架</div></div>';
+  });
+  h += '</div>';
+  return h;
+}
+function _renderAddItemForm(source) {
+  var h = '';
+  h += '<div style="background:#fef9ee;border:1px solid #e8d5a0;border-radius:8px;padding:10px 12px">';
+  h += '<div style="font-weight:600;font-size:.74rem;margin-bottom:6px">＋ 添加物品到仓库</div>';
+  h += '<div style="display:flex;gap:4px;margin-bottom:4px"><input id="addItemQuickName" placeholder="物品名称" style="flex:1;padding:5px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card)"><select id="addItemQuickCat" style="width:80px;padding:5px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card)">'+['艺术品','文具','手工','书籍','工具','食材','交换','其他'].map(function(c){return '<option>'+c+'</option>';}).join('')+'</select><input id="addItemQuickPrice" type="number" value="0" placeholder="价格" style="width:60px;padding:5px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card)"></div>';
+  h += '<button class="btn pri" onclick="_addItemToWarehouse(\''+(source||'workspace')+'\')" style="font-size:.7rem;padding:3px 12px;width:100%">确认添加</button></div>';
+  return h;
+}
+function _addItemToWarehouse(source) {
+  if (!currentUser) { alert('请先登录'); return; }
+  var n = (document.getElementById('addItemQuickName')||{}).value||''; if (!n.trim()) { alert('请输入物品名称'); return; }
+  var cat = (document.getElementById('addItemQuickCat')||{}).value||'其他';
+  var price = parseInt((document.getElementById('addItemQuickPrice')||{}).value) || 0;
+  if (!data.inventory) data.inventory = [];
+  data.inventory.push({ id:'bi_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), owner:currentUser.name, name:n.trim(), category:cat, price:price, description:'', status:'unlisted', created_at:new Date().toISOString().slice(0,10), listed_at:'', sold_to:'', sold_at:'' });
+  localStorage.setItem('camp_data',JSON.stringify(data));
+  if (source === 'bazaar') { window._bazaarAddFormOpen = false; openHubSub('bazaar'); }
+  else { window._invAddFormOpen = false; renderWorkspace(); }
+  renderHubDropdown();
+  setStatus('已添加到仓库：'+n.trim());
+}
+function _refreshItemViews() {
+  renderHubDropdown();
+  if (window._hubSubPage === 'bazaar') openHubSub('bazaar');
+  var ws = document.getElementById('workspaceContent');
+  if (ws && workspacePanel === 'items') renderWorkspace();
+}
+
+// 集市快速操作（保留兼容）
 function bazaarWarehouseAdd() {
   if (!currentUser) { alert('请先登录'); return; }
   var name = (document.getElementById('bazaarQuickName')||{}).value||''; if (!name.trim()) { alert('请输入物品名称'); return; }
