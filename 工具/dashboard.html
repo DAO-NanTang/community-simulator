@@ -3861,15 +3861,21 @@ function renderHubSlideContent(page) {
       h += '<div style="text-align:center;color:var(--muted);padding:30px 0">📭 暂无物品在售</div>';
     } else {
       owners.forEach(function(owner) {
-        h += '<div style="font-weight:600;font-size:.78rem;margin:8px 0 4px;display:flex;align-items:center;gap:6px">'+avatarCircle(owner,22,0)+' '+esc(owner)+'</div>';
+        h += '<div style="font-weight:600;font-size:.72rem;margin:6px 0 2px;display:flex;align-items:center;gap:4px">'+avatarCircle(owner,16,0)+' '+esc(owner)+'</div>';
         byOwner[owner].forEach(function(it) {
           var catIcons = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
-          h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px dotted var(--border);font-size:.78rem">';
-          h += '<span>'+(catIcons[it.category]||'📦')+' <b>'+esc(it.name)+'</b><span style="color:var(--muted);margin-left:4px">'+esc(it.category)+'</span></span>';
-          h += '<span style="display:flex;align-items:center;gap:6px"><span style="color:var(--accent);font-weight:600">'+it.price+' NT</span>';
-          if (currentUser && currentUser.name !== it.owner) h += '<button class="btn green" onclick="showPurchase(\''+escAttr(it.id)+'\')" style="font-size:.65rem;padding:2px 8px">购买</button>';
-          else if (currentUser && currentUser.name === it.owner) h += '<span style="font-size:.68rem;color:var(--muted)">我的</span>';
+          var catIcon = catIcons[it.category]||'📦';
+          h += '<div style="padding:4px 0;border-bottom:1px dotted var(--border)">';
+          // Row 1: icon + name + price + buy
+          h += '<div style="display:flex;justify-content:space-between;align-items:center">';
+          h += '<span style="font-size:.78rem">'+catIcon+' <b>'+esc(it.name)+'</b></span>';
+          h += '<span style="display:flex;align-items:center;gap:6px"><span style="color:var(--accent);font-weight:600;font-size:.78rem">'+it.price+' NT</span>';
+          if (currentUser && currentUser.name !== it.owner) h += '<button class="btn green" onclick="showPurchase(\''+escAttr(it.id)+'\')" style="font-size:.62rem;padding:2px 6px">购买</button>';
+          else if (currentUser && currentUser.name === it.owner) h += '<span style="font-size:.65rem;color:var(--muted)">我的</span>';
           h += '</span></div>';
+          // Row 2: description
+          if (it.description) h += '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">'+esc(it.description)+'</div>';
+          h += '</div>';
         });
       });
     }
@@ -4006,10 +4012,18 @@ function openHubSub(page, el) {
   var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
 
-  // Render content first (so panel gets correct height)
+  // Show + anchor to 一级菜单
+  if (sp) sp.classList.add('show');
+  document.getElementById('hubSlideBackdrop').classList.add('show');
+  _repositionHubSub();
+  // Render content
   renderHubSlideContent(page);
+}
 
-  // Position sub-panel: 一级菜单左侧, 始终跟随(缩放安全)
+// 跟随一级菜单锚点重定位（resize安全）
+function _repositionHubSub() {
+  var sp = document.getElementById('hubSubPanel');
+  if (!sp || !sp.classList.contains('show')) return;
   var menu = document.getElementById('hubMenu');
   if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
   if (menu && sp) {
@@ -4019,11 +4033,8 @@ function openHubSub(page, el) {
     sp.style.right = 'auto';
     sp.style.maxHeight = Math.min(500, window.innerHeight - mr.top - 20) + 'px';
   }
-
-  // Show sub panel + backdrop, keep dropdown visible
-  if (sp) sp.classList.add('show');
-  document.getElementById('hubSlideBackdrop').classList.add('show');
 }
+window.addEventListener('resize', _repositionHubSub);
 
 function closeHubSlide() {
   window._hubSubPage = '';
@@ -4045,16 +4056,19 @@ function renderBazaarContent() {
     h += '<div class="card" style="text-align:center;padding:40px"><div style="font-size:2rem">📭</div><div style="color:var(--muted)">暂无物品在售</div></div>';
   } else {
     owners.forEach(function(owner) {
-      h += '<div class="card"><h3 style="display:flex;align-items:center;gap:8px">'+avatarCircle(owner,24,0)+' '+esc(owner)+'</h3>';
+      h += '<div class="card"><h3 style="display:flex;align-items:center;gap:4px;font-size:.8rem">'+avatarCircle(owner,16,0)+' '+esc(owner)+'</h3>';
       byOwner[owner].forEach(function(it) {
         var catIcons = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
         var isMine = currentUser && currentUser.name === it.owner;
-        h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dotted var(--border)">';
-        h += '<span style="font-size:1.4rem">'+(catIcons[it.category]||'📦')+'</span>';
-        h += '<div style="flex:1;min-width:0"><div style="font-weight:600">'+esc(it.name)+'</div><div style="font-size:.72rem;color:var(--muted)">'+(it.description?esc(it.description):esc(it.category))+'</div></div>';
-        h += '<span style="font-weight:700;color:var(--accent);white-space:nowrap">💎 '+it.price+' NT</span>';
-        if (!isMine) h += '<button class="btn green" onclick="showPurchase(\''+escAttr(it.id)+'\')" style="font-size:.7rem;padding:3px 10px">购买</button>';
-        else h += '<span style="font-size:.68rem;color:var(--muted)">我的</span>';
+        h += '<div style="padding:5px 0;border-bottom:1px dotted var(--border)">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center">';
+        h += '<span style="font-size:.8rem">'+(catIcons[it.category]||'📦')+' <b>'+esc(it.name)+'</b></span>';
+        h += '<span style="display:flex;align-items:center;gap:6px"><span style="font-weight:700;color:var(--accent);font-size:.78rem">'+it.price+' NT</span>';
+        if (!isMine) h += '<button class="btn green" onclick="showPurchase(\''+escAttr(it.id)+'\')" style="font-size:.62rem;padding:2px 6px">购买</button>';
+        else h += '<span style="font-size:.65rem;color:var(--muted)">我的</span>';
+        h += '</span></div>';
+        if (it.description) h += '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">'+esc(it.description)+'</div>';
+        h += '</div>';
         h += '</div>';
       });
       h += '</div>';
