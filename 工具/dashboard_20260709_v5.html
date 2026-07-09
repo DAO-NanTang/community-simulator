@@ -1538,13 +1538,8 @@ var TX_TYPES = {
   TEAHOUSE_POST:    'teahouse_post',
   GAME_FEE:         'game_fee',
   ADMIN_ADJUST:     'admin_adjust',
-  SEASON_BONUS:     'season_bonus',
-  AUCTION_DEPOSIT:  'auction_deposit',
-  AUCTION_REFUND:   'auction_refund',
-  AUCTION_SETTLE:   'auction_settle'
+  SEASON_BONUS:     'season_bonus'
 };
-var AUCTION_ESCROW = '拍卖行托管';
-var DEFAULT_COUNCIL_ROOM = { url: 'https://meet.nantang.org/nbc', key: 'nbc2026' };
 
 // ═══ 会计系统：统一记账入口 ═══
 function recordTransaction(opts) {
@@ -1637,9 +1632,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!data.inn_bookings) data.inn_bookings = [];
     if (!data.teahouse_posts) data.teahouse_posts = [];
     if (!data.game_sessions) data.game_sessions = [];
-    if (!data.auctions) data.auctions = [];
-    if (!data.council_meetings) data.council_meetings = [];
-    if (!data.council_room) data.council_room = DEFAULT_COUNCIL_ROOM;
     // 种子测试数据：首次加载时自动填充示例物品
     if (!data.inventory || data.inventory.length === 0) {
       data.inventory = [
@@ -2628,7 +2620,7 @@ function computeInboxMessages() {
   }
 
   // 社区空间提醒（素社/桌游/客栈，对所有角色生效）
-  msgs = msgs.concat(computeMealReminders(), computeGameReminders(), computeInnReminders(), computeCouncilReminders(), computeAuctionReminders());
+  msgs = msgs.concat(computeMealReminders(), computeGameReminders(), computeInnReminders());
 
   // Assign unique IDs for per-message read tracking
   msgs.forEach(function(m, i) {
@@ -2663,14 +2655,12 @@ function renderInbox() {
   var TYPE_ICON = {
     submitted: '🆕', overdue: '⚠️', progress_low: '📉', pool_low: '🔴',
     review_approved: '✅', review_rejected: '❌', deadline_close: '⏰', nt_received: '💰',
-    meal_reminder: '⏰', meal_time: '🍽️', meal_pay: '💳', game_soon: '🎲', inn_checkin: '🏨', inn_checkout: '🧳',
-    meeting_notice: '🗳️', meeting_soon: '⏰', auction_soon: '🔨', auction_won: '🎉', auction_refunded: '💰'
+    meal_reminder: '⏰', meal_time: '🍽️', meal_pay: '💳', game_soon: '🎲', inn_checkin: '🏨', inn_checkout: '🧳'
   };
   var TYPE_LABEL = {
     submitted: '待审核', overdue: '逾期', progress_low: '进度掉队', pool_low: 'NT池预警',
     review_approved: '审核通过', review_rejected: '审核退回', deadline_close: '截止临近', nt_received: 'NT到账',
-    meal_reminder: '订餐提醒', meal_time: '用餐提醒', meal_pay: '用餐支付', game_soon: '桌游开局', inn_checkin: '入住', inn_checkout: '退房',
-    meeting_notice: '开会通知', meeting_soon: '会议临近', auction_soon: '拍卖即将开始', auction_won: '拍得物品', auction_refunded: '保证金退回'
+    meal_reminder: '订餐提醒', meal_time: '用餐提醒', meal_pay: '用餐支付', game_soon: '桌游开局', inn_checkin: '入住', inn_checkout: '退房'
   };
 
   function renderMsg(m) {
@@ -2702,11 +2692,6 @@ function renderInbox() {
       case 'nt_received':
         body = '收到 NT ' + m.amount.toLocaleString() + (m.task ? '（来自「' + esc(m.task) + '」）' : '');
         break;
-      case 'meeting_notice': body = '🗳️ 你被邀请参加「'+esc(m.topic)+'」'+esc(m.time||''); break;
-      case 'meeting_soon': body = '⏰「'+esc(m.topic)+'」30分钟后开始'; break;
-      case 'auction_soon': body = '🔨「'+esc(m.title)+'」拍卖会即将在 '+esc(m.location||'')+' 开始'; break;
-      case 'auction_won': body = '🎉 你以 '+m.price+' NT 拍得「'+esc(m.title)+'」'; break;
-      case 'auction_refunded': body = '💰 拍卖结束，保证金 '+m.deposit+' NT 已退回'; break;
       default: body = m.text || '';
     }
     return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px" onclick="jumpFromInbox(\'' + escAttr(m.jump.tab) + '\', ' + (m.jump.highlight ? JSON.stringify(m.jump.highlight).replace(/"/g, '&quot;') : 'null') + ', \'' + escAttr(m.id) + '\')" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">' +
@@ -3854,180 +3839,6 @@ function closeHubSlide() {
   if (bd) bd.classList.remove('show');
 }
 
-// ═══ 🥕 萝卜议事厅 ═══
-function renderCouncilHub() {
-  var room = data.council_room || DEFAULT_COUNCIL_ROOM;
-  var meetings = (data.council_meetings || []).slice().sort(function(a,b){ return (a.time||'').localeCompare(b.time||''); });
-  var upcoming = meetings.filter(function(m){ return m.time >= new Date().toISOString().slice(0,10); });
-  var h = '';
-  // 会议室入口
-  h += '<div class="card" style="padding:12px 14px;margin-bottom:10px"><div style="font-weight:600;margin-bottom:8px">🚪 进入议事会议室</div>';
-  h += '<div style="font-size:.78rem;color:var(--muted);margin-bottom:4px">地址：'+esc(room.url)+'</div>';
-  h += '<div style="display:flex;gap:6px"><input type="password" value="'+escAttr(room.key)+'" readonly style="flex:1;font-size:.75rem;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg)"><button class="btn" onclick="navigator.clipboard.writeText(\''+escAttr(room.key)+'\');this.textContent=\'✅\';setTimeout(function(){this.textContent=\'📋 复制密钥\'}.bind(this),1500)" style="font-size:.7rem;padding:4px 8px;white-space:nowrap">📋 复制密钥</button></div>';
-  h += '<button class="btn pri" onclick="window.open(\''+escAttr(room.url)+'\',\'_blank\')" style="font-size:.75rem;padding:6px 12px;margin-top:8px;width:100%">🚪 打开会议室 ↗</button>';
-  h += '</div>';
-  // 发起通知（toggle）
-  var showForm = window._councilFormOpen;
-  h += '<button class="btn" onclick="window._councilFormOpen=!window._councilFormOpen;openHubSub(\'council\')" style="font-size:.75rem;padding:5px 12px;width:100%;margin-bottom:8px">'+(showForm?'✕ 收起':'＋ 发起议事通知')+'</button>';
-  if (showForm) {
-    h += '<div class="card" style="padding:10px 14px;margin-bottom:10px"><div style="font-weight:600;margin-bottom:6px">＋ 发起议事通知</div>';
-    h += '<input id="councilTopic" placeholder="议题" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;margin-bottom:6px;box-sizing:border-box">';
-    h += '<div style="display:flex;gap:6px;margin-bottom:6px"><input type="date" id="councilDate" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"><input type="time" id="councilTime" value="20:00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"></div>';
-    h += '<textarea id="councilNote" placeholder="说明（可选）" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem;margin-bottom:6px;box-sizing:border-box;min-height:40px"></textarea>';
-    h += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">勾选参会人（将收到信箱通知）</div>';
-    h += '<div id="councilAttendees" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;max-height:120px;overflow-y:auto">';
-    var members = data.members || {};
-    Object.keys(members).sort().forEach(function(n){
-      h += '<label style="font-size:.72rem;cursor:pointer;display:flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid var(--border);border-radius:4px"><input type="checkbox" value="'+escAttr(n)+'" class="councilCb">'+esc(n)+'</label>';
-    });
-    h += '</div>';
-    h += '<label style="font-size:.72rem;cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:8px"><input type="checkbox" id="councilCopySelf" checked> 同时抄送我自己</label>';
-    h += '<button class="btn pri" onclick="createMeeting()" style="font-size:.75rem;padding:6px 14px;width:100%">📤 发布通知</button></div>';
-  }
-  // 近期会议
-  if (upcoming.length > 0) {
-    h += '<div style="font-weight:600;font-size:.78rem;margin-bottom:6px">📋 近期会议（'+upcoming.length+'场）</div>';
-    upcoming.forEach(function(m){
-      var isAttendee = currentUser && m.attendees.indexOf(currentUser.name) !== -1;
-      h += '<div class="card" style="padding:8px 12px;margin-bottom:6px;'+(isAttendee?'border-color:var(--accent);background:#fefdf6':'')+'"><div style="font-weight:600;font-size:.8rem">🗳️ '+esc(m.topic)+'</div><div style="font-size:.72rem;color:var(--muted)">发起：'+esc(m.host)+' · 🕐 '+esc(m.time)+(m.note?' · '+esc(m.note):'')+'</div><div style="font-size:.7rem;color:var(--muted)">参会：'+m.attendees.length+'人'+(isAttendee?'（含你）':'')+'</div></div>';
-    });
-  } else { h += '<div style="color:var(--muted);text-align:center;padding:20px">📭 暂无近期会议</div>'; }
-  return h;
-}
-function createMeeting() {
-  var topic = document.getElementById('councilTopic').value.trim(); if (!topic) { alert('请输入议题'); return; }
-  var date = document.getElementById('councilDate').value; if (!date) { alert('请选择日期'); return; }
-  var time = document.getElementById('councilTime').value || '20:00';
-  var note = document.getElementById('councilNote').value.trim();
-  var cbs = document.querySelectorAll('.councilCb:checked');
-  var attendees = []; cbs.forEach(function(cb){ attendees.push(cb.value); });
-  var copySelf = document.getElementById('councilCopySelf').checked;
-  if (copySelf && currentUser && attendees.indexOf(currentUser.name)===-1) attendees.push(currentUser.name);
-  if (attendees.length === 0) { alert('请至少勾选一位参会人'); return; }
-  if (!data.council_meetings) data.council_meetings = [];
-  data.council_meetings.push({ id:'cm_'+Date.now().toString(36), topic:topic, time:date+'T'+time, host:currentUser?currentUser.name:'', note:note, attendees:attendees, created_at:new Date().toISOString() });
-  localStorage.setItem('camp_data',JSON.stringify(data));
-  window._councilFormOpen = false;
-  openHubSub('council');
-}
-function computeCouncilReminders() {
-  var msgs = []; if (!currentUser) return msgs;
-  var now = new Date(); var today = now.toISOString().slice(0,10);
-  (data.council_meetings||[]).forEach(function(m){
-    if (m.attendees.indexOf(currentUser.name)===-1) return;
-    var mt = new Date(m.time); var diff = (mt - now) / 60000;
-    if (m.time >= today) {
-      if (diff <= 30 && diff > 0) msgs.push({ type:'meeting_soon', topic:m.topic, time:m.time, host:m.host, id:'council_'+m.id, createdAt:m.created_at, jump:null });
-      else if (diff > 30) msgs.push({ type:'meeting_notice', topic:m.topic, time:m.time, host:m.host, id:'council_'+m.id, createdAt:m.created_at, jump:null });
-    }
-  });
-  return msgs;
-}
-
-// ═══ 🔨 白菜拍卖行 ═══
-function renderAuctionHub() {
-  var auctions = (data.auctions||[]).slice().sort(function(a,b){ return (a.time||'').localeCompare(b.time||''); });
-  var active = auctions.filter(function(a){ return a.status==='signup'||a.status==='pending'; });
-  var showForm = window._auctionFormOpen;
-  var h = '';
-  // 进行中的拍卖会
-  if (active.length > 0) {
-    h += '<div style="font-weight:600;font-size:.78rem;margin-bottom:6px">🔥 进行中的拍卖会（'+active.length+'场）</div>';
-    active.forEach(function(a){
-      h += '<div class="card" style="padding:10px 14px;margin-bottom:8px"><div style="font-weight:600;font-size:.82rem">🔨 '+esc(a.title)+'</div>';
-      h += '<div style="font-size:.72rem;color:var(--muted)">主持：'+esc(a.host)+' · 🕐 '+esc(a.time)+' · 📍 '+esc(_locLabel(a.location))+'</div>';
-      h += '<div style="font-size:.72rem;color:var(--muted)">起拍 '+a.start_price+' NT · 保证金 '+a.deposit+' NT · 已报名 '+(a.bidders||[]).length+' 人</div>';
-      var isBidder = currentUser && (a.bidders||[]).some(function(b){ return b.name===currentUser.name; });
-      if (isBidder) h += '<span style="font-size:.7rem;color:var(--accent)">✅ 已报名</span> ';
-      else if (currentUser && a.status==='signup') h += '<button class="btn pri" onclick="showAuctionSignup(\''+a.id+'\')" style="font-size:.7rem;padding:3px 10px;margin-top:4px">🙋 报名参拍</button> ';
-      var isHost = currentUser && (currentUser.name===a.host||currentUser.role==='admin');
-      if (isHost && (a.status==='signup'||a.status==='pending')) h += '<button class="btn green" onclick="settleAuction(\''+a.id+'\')" style="font-size:.68rem;padding:2px 8px;margin-top:4px">🏁 结算</button> <button class="btn danger" onclick="passAuction(\''+a.id+'\')" style="font-size:.68rem;padding:2px 8px;margin-top:4px">🚫 流拍</button>';
-      if (a.status==='done') h += '<span style="font-size:.7rem;color:var(--green)">🏁 已成交 · '+esc(a.winner)+' · '+a.final_price+' NT</span>';
-      if (a.status==='passed') h += '<span style="font-size:.7rem;color:var(--muted)">🚫 已流拍</span>';
-      h += '</div>';
-    });
-  } else { h += '<div style="color:var(--muted);text-align:center;padding:20px">📭 暂无进行中的拍卖会</div>'; }
-  // 发起
-  h += '<button class="btn" onclick="window._auctionFormOpen=!window._auctionFormOpen;openHubSub(\'auction\')" style="font-size:.75rem;padding:5px 12px;width:100%;margin-bottom:8px">'+(showForm?'✕ 收起':'＋ 发起拍卖会')+'</button>';
-  if (showForm) {
-    h += '<div class="card" style="padding:10px 14px;margin-bottom:10px"><div style="font-weight:600;margin-bottom:6px">＋ 发起拍卖会</div>';
-    h += '<input id="aucTitle" placeholder="拍品名称" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;margin-bottom:6px;box-sizing:border-box">';
-    h += '<div style="display:flex;gap:6px;margin-bottom:6px"><input type="number" id="aucStartPrice" placeholder="起拍价 NT" min="1" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"><input type="number" id="aucDeposit" placeholder="保证金 NT" min="1" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"></div>';
-    h += '<div style="display:flex;gap:6px;margin-bottom:6px"><input type="date" id="aucDate" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"><input type="time" id="aucTime" value="20:00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"></div>';
-    h += '<select id="aucLocation" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem;margin-bottom:6px">'+getGameLocations().map(function(l){return '<option value="'+escAttr(l.id)+'">'+esc(l.label)+'</option>';}).join('')+'</select>';
-    h += '<textarea id="aucNote" placeholder="备注（可选）" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem;margin-bottom:6px;box-sizing:border-box;min-height:36px"></textarea>';
-    h += '<button class="btn pri" onclick="createAuction()" style="font-size:.75rem;padding:6px 14px;width:100%">发起拍卖会</button></div>';
-  }
-  // 我参与的
-  var myAuctions = auctions.filter(function(a){ return currentUser && ((a.bidders||[]).some(function(b){return b.name===currentUser.name;}) || a.host===currentUser.name); });
-  if (myAuctions.length > 0) {
-    h += '<div style="font-weight:600;font-size:.78rem;margin:10px 0 6px">📋 我参与的拍卖</div>';
-    myAuctions.forEach(function(a){
-      var isHost = currentUser && a.host===currentUser.name;
-      h += '<div class="card" style="padding:6px 10px;margin-bottom:4px;font-size:.75rem">'+esc(a.title)+' · '+esc(a.time)+(isHost?' · 主持中':' · 已报名')+'</div>';
-    });
-  }
-  return h;
-}
-function createAuction() {
-  var title = document.getElementById('aucTitle').value.trim(); if (!title) { alert('请输入拍品名称'); return; }
-  var sp = parseInt(document.getElementById('aucStartPrice').value)||0; if (sp<=0) { alert('请输入起拍价'); return; }
-  var dp = parseInt(document.getElementById('aucDeposit').value)||0; if (dp<=0) { alert('请输入保证金'); return; }
-  var date = document.getElementById('aucDate').value; if (!date) { alert('请选择日期'); return; }
-  var time = document.getElementById('aucTime').value||'20:00';
-  var loc = document.getElementById('aucLocation').value;
-  var note = document.getElementById('aucNote').value.trim();
-  if (!data.auctions) data.auctions = [];
-  data.auctions.push({ id:'auc_'+Date.now().toString(36), title:title, seller:currentUser?currentUser.name:'', host:currentUser?currentUser.name:'', start_price:sp, deposit:dp, time:date+'T'+time, location:loc, note:note, status:'signup', bidders:[], winner:'', final_price:0, created_at:new Date().toISOString() });
-  localStorage.setItem('camp_data',JSON.stringify(data));
-  window._auctionFormOpen = false;
-  openHubSub('auction');
-}
-function showAuctionSignup(id) {
-  var a = (data.auctions||[]).find(function(x){return x.id===id;}); if (!a||!currentUser) return;
-  var myNT = calcNtTotal(currentUser.name);
-  if (myNT < a.deposit) { alert('余额不足！需要保证金 '+a.deposit+' NT，当前余额：'+myNT.toLocaleString()); return; }
-  var anon = confirm('是否匿名报名？\n\n保证金 '+a.deposit+' NT 将被冻结。\n未中标全额退回，中标则抵扣货款。\n\n点「确定」= 实名报名\n点「取消」= 匿名报名');
-  if (!data.auctions) data.auctions = [];
-  var tx = recordTransaction({ type:TX_TYPES.AUCTION_DEPOSIT, from:currentUser.name, to:AUCTION_ESCROW, amount:a.deposit, ref_id:id, item_name:'保证金·'+a.title, scope:'personal' });
-  a.bidders.push({ name:currentUser.name, anon:!anon, deposit_tx:tx?tx.id:'' });
-  localStorage.setItem('camp_data',JSON.stringify(data));
-  openHubSub('auction');
-}
-function settleAuction(id) {
-  var a = (data.auctions||[]).find(function(x){return x.id===id;}); if (!a||a.status==='done'||a.status==='passed') return;
-  if (currentUser && currentUser.name!==a.host && (currentUser.role!=='admin')) { alert('仅主持人可结算'); return; }
-  var winner = prompt('中标人姓名：'); if (!winner) return;
-  var price = parseInt(prompt('成交价 (NT)：')); if (!price||price<=0) return;
-  // 退所有人保证金
-  (a.bidders||[]).forEach(function(b){ recordTransaction({ type:TX_TYPES.AUCTION_REFUND, from:AUCTION_ESCROW, to:b.name, amount:a.deposit, ref_id:id, item_name:'退保证金·'+a.title, scope:'personal' }); });
-  // 中标人付款
-  recordTransaction({ type:TX_TYPES.AUCTION_SETTLE, from:winner, to:a.seller, amount:price, ref_id:id, item_name:a.title, scope:'personal' });
-  a.winner = winner; a.final_price = price; a.status = 'done';
-  localStorage.setItem('camp_data',JSON.stringify(data));
-  openHubSub('auction');
-}
-function passAuction(id) {
-  var a = (data.auctions||[]).find(function(x){return x.id===id;}); if (!a||a.status==='done'||a.status==='passed') return;
-  if (currentUser && currentUser.name!==a.host && (currentUser.role!=='admin')) { alert('仅主持人可操作'); return; }
-  (a.bidders||[]).forEach(function(b){ recordTransaction({ type:TX_TYPES.AUCTION_REFUND, from:AUCTION_ESCROW, to:b.name, amount:a.deposit, ref_id:id, item_name:'退保证金·'+a.title, scope:'personal' }); });
-  a.status = 'passed';
-  localStorage.setItem('camp_data',JSON.stringify(data));
-  openHubSub('auction');
-}
-function computeAuctionReminders() {
-  var msgs = []; if (!currentUser) return msgs;
-  var now = new Date();
-  (data.auctions||[]).forEach(function(a){
-    var at = new Date(a.time); var diff = (at - now) / 60000;
-    var isBidder = (a.bidders||[]).some(function(b){ return b.name===currentUser.name; });
-    if (isBidder && diff <= 30 && diff > 0 && (a.status==='signup'||a.status==='pending')) msgs.push({ type:'auction_soon', title:a.title, time:a.time, location:a.location, id:'auc_'+a.id, createdAt:a.created_at, jump:null });
-    if (a.status==='done' && a.winner===currentUser.name) msgs.push({ type:'auction_won', title:a.title, price:a.final_price, id:'aucwon_'+a.id, createdAt:new Date().toISOString().slice(0,10), jump:null });
-    if (a.status==='done' && isBidder && a.winner!==currentUser.name) msgs.push({ type:'auction_refunded', title:a.title, deposit:a.deposit, id:'aucref_'+a.id, createdAt:new Date().toISOString().slice(0,10), jump:null });
-  });
-  return msgs;
-}
-
 function renderHubSlideContent(page) {
   var body = document.getElementById('hubSlideBody'); if (!body) return;
   var h = '';
@@ -4179,10 +3990,6 @@ function renderHubSlideContent(page) {
     h += renderTeahouseHub();
   } else if (page === 'games') {
     h += renderGamesHub();
-  } else if (page === 'council') {
-    h += renderCouncilHub();
-  } else if (page === 'auction') {
-    h += renderAuctionHub();
   } else {
     h += '<div style="text-align:center;color:var(--muted);padding:30px 0"><div style="font-size:2.5rem;margin-bottom:8px">🧭</div><div style="font-weight:600;font-size:.85rem">实景地图</div><div style="font-size:.72rem;margin-top:4px">真正的南塘村落地图 · 敬请期待</div></div>';
   }
@@ -4199,17 +4006,13 @@ function renderHubDropdown() {
   var openGames = (data.game_sessions || []).filter(function(g) { return g.status === 'open'; }).length;
   var teahouseCount = (data.teahouse_posts || []).length;
 
-  var activeAuctions = (data.auctions||[]).filter(function(a){return a.status==='signup'||a.status==='pending';}).length;
-  var upcomingMeetings = (data.council_meetings||[]).filter(function(m){return m.time>=new Date().toISOString().slice(0,10);}).length;
   var items = [
     { id:'map', icon:'🧭', label:'实景地图', info:'待开放', ok:false },
     { id:'inn', icon:'🏨', label:'客栈', info:confirmedGuests+'/'+totalBeds+'人', ok:true },
     { id:'canteen', icon:'🥬', label:'素社食堂', info:'午/晚餐', ok:true },
     { id:'bazaar', icon:'🏪', label:'集市', info:listedCount+'件在售', ok:true },
     { id:'teahouse', icon:'🍵', label:'茶馆', info:teahouseCount+'条', ok:true },
-    { id:'games', icon:'🎲', label:'桌游室', info:openGames+'局', ok:true },
-    { id:'auction', icon:'🔨', label:'白菜拍卖行', info:activeAuctions+'场', ok:true },
-    { id:'council', icon:'🥕', label:'萝卜议事厅', info:upcomingMeetings+'场', ok:true }
+    { id:'games', icon:'🎲', label:'桌游室', info:openGames+'局', ok:true }
   ];
 
   var html = '';
