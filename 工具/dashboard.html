@@ -432,7 +432,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
       <button class="btn" onclick="showLoginEntry()" style="margin-top:16px">← 返回</button>
     </div>
-    <div id="registerForm" class="hidden login-card" style="text-align:center;max-width:320px;padding:18px 20px">
+    <div id="registerForm" class="hidden login-card" style="text-align:center;max-width:380px;padding:18px 20px">
       <h2 id="registerTitle" style="font-size:1rem;margin-bottom:4px"></h2>
       <div style="margin:4px 0;cursor:pointer" id="regAvatarPreview"></div>
       <button class="btn" onclick="cycleRegAvatar()" style="font-size:.65rem;padding:2px 8px">🎨 换头像</button>
@@ -1122,19 +1122,6 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   </div>
 </main>
 
-<!-- Map Invite Card -->
-<div id="mapInviteCard" class="hidden" style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
-  <div class="login-card" style="text-align:center;max-width:320px">
-    <h3>🗺️ 实景地图</h3>
-    <p style="font-size:.8rem;color:var(--muted);margin:8px 0">输入 NPC 邀请码成为在地伙伴<br>或跳过直接浏览</p>
-    <input id="mapInviteInput" placeholder="邀请码（选填）" style="text-align:center">
-    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
-      <button class="btn" onclick="closeMapInvite()">跳过</button>
-      <button class="btn pri" onclick="submitMapInvite()">确认</button>
-    </div>
-  </div>
-</div>
-
 <!-- Village Modal: Activity Info -->
 <div id="villageModalActivity" class="village-modal hidden" onclick="if(event.target===this)closeVillageModal('activity')">
   <div class="vm-inner">
@@ -1371,6 +1358,8 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 </div>
 
 <!-- Contact Card --><div class="picker-dropdown hidden" id="contactCardDropdown"><div class="pk-header" style="display:flex;align-items:center;gap:8px;justify-content:space-between"><span id="contactCardTitle" style="font-weight:700;font-size:.85rem"></span><button onclick="closeContactCard()" style="background:none;border:none;font-size:1rem;cursor:pointer;color:var(--muted)">✕</button></div><div class="pk-list" id="contactCardBody" style="padding:4px 10px 10px"></div></div>
+
+<!-- Map Invite Card --><div id="mapInviteCard" class="hidden" style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)"><div class="login-card" style="text-align:center;max-width:320px"><h3>🗺️ 实景地图</h3><p style="font-size:.8rem;color:var(--muted);margin:8px 0">输入 NPC 邀请码成为在地伙伴<br>或跳过直接浏览</p><input id="mapInviteInput" placeholder="邀请码（选填）" style="text-align:center"><div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn" onclick="closeMapInvite()">跳过</button><button class="btn pri" onclick="submitMapInvite()">确认</button></div></div></div>
 
 <!-- Item Picker (集市选物品，复用 picker-dropdown 样式) -->
 <div class="picker-dropdown hidden" id="itemPickerDropdown">
@@ -1898,7 +1887,7 @@ function showRegister(role) {
   updateRegAvatarPreview();
 }
 function cycleRegAvatar() { regAvatarSeed = (regAvatarSeed + 1) % 60; updateRegAvatarPreview(); }
-function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 200, 0); }
+function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 40, 0); }
 function doRegister() {
   var name = document.getElementById('regName').value.trim();
   var password = document.getElementById('regPassword').value;
@@ -2180,40 +2169,11 @@ function showVillageSquare() {
   if (!currentUser) return;
   showPlazaPlaceholder(currentUser);
 }
-function showMapInvite() {
-  document.getElementById('mapInviteInput').value = '';
-  document.getElementById('mapInviteCard').classList.remove('hidden');
-}
-function closeMapInvite() {
-  document.getElementById('mapInviteCard').classList.add('hidden');
-  openVillageModal('map');
-}
-function submitMapInvite() {
-  var code = document.getElementById('mapInviteInput').value.trim().toUpperCase();
-  if (code) {
-    var worldCodes = getWorldCodes();
-    var inviteCodes = getInviteCodes();
-    if (worldCodes.includes(code)) {
-      saveWorldCodes(worldCodes.filter(function(c) { return c !== code; }));
-      upgradeToNPC(code);
-    } else if (inviteCodes.includes(code)) {
-      saveInviteCodes(inviteCodes.filter(function(c) { return c !== code; }));
-      upgradeToNPC(code);
-    } else {
-      alert('邀请码无效（冒险者池'+worldCodes.length+'个，NBC池'+inviteCodes.length+'个）');
-    }
-  }
-  closeMapInvite();
-}
-function upgradeToNPC(code) {
-  if (!currentUser) return;
-  currentUser.role = 'npc'; currentUser.world_id = code;
-  var users = getUsers();
-  if (users[currentUser.name]) { users[currentUser.name].role = 'npc'; users[currentUser.name].world_id = code; saveUsers(users); }
-  refreshUserHUD();
-  setStatus('已升级为在地伙伴！');
-}
 
+function showMapInvite(){document.getElementById('mapInviteInput').value='';document.getElementById('mapInviteCard').classList.remove('hidden');}
+function closeMapInvite(){document.getElementById('mapInviteCard').classList.add('hidden');openVillageModal('map');}
+function submitMapInvite(){var code=document.getElementById('mapInviteInput').value.trim().toUpperCase();if(code){var wc=getWorldCodes();var ic=getInviteCodes();if(wc.includes(code)){saveWorldCodes(wc.filter(function(c){return c!==code}));upgradeToNPC(code);}else if(ic.includes(code)){saveInviteCodes(ic.filter(function(c){return c!==code}));upgradeToNPC(code);}else{alert('邀请码无效（冒险者池'+wc.length+'个，NBC池'+ic.length+'个）');}}closeMapInvite();}
+function upgradeToNPC(code){if(!currentUser)return;currentUser.role='npc';currentUser.world_id=code;var users=getUsers();if(users[currentUser.name]){users[currentUser.name].role='npc';users[currentUser.name].world_id=code;saveUsers(users);}refreshUserHUD();var vi=document.getElementById('villageUserInfo');if(vi)vi.textContent='👤 '+currentUser.name+' · '+getUserTitle(currentUser);setStatus('已升级为在地伙伴！');}
 function enterVillagerMain() {
   hidePlazaPlaceholder();
   document.body.classList.add('adventurer-mode');
@@ -2221,10 +2181,9 @@ function enterVillagerMain() {
   document.getElementById('builderModeBar').classList.add('hidden');
   document.getElementById('adventurerTabs').classList.remove('hidden');
   document.getElementById('worldHUD').classList.remove('hidden');
-  // 云村民隐藏任务大厅按钮
-  var qb = document.querySelector('#adventurerTabs .tab[data-tab=\"questboard\"]');
+  var qb = document.querySelector('#adventurerTabs .tab[data-tab="questboard"]');
   if (qb) { if (currentUser && currentUser.role === 'visitor') qb.classList.add('hidden'); else qb.classList.remove('hidden'); }
-  switchTab('leaderboard');
+  switchTab('workspace');
 }
 
 // ── Village modals ──
@@ -2868,9 +2827,9 @@ function switchToPreview(role) {
     document.getElementById('builderModeBar').classList.add('hidden');
     document.getElementById('adventurerTabs').classList.remove('hidden');
     document.getElementById('worldHUD').classList.remove('hidden');
-    var qb = document.querySelector('#adventurerTabs .tab[data-tab=\"questboard\"]');
+    var qb = document.querySelector('#adventurerTabs .tab[data-tab="questboard"]');
     if (qb) qb.classList.toggle('hidden', role === 'visitor');
-    switchTab('leaderboard');
+    switchTab('workspace');
   }
   showPreviewBanner(role);
 }
@@ -3095,6 +3054,17 @@ function renderWorkspace() {
     html += '<div class="card"><h3>⚙️ 设置</h3>';
     html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" disabled style="width:100%"><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
+    var _identities = ["在地成员","原村民","共建者","冒险者","云村民"];
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">身份</label><br><select id="wsIdentity" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].identity=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;font-family:var(--font);background:var(--card)"><option value="">未设置</option>';
+    _identities.forEach(function(v){ html += '<option value="'+v+'"'+(memInfo.identity===v?' selected':'')+'>'+v+'</option>'; });
+    html += '</select></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">电话</label><br><input class="inline-input" value="'+escAttr(memInfo.phone||'')+'" id="wsPhone" style="width:100%" placeholder="138****6789" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].phone=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))"></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">住址</label><br><input class="inline-input" value="'+escAttr(memInfo.address||'')+'" id="wsAddress" style="width:100%" placeholder="福建南平…" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].address=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))"></div>';
+    var _skillsStr = (memInfo.skills||[]).join(", ");
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">技能标签（逗号分隔）</label><br><input class="inline-input" value="'+escAttr(_skillsStr)+'" id="wsSkills" style="width:100%" placeholder="水墨, 书法, 策展" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].skills=this.value.split(\x27,\x27).map(function(s){return s.trim()}).filter(Boolean);localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))"></div>';
+    var _pff = ["identity","phone","address","skills"]; var _pfc = _pff.filter(function(f){ return memInfo[f] || (f==="skills" ? memInfo.skills && memInfo.skills.length : false); }).length; var _pct = Math.round(_pfc/_pff.length*100);
+    html += '<div style="margin-bottom:10px;padding:8px;background:#fef9ee;border-radius:6px;border:1px solid #e8d5a0"><div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📋 档案完整度</div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:'+_pct+'%;background:var(--accent);border-radius:3px;transition:.3s"></div></div><div style="font-size:.65rem;color:var(--muted)">'+_pct+'%'+(_pct===100?' 🎉':'')+'</div></div>';
+
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
     html += '</div>';
@@ -4848,7 +4818,7 @@ function showItemPicker(target, el) {
 }
 function closeItemPicker() { document.getElementById('itemPickerDropdown').classList.add('hidden'); }
 
-// ═══ Phase1: Contact+Sidebar+Archive ═══
+// ═══ Phase1: Contact+Sidebar+Archive+MapInvite ═══
 // Phase 1 JS patch: contact card + sidebar + archive hub
 var _contactCardJustOpened = false;
 function showContactCard(name, el) {
@@ -6258,7 +6228,7 @@ function parseDateStr(s) {
 function avatarCircle(seed, size, styleIdx) {
   var name = typeof seed === 'string' ? seed : CHARACTER_SEEDS[seed % CHARACTER_SEEDS.length];
   var url = 'https://api.dicebear.com/7.x/' + AVATAR_STYLE + '/svg?seed=' + encodeURIComponent(name) + '&size=' + (size*2) + '&radius=50';
-  return '<span style="display:inline-block;width:'+size+'px;height:'+size+'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + url + '" width="' + size + '" height="' + size + '" style="border-radius:50%;object-fit:cover;display:block" alt="" onerror="this.style.opacity=\'0\'"></span>';
+  return '<span style="display:inline-block;width:'+size+'px;height:'+size+'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + url + '" width="' + (size*2) + '" height="' + (size*2) + '" style="border-radius:50%;object-fit:cover;display:block;width:100%;height:100%" alt="" onerror="this.style.opacity=\'0\'"></span>';
 }
 
 function avatarImg(seed, size, styleIdx) {
