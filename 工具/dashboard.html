@@ -1264,6 +1264,10 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <label>任务名称 *</label>
     <input type="text" id="postTaskName" placeholder="例如：工笔画临摹练习">
     <div style="display:flex;gap:10px">
+      <div style="flex:1"><label>类型</label><select id="postTaskType"><option value="支线">支线</option><option value="主线">主线</option><option value="共创">共创</option><option value="隐藏">隐藏</option><option value="身份">身份</option></select></div>
+      <div style="flex:1"><label>范围</label><select id="postTaskScope"><option value="camp">🏕️ 营地</option><option value="personal">✏️ 私人</option></select></div>
+    </div>
+    <div style="display:flex;gap:10px">
       <div style="flex:1"><label>NT 奖励</label><input type="number" id="postTaskPoints" value="5" min="1"></div>
       <div style="flex:1"><label>人数限制（0=不限）</label><input type="number" id="postTaskSlots" value="0" min="0"></div>
     </div>
@@ -4779,7 +4783,7 @@ function confirmPostTask() {
   if (reqFile) submitReqs.push({ type: 'file', min: fileCount });
   var reviewer = document.getElementById('postTaskReviewer').value.trim();
   var task = {
-    name: name, scope: 'personal', type: '日常', category: '其他',
+    name: name, scope: document.getElementById('postTaskScope').value, type: document.getElementById('postTaskType').value, category: '其他',
     points: points || 5, max_slots: parseInt(document.getElementById('postTaskSlots').value) || 0,
     start: document.getElementById('postTaskStart').value.trim(),
     deadline: document.getElementById('postTaskDeadline').value.trim(),
