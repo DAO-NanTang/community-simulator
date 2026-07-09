@@ -3861,21 +3861,24 @@ function renderHubSlideContent(page) {
       h += '<div style="text-align:center;color:var(--muted);padding:30px 0">📭 暂无物品在售</div>';
     } else {
       owners.forEach(function(owner) {
-        h += '<div style="font-weight:600;font-size:.72rem;margin:6px 0 2px;display:flex;align-items:center;gap:4px">'+avatarCircle(owner,16,0)+' '+esc(owner)+'</div>';
         byOwner[owner].forEach(function(it) {
           var catIcons = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
           var catIcon = catIcons[it.category]||'📦';
-          h += '<div style="padding:4px 0;border-bottom:1px dotted var(--border)">';
+          var isMine = currentUser && currentUser.name === it.owner;
+          // Avatar left, info right — 2-row compact layout
+          h += '<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px dotted var(--border)">';
+          h += '<div style="flex-shrink:0;padding-top:2px">'+avatarCircle(owner,28,0)+'</div>';
+          h += '<div style="flex:1;min-width:0">';
           // Row 1: icon + name + price + buy
           h += '<div style="display:flex;justify-content:space-between;align-items:center">';
           h += '<span style="font-size:.78rem">'+catIcon+' <b>'+esc(it.name)+'</b></span>';
-          h += '<span style="display:flex;align-items:center;gap:6px"><span style="color:var(--accent);font-weight:600;font-size:.78rem">'+it.price+' NT</span>';
-          if (currentUser && currentUser.name !== it.owner) h += '<button class="btn green" onclick="showPurchase(\''+escAttr(it.id)+'\')" style="font-size:.62rem;padding:2px 6px">购买</button>';
-          else if (currentUser && currentUser.name === it.owner) h += '<span style="font-size:.65rem;color:var(--muted)">我的</span>';
+          h += '<span style="display:flex;align-items:center;gap:4px"><span style="color:var(--accent);font-weight:600;font-size:.78rem;white-space:nowrap">'+it.price+' NT</span>';
+          if (!isMine) h += '<button class="btn green" onclick="showPurchase(\''+escAttr(it.id)+'\')" style="font-size:.62rem;padding:2px 6px;flex-shrink:0">购买</button>';
+          else h += '<span style="font-size:.65rem;color:var(--muted);white-space:nowrap">我的</span>';
           h += '</span></div>';
-          // Row 2: description
-          if (it.description) h += '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">'+esc(it.description)+'</div>';
-          h += '</div>';
+          // Row 2: owner name + description
+          h += '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">'+esc(owner)+(it.description?' · '+esc(it.description):'')+'</div>';
+          h += '</div></div>';
         });
       });
     }
@@ -4056,20 +4059,21 @@ function renderBazaarContent() {
     h += '<div class="card" style="text-align:center;padding:40px"><div style="font-size:2rem">📭</div><div style="color:var(--muted)">暂无物品在售</div></div>';
   } else {
     owners.forEach(function(owner) {
-      h += '<div class="card"><h3 style="display:flex;align-items:center;gap:4px;font-size:.8rem">'+avatarCircle(owner,16,0)+' '+esc(owner)+'</h3>';
+      h += '<div class="card" style="padding:12px">';
       byOwner[owner].forEach(function(it) {
         var catIcons = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
         var isMine = currentUser && currentUser.name === it.owner;
-        h += '<div style="padding:5px 0;border-bottom:1px dotted var(--border)">';
+        h += '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px dotted var(--border)">';
+        h += '<div style="flex-shrink:0;padding-top:2px">'+avatarCircle(owner,28,0)+'</div>';
+        h += '<div style="flex:1;min-width:0">';
         h += '<div style="display:flex;justify-content:space-between;align-items:center">';
-        h += '<span style="font-size:.8rem">'+(catIcons[it.category]||'📦')+' <b>'+esc(it.name)+'</b></span>';
-        h += '<span style="display:flex;align-items:center;gap:6px"><span style="font-weight:700;color:var(--accent);font-size:.78rem">'+it.price+' NT</span>';
-        if (!isMine) h += '<button class="btn green" onclick="showPurchase(\''+escAttr(it.id)+'\')" style="font-size:.62rem;padding:2px 6px">购买</button>';
-        else h += '<span style="font-size:.65rem;color:var(--muted)">我的</span>';
+        h += '<span style="font-size:.78rem">'+(catIcons[it.category]||'📦')+' <b>'+esc(it.name)+'</b></span>';
+        h += '<span style="display:flex;align-items:center;gap:4px"><span style="font-weight:700;color:var(--accent);font-size:.78rem;white-space:nowrap">'+it.price+' NT</span>';
+        if (!isMine) h += '<button class="btn green" onclick="showPurchase(\''+escAttr(it.id)+'\')" style="font-size:.62rem;padding:2px 6px;flex-shrink:0">购买</button>';
+        else h += '<span style="font-size:.65rem;color:var(--muted);white-space:nowrap">我的</span>';
         h += '</span></div>';
-        if (it.description) h += '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">'+esc(it.description)+'</div>';
-        h += '</div>';
-        h += '</div>';
+        h += '<div style="font-size:.65rem;color:var(--muted);margin-top:1px">'+esc(owner)+(it.description?' · '+esc(it.description):'')+'</div>';
+        h += '</div></div>';
       });
       h += '</div>';
     });
