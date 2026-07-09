@@ -1244,6 +1244,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div class="modal" style="max-width:480px">
     <h2>📤 提交任务</h2>
     <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px" id="submitTaskName">—</p>
+    <div id="submitRequirements" style="background:var(--bg);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:.75rem;display:none"></div>
     <label>📝 完成说明（必填）</label>
     <textarea id="submitNote" rows="4" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;background:var(--bg);color:var(--text);resize:vertical" placeholder="描述你完成的内容…"></textarea>
     <label style="margin-top:10px">🖼️ 图片链接（可选，一行一个）</label>
@@ -3069,6 +3070,9 @@ function renderWorkspace() {
     }
   });
 
+  // ── Camp tasks pending admin approval ──
+  var pendingCamp = (currentUser.role === 'admin') ? tasks.filter(function(t) { return t.status === 'pending_approval'; }) : [];
+
   // ── Role display ──
   var daysSince = user.created ? Math.ceil((new Date() - new Date(user.created)) / (1000*60*60*24)) : 0;
   var avatarSi = memInfo.avatar_seed !== undefined ? memInfo.avatar_seed : (user.avatar_seed || 0);
@@ -3184,13 +3188,26 @@ function renderWorkspace() {
     if (addFormOpen) html += _renderAddItemForm('workspace');
   } else {
     // ── Tasks (default) ──
+    // 🏛️ Camp approval (admin only)
+    if (pendingCamp.length > 0) {
+      html += '<div class="card" style="background:#f0f4ee;border-color:#7aaa5a;margin-bottom:12px"><h3>🏛️ 营队审批（' + pendingCamp.length + '项）</h3>';
+      pendingCamp.forEach(function(t) { var idx = tasks.indexOf(t);
+        html += '<div style="border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:.78rem;background:#fffdf5">'+
+          '<b>'+esc(t.name)+'</b> <span style="font-size:.72rem;color:var(--muted)">🏕️营地 · NT'+(t.points||0)+' · '+esc(t.type||'')+'</span>'+
+          '<div style="font-size:.7rem;color:var(--muted);margin:2px 0">发布者：'+esc(t.poster||'')+(t.reviewer?' · 审核人：'+esc(t.reviewer):'')+' · '+esc(t.posted_at||'')+'</div>'+
+          '<button class="btn green" onclick="approveCampTask('+idx+',true);renderWorkspace()" style="font-size:.68rem;padding:2px 10px">✅ 通过</button>'+
+          '<button class="btn danger" onclick="approveCampTask('+idx+',false);renderWorkspace()" style="font-size:.68rem;padding:2px 10px">❌ 退回</button>'+
+          '</div>';
+      });
+      html += '</div>';
+    }
     // Pending reviews on top
     if (myPosted.length > 0) {
       html += '<div class="card" style="background:#fef9ee;border-color:#e8c840;margin-bottom:12px"><h3>⏳ 待审核（' + myPosted.reduce(function(s,p){return s+p.pending.length;},0) + '项）</h3>';
       myPosted.forEach(function(p) {
         p.pending.forEach(function(c) {
           html += '<div style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:4px;font-size:.78rem;background:#fffdf5">'+
-            esc(c.name)+' → <b>'+esc(p.task.name)+'</b> · NT'+(p.task.points||0)+
+            esc(c.name)+' → <b>'+esc(p.task.name)+'</b> · '+(p.task.scope==='personal'?'✏️私人':'🏕️营地')+' · NT'+(p.task.points||0)+
             (c.submission ? '<div style="font-size:.7rem;color:var(--muted);margin:2px 0">📝 '+esc(c.submission.note||'')+'</div>' : '')+
             ' <button class="btn green" onclick="reviewTask('+p.idx+',\''+escAttr(c.name)+'\',\'approve\');renderWorkspace()" style="font-size:.65rem;padding:2px 8px">✅ 通过</button>'+
             ' <button class="btn danger" onclick="reviewTask('+p.idx+',\''+escAttr(c.name)+'\',\'reject\');renderWorkspace()" style="font-size:.65rem;padding:2px 8px">❌ 退回</button>'+
@@ -4717,6 +4734,8 @@ function renderNTAdmin() {
   if (ntTasks.length === 0) { html += '<div style="color:var(--muted);padding:8px">暂无已发布任务</div>'; }
   else { html += '<table style="width:100%;font-size:.78rem"><thead><tr><th style="text-align:left;padding:4px 8px">任务名</th><th style="padding:4px 8px">类型</th><th style="text-align:right;padding:4px 8px">NT</th><th style="text-align:right;padding:4px 8px">已领/限额</th><th style="padding:4px 8px">状态</th><th style="padding:4px 8px"></th></tr></thead><tbody>'; ntTasks.forEach(function(t) { var idx = tasks.indexOf(t); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var slots = t.max_slots > 0 ? activeClaimants.length + '/' + t.max_slots : '不限'; html += '<tr><td style="padding:3px 8px"><b>' + esc(t.name) + '</b></td><td style="padding:3px 8px">' + esc(t.type||'') + '</td><td style="text-align:right;padding:3px 8px">' + (t.points||0) + '</td><td style="text-align:right;padding:3px 8px">' + slots + '</td><td style="padding:3px 8px">' + (t.status||'active') + '</td><td style="padding:3px 8px">' + (t.type === '隐藏' ? '<button class="btn" onclick="triggerHiddenTask(' + idx + ')" style="font-size:.65rem;padding:2px 6px">🔓 触发</button>' : '') + '</td></tr>'; }); html += '</tbody></table>'; }
   var el = document.getElementById('ntadminTaskList'); if (el) el.innerHTML = html;
+  // NT管理审核列表：全局视图，供管理员/NT查看所有待审核项
+  // 个人日常审核入口在工作台「⏳ 待审核」分区
   var reviewItems = []; ntTasks.forEach(function(t) { var idx = tasks.indexOf(t); (t.claimants || []).forEach(function(c) { if (c.status === 'submitted') reviewItems.push({ task: t, idx: idx, claimant: c }); }); });
   html = '<h3 style="margin-top:16px">⏳ 待审核（' + reviewItems.length + '项）</h3>';
   if (reviewItems.length === 0) { html += '<div style="color:var(--muted);padding:8px">暂无待审核项</div>'; }
@@ -4755,6 +4774,22 @@ function showSubmitModal(idx) {
   document.getElementById('submitNote').value = '';
   document.getElementById('submitImages').value = '';
   document.getElementById('submitLinks').value = '';
+  // 显示发布者设置的提交要求
+  var reqs = t.submit_requirements || [];
+  var reqDiv = document.getElementById('submitRequirements');
+  if (reqs.length > 0) {
+    var reqHtml = '<div style="font-weight:600;margin-bottom:4px">📋 发布者要求提交：</div>';
+    reqs.forEach(function(r) {
+      var type = typeof r === 'string' ? r : r.type;
+      var min = (typeof r === 'object' && r.min) ? r.min : 1;
+      var label = type === 'note' ? '📝 文字说明（必填）' : type === 'photo' ? '📷 至少 '+min+' 张照片' : type === 'file' ? '📎 至少 '+min+' 个文件' : '';
+      reqHtml += '<div style="padding:2px 0">⬜ '+label+'</div>';
+    });
+    reqDiv.innerHTML = reqHtml;
+    reqDiv.style.display = '';
+  } else {
+    reqDiv.style.display = 'none';
+  }
   document.getElementById('submitTaskModal').classList.add('show');
 }
 function closeSubmitModal() { document.getElementById('submitTaskModal').classList.remove('show'); submitIdx = -1; }
@@ -5394,7 +5429,7 @@ document.addEventListener('click', function(e) {
 function showCampTask() { if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'builder')) { alert('仅管理员和共建者可发布营队任务'); return; } document.getElementById('campTaskName').value = ''; document.getElementById('campTaskType').value = '支线'; document.getElementById('campTaskCategory').value = '其他'; document.getElementById('campTaskPoints').value = '15'; document.getElementById('campTaskSlots').value = '0'; var today = new Date().toISOString().slice(0,10); document.getElementById('campTaskStart').value = today; document.getElementById('campTaskDeadline').value = ''; document.getElementById('campTaskReviewer').value = ''; document.getElementById('campReqNote').checked = true; document.getElementById('campReqPhoto').checked = false; document.getElementById('campReqFile').checked = false; document.getElementById('campReqPhotoCount').value = '1'; document.getElementById('campReqFileCount').value = '1'; document.getElementById('campTaskNote').value = ''; var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); document.getElementById('campTaskPoolInfo').textContent = '💡 使用营地资金池 · 剩余：' + (poolTotal - totalIssued).toLocaleString() + ' / ' + poolTotal.toLocaleString() + ' NT · 提交后需审核'; document.getElementById('campTaskModal').classList.add('show'); }
 function closeCampTaskModal() { document.getElementById('campTaskModal').classList.remove('show'); }
 function confirmCampTask() { var name = document.getElementById('campTaskName').value.trim(); if (!name) { alert('请输入任务名称'); return; } var points = parseInt(document.getElementById('campTaskPoints').value) || 0; var reviewer = document.getElementById('campTaskReviewer').value.trim(); var reqNote = document.getElementById('campReqNote').checked; var reqPhoto = document.getElementById('campReqPhoto').checked; var reqFile = document.getElementById('campReqFile').checked; var photoCount = parseInt(document.getElementById('campReqPhotoCount').value) || 1; var fileCount = parseInt(document.getElementById('campReqFileCount').value) || 1; var submitReqs = []; if (reqNote) submitReqs.push('note'); if (reqPhoto) submitReqs.push({ type: 'photo', min: photoCount }); if (reqFile) submitReqs.push({ type: 'file', min: fileCount }); var task = { name: name, scope: 'camp', type: document.getElementById('campTaskType').value, category: document.getElementById('campTaskCategory').value, points: points || 15, max_slots: parseInt(document.getElementById('campTaskSlots').value) || 0, start: document.getElementById('campTaskStart').value.trim(), deadline: document.getElementById('campTaskDeadline').value.trim(), note: document.getElementById('campTaskNote').value.trim(), source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '', posted_at: new Date().toISOString().slice(0,10), claimants: [], status: 'pending_approval', visibility: 'all', reviewer: reviewer, submit_requirements: submitReqs, min_season: 0 }; if (!data.tasks) data.tasks = []; data.tasks.push(task); localStorage.setItem('camp_data', JSON.stringify(data)); closeCampTaskModal(); renderNTAdmin(); setStatus('已提交审核：' + name); }
-function approveCampTask(idx, approve) { var t = data.tasks[idx]; if (!t || t.status !== 'pending_approval') return; if (approve) { t.status = 'active'; setStatus('✅ 已通过：' + t.name); } else { t.status = 'rejected'; t.review_note = prompt('退回原因（可选）：') || ''; setStatus('❌ 已退回：' + t.name); } localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); }
+function approveCampTask(idx, approve) { var t = data.tasks[idx]; if (!t || t.status !== 'pending_approval') return; if (approve) { t.status = 'active'; setStatus('✅ 已通过：' + t.name); } else { t.status = 'rejected'; t.review_note = prompt('退回原因（可选）：') || ''; setStatus('❌ 已退回：' + t.name); } localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); if (!document.getElementById('tab-workspace').classList.contains('hidden')) renderWorkspace(); }
 
 function doUpgrade() {
   var code = document.getElementById('upgradeCode').value.trim(); if (!code) return; if (!currentUser) return;
@@ -5426,7 +5461,7 @@ function switchTab(name, opts) {
     admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map','leaderboard'],
     builder: ['workspace','questboard','taskhall','timeline','budget','settlement','leaderboard'],
     adventurer: ['workspace','questboard','timeline','leaderboard'],
-    npc: ['questboard','timeline','leaderboard'], visitor: ['timeline','leaderboard']
+    npc: ['workspace','questboard','timeline','leaderboard'], visitor: ['workspace','timeline','leaderboard']
   };
   if (currentUser && !previewMode) {
     var allowed = roleTabs[currentUser.role];
