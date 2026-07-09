@@ -3054,15 +3054,12 @@ function renderWorkspace() {
     html += '<div class="card"><h3>⚙️ 设置</h3>';
     html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" disabled style="width:100%"><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
-    var _identities = ["在地成员","原村民","共建者","冒险者","云村民"];
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">身份</label><br><select id="wsIdentity" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].identity=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;font-family:var(--font);background:var(--card)"><option value="">未设置</option>';
-    _identities.forEach(function(v){ html += '<option value="'+v+'"'+(memInfo.identity===v?' selected':'')+'>'+v+'</option>'; });
-    html += '</select></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">身份</label><br><input class="inline-input" value="'+escAttr(_getIdentityLabel(user, memInfo)) +'" disabled style="width:100%;background:#f8f4ec;color:var(--text)"><div style="font-size:.65rem;color:var(--muted);margin-top:2px">身份由系统记录，不可手动修改</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">电话</label><br><input class="inline-input" value="'+escAttr(memInfo.phone||'')+'" id="wsPhone" style="width:100%" placeholder="138****6789" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].phone=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))"></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">住址</label><br><input class="inline-input" value="'+escAttr(memInfo.address||'')+'" id="wsAddress" style="width:100%" placeholder="福建南平…" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].address=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))"></div>';
     var _skillsStr = (memInfo.skills||[]).join(", ");
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">技能标签（逗号分隔）</label><br><input class="inline-input" value="'+escAttr(_skillsStr)+'" id="wsSkills" style="width:100%" placeholder="水墨, 书法, 策展" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].skills=this.value.split(\x27,\x27).map(function(s){return s.trim()}).filter(Boolean);localStorage.setItem(\x27camp_data\x27,JSON.stringify(data))"></div>';
-    var _pff = ["identity","phone","address","skills"]; var _pfc = _pff.filter(function(f){ return memInfo[f] || (f==="skills" ? memInfo.skills && memInfo.skills.length : false); }).length; var _pct = Math.round(_pfc/_pff.length*100);
+    var _pff = ["phone","address","skills"]; var _pfc = _pff.filter(function(f){ return memInfo[f] || (f==="skills" ? memInfo.skills && memInfo.skills.length : false); }).length; var _pct = Math.round(_pfc/_pff.length*100);
     html += '<div style="margin-bottom:10px;padding:8px;background:#fef9ee;border-radius:6px;border:1px solid #e8d5a0"><div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📋 档案完整度</div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:'+_pct+'%;background:var(--accent);border-radius:3px;transition:.3s"></div></div><div style="font-size:.65rem;color:var(--muted)">'+_pct+'%'+(_pct===100?' 🎉':'')+'</div></div>';
 
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
@@ -5019,6 +5016,21 @@ function _addItemToWarehouse(source) {
   else { window._invAddFormOpen = false; renderWorkspace(); }
   renderHubDropdown();
   setStatus('已添加到仓库：'+n.trim());
+}
+function _getIdentityLabel(user, mi) {
+  var u = user || {}; var role = u.role || '';
+  if (role === 'admin') return '🧙 管理员';
+  if (role === 'builder') return '🧱 共建者';
+  if (role === 'adventurer') return '⚔️ 冒险者';
+  if (role === 'npc') {
+    var code = u.world_id || '';
+    var created = u.created || '';
+    var via = code ? ' · 通过邀请码 '+esc(code) : '';
+    var when = created ? ' · '+esc(created) : '';
+    return '👥 在地伙伴'+via+when;
+  }
+  if (role === 'visitor') return '🏕️ 云村民';
+  return role || '未设置';
 }
 function _refreshItemViews() {
   renderHubDropdown();
