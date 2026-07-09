@@ -3063,6 +3063,7 @@ function renderWorkspace() {
     html += '</div><div style="display:flex;gap:4px"><input id="wsSkillsInput" placeholder="输入技能后回车添加" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.72rem;font-family:var(--font);background:var(--card)" onkeydown="if(event.key===\x27Enter\x27){event.preventDefault();_addSkill()}"><button class="btn" onclick="_addSkill()" style="font-size:.7rem;padding:3px 8px">＋</button></div></div>';
 
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
+    html += '<button class="btn green" onclick="renderWorkspace()" style="font-size:.72rem;padding:4px 12px;width:100%;margin-bottom:10px">💾 保存并刷新档案进度</button>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
     var _pff = ["bio","phone","address","skills","wallet"]; var _pfc = _pff.filter(function(f){ return memInfo[f] || (f==="skills"?memInfo.skills&&memInfo.skills.length:false) || (f==="bio"?memInfo.bio&&memInfo.bio.trim():false) || (f==="wallet"?memInfo.wallet&&memInfo.wallet.trim():false); }).length; var _pct = Math.round(_pfc/_pff.length*100);
     html += '<div style="margin-top:10px;padding:8px;background:#fef9ee;border-radius:6px;border:1px solid #e8d5a0"><div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📋 档案完整度（'+_pfc+'/'+_pff.length+'）</div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:'+_pct+'%;background:var(--accent);border-radius:3px;transition:.3s"></div></div><div style="font-size:.65rem;color:var(--muted)">'+_pct+'%'+(_pct===100?' 🎉':'')+'</div></div>';
@@ -5787,7 +5788,10 @@ function renderMembers() {
   var seen = {};
   tasks.forEach(function(t) {
     var name = t.assignee || '';
-    if (name && staffData[name] && !seen[name+'|'+t.name]) {
+    // Skip unclaimed tasks (no active claimants and not in progress/completed)
+    var hasClaimant = (t.claimants||[]).some(function(c){return c.status!=='dropped';});
+    var isActive = t.status==='进行中'||t.status==='已完成'||t.status==='已确认';
+    if (name && staffData[name] && !seen[name+'|'+t.name] && (hasClaimant||isActive)) {
       seen[name+'|'+t.name] = true;
       staffData[name].tasks.push(t);
       staffData[name].points += (t.points || 1);
@@ -6344,10 +6348,13 @@ function renderPlayers() {
   // Reset
   playerData = {};
 
-  // 1. From tasks (non-staff)
+  // 1. From tasks (non-staff) — skip unclaimed tasks
   tasks.forEach(function(t) {
     var name = t.assignee || '';
     if (!name || staffNames.some(function(s) { return name.indexOf(s) !== -1; })) return;
+    var hasClaimant = (t.claimants||[]).some(function(c){return c.status!=='dropped';});
+    var isActive = t.status==='进行中'||t.status==='已完成'||t.status==='已确认';
+    if (!hasClaimant && !isActive) return;
     if (!playerData[name]) playerData[name] = { tasks: [], points: 0, done: 0, active: 0, todo: 0, nt: 0, rmb: 0 };
     playerData[name].tasks.push(t);
     playerData[name].points += (t.points || 1);
