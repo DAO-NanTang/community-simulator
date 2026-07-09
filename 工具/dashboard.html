@@ -668,7 +668,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <span style="font-size:.68rem;color:var(--muted);white-space:nowrap"><b style="color:var(--green)" id="staffProgDone">0</b>✓ <b style="color:var(--yellow)" id="staffProgActive">0</b>◷ <b id="staffProgTotal">0</b>总</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap">
-        <span style="white-space:nowrap;font-size:.82rem;font-weight:700;color:#5b8cb8;min-width:70px">⚔️ 玩家</span>
+        <span style="white-space:nowrap;font-size:.82rem;font-weight:700;color:#5b8cb8;min-width:70px">⚔️ 冒险者</span>
         <div id="playBar" style="flex:1;min-width:80px;height:20px;display:flex;gap:1px"></div>
         <span style="font-size:.9rem;font-weight:700;color:#5b8cb8;min-width:36px;text-align:right" id="playProgPct">0%</span>
         <span style="font-size:.68rem;color:var(--muted);white-space:nowrap"><b style="color:#5b8cb8" id="playProgDone">0</b>✓ <b style="color:#8bb8d8" id="playProgActive">0</b>◷ <b id="playProgTotal">0</b>总</span>
@@ -1094,21 +1094,21 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <div style="font-size:2.5rem;margin-bottom:8px">📋</div>
           <h3 style="margin:4px 0">社区副本</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">浏览全部活动<br>选择加入活动</p>
-          <button class="btn" style="font-size:.78rem;margin-top:8px">查看活动</button>
+          <button class="btn" style="font-size:.78rem;margin-top:8px">📋 看看有什么活动</button>
         </div>
         <!-- 卡片2: 任务大厅 -->
         <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('questhall')">
           <div style="font-size:2.5rem;margin-bottom:8px">🏛️</div>
           <h3 style="margin:4px 0">任务大厅</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">在地任务<br>发布与认领</p>
-          <button class="btn pri" style="font-size:.78rem;margin-top:8px">进入大厅</button>
+          <button class="btn pri" style="font-size:.78rem;margin-top:8px">🏛️ 去任务大厅逛逛</button>
         </div>
         <!-- 卡片3: 实景地图 -->
         <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="showMapInvite()">
           <div style="font-size:2.5rem;margin-bottom:8px">🗺️</div>
           <h3 style="margin:4px 0">实景地图</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">成为在地伙伴<br>或浏览地图</p>
-          <button class="btn" style="font-size:.78rem;margin-top:8px">🔒 建设中</button>
+          <button class="btn" style="font-size:.78rem;margin-top:8px">🗺️ 探索实景地图</button>
         </div>
       </div>
       <div style="text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15)">
@@ -1162,7 +1162,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button onclick="closeVillageModal('map')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)">✕</button>
     <div style="font-size:5rem;margin-bottom:16px">🗺️</div>
     <h2>实景地图</h2>
-    <p style="color:var(--muted)">🔒 建设中，敬请期待</p>
+    <p style="color:var(--muted)">🗺️ 探索实景地图，敬请期待</p>
     <p style="font-size:.82rem;color:var(--muted)">开放后可以在这里探索南塘村、成为在地伙伴</p>
   </div>
 </div>
@@ -4662,7 +4662,7 @@ function renderQuestCard(t, opts) {
   h += '<span>🧙 '+esc(t.poster||'?')+'</span>';
   if (activeC.length>0) h += '<span>👤 '+activeC.map(function(c){return esc(c.name)}).join(' ')+'</span>';
   if (t.reviewer) h += '<span>✅ '+esc(t.reviewer)+'</span>';
-  h += '<span>📅 '+(t.posted_at||t.deadline||'—')+'</span><span>⏰ '+(t.deadline||'—')+'</span><span>👥 '+slots+'</span>';
+  if (t.start) h += '<span>🗓️ '+esc(t.start)+'</span>'; h += '<span>📅 '+(t.posted_at||t.deadline||'—')+'</span><span>⏰ '+(t.deadline||'—')+'</span><span>👥 '+slots+'</span>';
   if (opts.showAssignee) h += '<span>👤 '+esc(t.assignee||'—')+'</span>';
   h += '<span style="color:var(--accent);font-weight:600">💎 '+(t.points||0)+' NT</span></div>';
   // Progress
