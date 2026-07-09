@@ -6413,6 +6413,24 @@ function renderTimeline() {
   var container = document.getElementById('timelineView');
   var empty = document.getElementById('timelineEmpty');
   var tasks = data.tasks || [];
+  // Filter based on role: non-admin/builder only see their own tasks
+  var role = currentUser ? currentUser.role : '';
+  if (role !== 'admin' && role !== 'builder') {
+    var myName = currentUser ? currentUser.name : '';
+    tasks = tasks.filter(function(t) {
+      if (t.assignee === myName) return true;
+      var cl = (t.claimants || []).find(function(c) { return c.name === myName && c.status !== 'dropped'; });
+      if (cl) return true;
+      return false;
+    });
+  }
+  // Hide calendar toggle for NPC/visitor
+  var isStaff = role === 'admin' || role === 'builder';
+  var calBtn = document.getElementById('btnCalendarView');
+  var tlBtn = document.getElementById('btnTimelineView');
+  if (calBtn) calBtn.style.display = isStaff ? '' : 'none';
+  if (tlBtn) tlBtn.style.display = isStaff ? '' : 'none';
+
   if (tasks.length === 0) {
     container.innerHTML = '';
     empty.classList.remove('hidden');
@@ -6455,9 +6473,19 @@ var scheduleData = [];
 function renderCalendar() {
   var grid = document.getElementById('calendarGrid');
   var schedule = data.schedule;
+  // Filter tasks for non-admin/builder roles
+  var allTasks = data.tasks || [];
+  var role = currentUser ? currentUser.role : '';
+  var myName = currentUser ? currentUser.name : '';
+  if (role !== 'admin' && role !== 'builder') {
+    allTasks = allTasks.filter(function(t) {
+      if (t.assignee === myName) return true;
+      return (t.claimants || []).some(function(c) { return c.name === myName && c.status !== 'dropped'; });
+    });
+  }
   if (!schedule || !schedule.dates || schedule.dates.length === 0) {
     // Fallback: build from tasks
-    var tasks = data.tasks || [];
+    var tasks = allTasks;
     if (tasks.length === 0) { grid.innerHTML = '<div class="empty-state"><div class="icon">📅</div>还没有日程数据</div>'; return; }
     var dateSet = {};
     tasks.forEach(function(t) {
