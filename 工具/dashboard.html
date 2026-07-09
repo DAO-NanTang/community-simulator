@@ -1634,7 +1634,7 @@ function recordTransaction(opts) {
     to: opts.to,
     amount: opts.amount,
     scope: opts.scope || 'camp',
-    date: Clock.today(),
+    date: new Date().toISOString().slice(0,10),
     created_at: Clock.iso(),
     ref_id: opts.ref_id || '',
     task_name: opts.task_name || '',
@@ -1733,7 +1733,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // 种子食堂示例菜单
     if (!data.canteen_menus || Object.keys(data.canteen_menus).length === 0) {
-      var today = Clock.today();
+      var today = new Date().toISOString().slice(0,10);
       data.canteen_menus = {};
       data.canteen_menus[today] = { lunch: ['糙米饭','清炒时蔬','菌菇汤','麻婆豆腐','凉拌黄瓜','菊花茶'], dinner: ['素汤面','田园沙拉','鱼香茄子','花生米','蒸红薯','普洱茶'] };
       localStorage.setItem('camp_data', JSON.stringify(data));
@@ -1878,7 +1878,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type: 'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'data_' + Clock.today() + '.json';
+  a.download = 'data_' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
   setStatus('已导出');
 }
@@ -1912,6 +1912,24 @@ var ROLE_CAPABILITIES = {
 };
 function userCan(user, cap) { if (!user) return false; var c = ROLE_CAPABILITIES[user.role]; return c ? !!c[cap] : false; }
 function userTabs(user) { if (!user) return []; var c = ROLE_CAPABILITIES[user.role]; return c ? c.tabs : []; }
+// ═══ 统一领取权限 ═══
+function canUserClaim(user, task) {
+  if (!user) return { ok: false, reason: '请先登录' };
+  if (!task) return { ok: false, reason: '任务不存在' };
+  if (task.status !== 'active') return { ok: false, reason: '任务不可领取' };
+  var activeC = (task.claimants||[]).filter(function(c){ return c.status!=='dropped'; });
+  if (task.max_slots > 0 && activeC.length >= task.max_slots) return { ok: false, reason: '名额已满' };
+  var scope = task.scope || 'camp';
+  if (scope === 'camp' && !userCan(user, 'isMember')) return { ok: false, reason: '需加入营队' };
+  var vis = task.visibility || 'all';
+  if (vis === 'all') return { ok: true };
+  if (vis === 'specific') {
+    if (task.target_claimant !== user.name) return { ok: false, reason: '仅指定领取人可领' };
+    return { ok: true };
+  }
+  if (user.role !== vis) { var label = ROLE_TITLES[vis] || vis; return { ok: false, reason: '仅 ' + label + ' 可领' }; }
+  return { ok: true };
+}
 function refreshUserHUD(){ if(!currentUser)return;var el=document.getElementById('hudCurrentUser');if(el)el.textContent=currentUser.name+' · '+getUserTitle(currentUser);updateWorldHUD(); }
 function getWorldCodes() { try { return JSON.parse(localStorage.getItem('nt_world_codes')) || []; } catch(e) { return []; } }
 function saveWorldCodes(codes) { localStorage.setItem('nt_world_codes', JSON.stringify(codes)); }
@@ -1925,13 +1943,13 @@ function migrateExistingMembers() {
   var users = getUsers();
   var staffNames = getStaffNames();
   (data.staff_cards || []).forEach(function(c) {
-    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, season: '', created: Clock.today(), uid: generateUID(), season_history: [{ role: 'builder', period: '', changed_at: Clock.today() }] };
+    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0,10), uid: generateUID(), season_history: [{ role: 'builder', period: '', changed_at: new Date().toISOString().slice(0,10) }] };
   });
   Object.values(data.members || {}).forEach(function(m) {
     if (users[m.name]) return;
     var isStaff = staffNames.some(function(s) { return m.name === s; });
     var role = isStaff ? 'builder' : 'adventurer';
-    users[m.name] = { name: m.name, role: role, password: null, avatar_seed: m.avatar_seed || 0, season: '', created: Clock.today(), uid: generateUID(), season_history: [{ role: role, period: '', changed_at: Clock.today() }] };
+    users[m.name] = { name: m.name, role: role, password: null, avatar_seed: m.avatar_seed || 0, season: '', created: new Date().toISOString().slice(0,10), uid: generateUID(), season_history: [{ role: role, period: '', changed_at: new Date().toISOString().slice(0,10) }] };
   });
   saveUsers(users);
 }
@@ -1942,8 +1960,8 @@ function seedAdminAccount() {
   users['砚仁'] = {
     name: '砚仁', role: 'admin',
     password: encodePassword('1500', '砚仁'),
-    avatar_seed: 0, season: '', created: Clock.today(),
-    season_history: [{ role: 'admin', period: '', changed_at: Clock.today() }]
+    avatar_seed: 0, season: '', created: new Date().toISOString().slice(0,10),
+    season_history: [{ role: 'admin', period: '', changed_at: new Date().toISOString().slice(0,10) }]
   };
   saveUsers(users);
 }
@@ -1987,7 +2005,7 @@ function changeUserRole(name, newRole, opts) {
   users[name].season_history.push({
     role: oldRole,
     period: opts.period || '',
-    changed_at: Clock.today()
+    changed_at: new Date().toISOString().slice(0,10)
   });
 
   // Step 2: 更新 users 表
@@ -2074,7 +2092,7 @@ function registerUser(name, password, role, avatarSeed, inviteCode) {
     if (!codes.includes(inviteCode)) return { ok: false, error: '邀请码无效' };
     saveWorldCodes(codes.filter(function(c) { return c !== inviteCode; }));
   }
-  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, season: '', created: Clock.today(), world_id: (role === 'adventurer') ? inviteCode : null, uid: generateUID(), season_history: [{ role: role, period: '', changed_at: Clock.today() }] };
+  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, season: '', created: new Date().toISOString().slice(0,10), world_id: (role === 'adventurer') ? inviteCode : null, uid: generateUID(), season_history: [{ role: role, period: '', changed_at: new Date().toISOString().slice(0,10) }] };
   saveUsers(users);
   if (!data.members) data.members = {};
   if (!data.members[name]) { data.members[name] = { name: name, role: role, avatar_seed: avatarSeed, gender: '' }; localStorage.setItem('camp_data', JSON.stringify(data)); }
@@ -2439,7 +2457,7 @@ function parseDL(dl) { if(!dl) return null; var m=dl.match(/(\d+)\/(\d+)/); if(m
 function renderVillageQuestHall() {
   // Set fixed NPC avatar
   var npcAv = document.getElementById('npcAvatar'); if (npcAv) npcAv.innerHTML = avatarCircle(42, 56, 0);
-  var tasks = data.tasks || []; var name = currentUser ? currentUser.name : ''; var today = Clock.today();
+  var tasks = data.tasks || []; var name = currentUser ? currentUser.name : ''; var today = new Date().toISOString().slice(0,10);
   var isMember = userCan(currentUser, 'isMember');
 
   // ── Timeline bar in NPC area ──
@@ -2501,7 +2519,6 @@ function renderVillageQuestHall() {
     if (villageQuickFilter==='today' && t.deadline!==today) return false;
     if (villageQuickFilter==='urgent'){ var dl=t.deadline?parseDL(t.deadline):null; var td=new Date(today+'T00:00:00'); if(!dl||(dl-td)/86400000>2)return false; }
     if (villageQuickFilter==='need_people'){ var ac=(t.claimants||[]).filter(function(c){return c.status!=='dropped';}); if(t.max_slots<=0||ac.length>=t.max_slots)return false; }
-    var vis = t.visibility || 'all'; if (vis !== 'all' && currentUser) { if (vis === 'specific' && t.target_claimant !== currentUser.name && currentUser.role !== 'admin') return false; if (vis !== 'specific' && currentUser.role !== vis && currentUser.role !== 'admin') return false; } return true;
   });
 
   // ── Unclaimed banner ──
@@ -2759,7 +2776,7 @@ function computeInboxMessages() {
   var msgs = [];
   if (!currentUser) return msgs;
   var tasks = data.tasks || [];
-  var today = Clock.today();
+  var today = new Date().toISOString().slice(0,10);
   var role = currentUser.role;
 
   if (role === 'admin' || role === 'builder') {
@@ -3115,7 +3132,7 @@ function saveMember() {
   };
   var users = getUsers();
   if (users[oldName]) { users[newName] = users[oldName]; users[newName].name = newName; users[newName].avatar_seed = editingAvatarSeed; if (oldName !== newName) delete users[oldName]; }
-  else if (!users[newName]) { users[newName] = { name: newName, role: 'adventurer', password: null, avatar_seed: editingAvatarSeed, season: '', created: Clock.today() }; }
+  else if (!users[newName]) { users[newName] = { name: newName, role: 'adventurer', password: null, avatar_seed: editingAvatarSeed, season: '', created: new Date().toISOString().slice(0,10) }; }
   else { users[newName].avatar_seed = editingAvatarSeed; }
   var newPwd = document.getElementById('memberNewPassword').value;
   if (newPwd) { var confirmPwd = document.getElementById('memberConfirmPassword').value; if (newPwd !== confirmPwd) return alert('两次密码不一致'); if (newPwd.length < 2) return alert('密码至少 2 位'); users[newName].password = encodePassword(newPwd, newName); }
@@ -3472,9 +3489,9 @@ function saveItem() {
   if (!data.inventory) data.inventory = [];
   if (id) {
     var it = data.inventory.find(function(x) { return x.id === id; });
-    if (it) { it.name = name; it.category = category; it.price = price; it.description = desc; if (listNow && it.status !== 'listed') { it.status = 'listed'; it.listed_at = Clock.today(); } if (!listNow && it.status === 'listed') it.status = 'unlisted'; }
+    if (it) { it.name = name; it.category = category; it.price = price; it.description = desc; if (listNow && it.status !== 'listed') { it.status = 'listed'; it.listed_at = new Date().toISOString().slice(0,10); } if (!listNow && it.status === 'listed') it.status = 'unlisted'; }
   } else {
-    data.inventory.push({ id: 'bi_' + Clock.stamp() + Math.random().toString(36).slice(2,6), owner: currentUser.name, name: name, category: category, price: price, description: desc, status: listNow ? 'listed' : 'unlisted', created_at: Clock.today(), listed_at: listNow ? Clock.today() : '', sold_to: '', sold_at: '' });
+    data.inventory.push({ id: 'bi_' + Clock.stamp() + Math.random().toString(36).slice(2,6), owner: currentUser.name, name: name, category: category, price: price, description: desc, status: listNow ? 'listed' : 'unlisted', created_at: new Date().toISOString().slice(0,10), listed_at: listNow ? new Date().toISOString().slice(0,10) : '', sold_to: '', sold_at: '' });
   }
   localStorage.setItem('camp_data', JSON.stringify(data));
   document.getElementById('inventoryModal').classList.remove('show');
@@ -3493,7 +3510,7 @@ function deleteItem() {
 function listItemToBazaar(id) {
   var it = (data.inventory || []).find(function(x) { return x.id === id; });
   if (!it) return;
-  it.status = 'listed'; it.listed_at = Clock.today();
+  it.status = 'listed'; it.listed_at = new Date().toISOString().slice(0,10);
   localStorage.setItem('camp_data', JSON.stringify(data));
   renderWorkspace();
 }
@@ -3563,7 +3580,7 @@ function confirmPurchase() {
   if (!it || it.status !== 'listed') { alert('物品已下架或售出'); document.getElementById('purchaseModal').classList.remove('show'); return; }
   var myNT = calcNtTotal(currentUser.name);
   if (myNT < it.price) { alert('NT 余额不足'); return; }
-  it.status = 'sold'; it.sold_to = currentUser.name; it.sold_at = Clock.today();
+  it.status = 'sold'; it.sold_to = currentUser.name; it.sold_at = new Date().toISOString().slice(0,10);
   recordTransaction({ type: TX_TYPES.BAZAAR_TRADE, from: currentUser.name, to: it.owner, amount: it.price, ref_id: itemId, item_name: it.name, scope: 'personal' });
   localStorage.setItem('camp_data', JSON.stringify(data));
   document.getElementById('purchaseModal').classList.remove('show');
@@ -3617,7 +3634,7 @@ function getVendorPanels(user) {
 
 function renderCanteen() {
   var container = document.getElementById('canteenContent'); if (!container) return;
-  var today = Clock.today();
+  var today = new Date().toISOString().slice(0,10);
   var hour = Clock.hour();
   var menu = data.canteen_menus && data.canteen_menus[today] ? data.canteen_menus[today] : { lunch: [], dinner: [] };
   var myOrders = (data.canteen_orders || []).filter(function(o) { return o.person === (currentUser?currentUser.name:'') && o.date === today; });
@@ -3682,7 +3699,7 @@ function preorderCanteen(meal) {
   if (!currentUser) { alert('请先登录'); return; }
   var myNT = calcNtTotal(currentUser.name);
   if (myNT < 10) { alert('NT 余额不足（需要 10 NT）'); return; }
-  var today = Clock.today();
+  var today = new Date().toISOString().slice(0,10);
   var menu = data.canteen_menus && data.canteen_menus[today] ? data.canteen_menus[today] : {};
   var items = menu[meal] || [];
   var orderId = 'co_' + Clock.stamp() + Math.random().toString(36).slice(2,6);
@@ -3724,7 +3741,7 @@ function submitCanteenSuggestion() {
   var input = document.getElementById('canteenSuggestion');
   if (!input || !input.value.trim()) return;
   if (!data.canteen_suggestions) data.canteen_suggestions = [];
-  data.canteen_suggestions.push({ person: currentUser?currentUser.name:'', date: Clock.today(), suggestion: input.value.trim() });
+  data.canteen_suggestions.push({ person: currentUser?currentUser.name:'', date: new Date().toISOString().slice(0,10), suggestion: input.value.trim() });
   localStorage.setItem('camp_data', JSON.stringify(data));
   input.value = '';
   setStatus('已提交建议 ✅');
@@ -4105,7 +4122,7 @@ function applyInnBooking(roomId) {
   if (!isRoomAvailable(room, ci, co)) { alert('该房型在所选日期已满，请更换房型或日期'); return; }
   var id = 'bk_' + Clock.stamp() + Math.random().toString(36).slice(2, 6);
   if (!data.inn_bookings) data.inn_bookings = [];
-  data.inn_bookings.push({ id: id, guest: currentUser.name, room: room, bed: bed, check_in: ci, check_out: co, status: 'pending', note: '', created_at: Clock.today(), confirmed_by: '' });
+  data.inn_bookings.push({ id: id, guest: currentUser.name, room: room, bed: bed, check_in: ci, check_out: co, status: 'pending', note: '', created_at: new Date().toISOString().slice(0,10), confirmed_by: '' });
   localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); refreshHub();
   setStatus('入住申请已提交，等待摊主确认');
 }
@@ -4138,7 +4155,7 @@ function cancelInnBooking(id) {
 // —— 🥬 素社食堂（摊主菜单保存）——
 function saveCanteenMenu() {
   if (!_hasVendorPanel('canteen')) return;
-  var today = Clock.today();
+  var today = new Date().toISOString().slice(0,10);
   var lunch = ((document.getElementById('menuLunchInput') || {}).value || '').split(/[,，]/).map(function(s) { return s.trim(); }).filter(Boolean);
   var dinner = ((document.getElementById('menuDinnerInput') || {}).value || '').split(/[,，]/).map(function(s) { return s.trim(); }).filter(Boolean);
   if (!data.canteen_menus) data.canteen_menus = {};
@@ -4176,7 +4193,7 @@ function closeHubSlide() {
 // ═══ 🥕 萝卜议事厅 ═══
 function renderCouncilHub() {
   var meetings = (data.council_meetings || []).slice().sort(function(a,b){ return (a.time||'').localeCompare(b.time||''); });
-  var upcoming = meetings.filter(function(m){ return m.time >= Clock.today(); });
+  var upcoming = meetings.filter(function(m){ return m.time >= new Date().toISOString().slice(0,10); });
   var h = '';
   // 快速加入（任何人可用）
   h += '<div class="card" style="padding:12px 14px;margin-bottom:10px"><div style="font-weight:600;margin-bottom:6px">🚪 快速进入</div><div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">输入会议号 → imeeting.co</div>';
@@ -4377,8 +4394,8 @@ function computeAuctionReminders() {
     var at = new Date(a.time); var diff = (at - now) / 60000;
     var isBidder = (a.bidders||[]).some(function(b){ return b.name===currentUser.name; });
     if (isBidder && diff <= 30 && diff > 0 && (a.status==='signup'||a.status==='pending')) msgs.push({ type:'auction_soon', title:a.title, time:a.time, location:a.location, id:'auc_'+a.id, createdAt:a.created_at, jump:null });
-    if (a.status==='done' && a.winner===currentUser.name) msgs.push({ type:'auction_won', title:a.title, price:a.final_price, id:'aucwon_'+a.id, createdAt:Clock.today(), jump:null });
-    if (a.status==='done' && isBidder && a.winner!==currentUser.name) msgs.push({ type:'auction_refunded', title:a.title, deposit:a.deposit, id:'aucref_'+a.id, createdAt:Clock.today(), jump:null });
+    if (a.status==='done' && a.winner===currentUser.name) msgs.push({ type:'auction_won', title:a.title, price:a.final_price, id:'aucwon_'+a.id, createdAt:new Date().toISOString().slice(0,10), jump:null });
+    if (a.status==='done' && isBidder && a.winner!==currentUser.name) msgs.push({ type:'auction_refunded', title:a.title, deposit:a.deposit, id:'aucref_'+a.id, createdAt:new Date().toISOString().slice(0,10), jump:null });
   });
   return msgs;
 }
@@ -4449,7 +4466,7 @@ function renderHubSlideContent(page) {
       }
     }
   } else if (page === 'canteen') {
-    var today = Clock.today();
+    var today = new Date().toISOString().slice(0,10);
     var hour = Clock.hour();
     var menu = data.canteen_menus && data.canteen_menus[today] ? data.canteen_menus[today] : { lunch: [], dinner: [] };
     var myOrders = (data.canteen_orders || []).filter(function(o) { return o.person === (currentUser?currentUser.name:'') && o.date === today; });
@@ -4557,7 +4574,7 @@ function renderHubDropdown() {
   var teahouseCount = (data.teahouse_posts || []).length;
 
   var activeAuctions = (data.auctions||[]).filter(function(a){return a.status==='signup'||a.status==='pending';}).length;
-  var upcomingMeetings = (data.council_meetings||[]).filter(function(m){return m.time>=Clock.today();}).length;
+  var upcomingMeetings = (data.council_meetings||[]).filter(function(m){return m.time>=new Date().toISOString().slice(0,10);}).length;
   var items = [
     { id:'map', icon:'🧭', label:'实景地图', info:'待开放', ok:false },
     { id:'inn', icon:'🏨', label:'客栈', info:confirmedGuests+'/'+totalBeds+'人', ok:true },
@@ -4682,7 +4699,7 @@ function renderQuestCard(t, opts) {
   var doneCount = activeC.filter(function(c){return c.status==='completed';}).length;
   var subCount = activeC.filter(function(c){return c.status==='submitted';}).length;
   var expanded = window._cardExpanded[t.name+'_'+ctx];
-  var locked = ctx==='village' && (t.scope||'camp')==='camp' && !isMember;
+  var cr = canUserClaim(currentUser, t); var locked = !cr.ok;
   var myClaim = userName ? (t.claimants||[]).find(function(c){return c.name===userName&&c.status!=='dropped';}) : null;
   var isDone = myClaim && myClaim.status==='completed';
   var isMine = !!myClaim && !isDone;
@@ -4761,7 +4778,7 @@ function renderQuestCard(t, opts) {
     h += '</select>';
   }
   if (locked) {
-    h += '<span style="font-size:.7rem;color:var(--red)">🔒 需加入营队</span>';
+    h += '<span style="font-size:.7rem;color:var(--red)">🔒 '+esc(cr.reason)+'</span>';
   } else if (isDone || (grey && !isMine)) {
     h += '<span style="font-size:.7rem;color:var(--muted)">✅ '+(isDone?'你已完成':'已领满')+'</span>';
   } else if (myClaim) {
@@ -4786,7 +4803,7 @@ function renderQuestCard(t, opts) {
 var questScopeFilter = 'all'; // 'all' | 'camp' | 'personal'
 function renderQuestBoard() {
   var container = document.getElementById('questBoardContent'); if (!container) return; var tasks = data.tasks || []; var name = currentUser ? currentUser.name : '';
-  var today = Clock.today();
+  var today = new Date().toISOString().slice(0,10);
 
   // ── Row 1: Scope + Quick (bigger) ──
   var scopeBtns = [{v:'all',l:'全部'},{v:'camp',l:'🏕️ 营地'},{v:'personal',l:'👤 私人'}];
@@ -4831,7 +4848,6 @@ function renderQuestBoard() {
     if (questLocFilter && t.type !== questLocFilter) return false;
     // type filter
     if (questFilter === 'claimable') return isClaimable; if (questFilter === 'claimed') return isClaimed; if (questFilter !== 'all') return t.type === questFilter;
-    var vis = t.visibility || 'all'; if (vis !== 'all' && currentUser) { if (vis === 'specific' && t.target_claimant !== currentUser.name && currentUser.role !== 'admin') return false; if (vis !== 'specific' && currentUser.role !== vis && currentUser.role !== 'admin') return false; } return true;
   });
   var claimable = filtered.filter(function(t) { var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var isFull = t.max_slots > 0 && activeClaimants.length >= t.max_slots; return !myClaim && !isFull; });
   var claimed = filtered.filter(function(t) { var myClaim = (t.claimants || []).find(function(c) { return c.name === name; }); return myClaim && myClaim.status !== 'dropped'; });
@@ -4957,7 +4973,7 @@ function renderNTAdmin() {
 }
 
 // ── Task Actions ──
-function claimTask(idx) { if (!currentUser) { alert('请先登录'); return; } var t = data.tasks[idx]; if (!t || !t.claimants) return; var alreadyClaimed = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (alreadyClaimed) { alert('你已经领取过该委托'); return; } var activeCount = t.claimants.filter(function(c) { return c.status !== 'dropped'; }).length; if (t.max_slots > 0 && activeCount >= t.max_slots) { alert('名额已满'); return; } t.claimants.push({ name: currentUser.name, claimed_at: Clock.today(), status: 'in_progress' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard();refreshMemberView(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace();var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();var hm=document.getElementById('hubQuestHallModal');if(hm&&!hm.classList.contains('hidden'))openHubQuestHall();setStatus('已领取：' + t.name); }
+function claimTask(idx) { if (!currentUser) { alert('请先登录'); return; } var t = data.tasks[idx]; if (!t) return; var cr = canUserClaim(currentUser, t); if (!cr.ok) { alert(cr.reason); return; } if (!t.claimants) return; var alreadyClaimed = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (alreadyClaimed) { alert('你已经领取过该委托'); return; } var activeCount = t.claimants.filter(function(c) { return c.status !== 'dropped'; }).length; if (t.max_slots > 0 && activeCount >= t.max_slots) { alert('名额已满'); return; } t.claimants.push({ name: currentUser.name, claimed_at: new Date().toISOString().slice(0,10), status: 'in_progress' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard();refreshMemberView(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace();var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();var hm=document.getElementById('hubQuestHallModal');if(hm&&!hm.classList.contains('hidden'))openHubQuestHall();setStatus('已领取：' + t.name); }
 var draftEditIdx = -1; // 正在编辑的草稿索引（-1=新建）
 function savePostDraft() {
   if (!currentUser) { alert('请先登录'); return; }
@@ -5018,7 +5034,7 @@ function publishDraft(idx) {
   var points = t.points||0;
   var myNT = calcNtTotal(currentUser.name);
   if (points > 0 && myNT < points) { alert('NT 余额不足！需要 ' + points + ' NT，当前余额：' + myNT.toLocaleString()); return; }
-  t.status = 'active'; t.posted_at = Clock.today();
+  t.status = 'active'; t.posted_at = new Date().toISOString().slice(0,10);
   if (points > 0) { recordTransaction({ type: TX_TYPES.TASK_POST, from: currentUser.name, to: '任务池', amount: points, task_name: t.name, scope: 'personal' }); }
   localStorage.setItem('camp_data',JSON.stringify(data));
   renderWorkspace(); renderQuestBoard();
@@ -5064,7 +5080,7 @@ function confirmSubmit() {
   var links = document.getElementById('submitLinks').value.trim().split('\n').filter(function(l){return l;});
   if (hasReq('photo')) { var pr = getReq('photo'); var pMin = (typeof pr === 'object' ? pr.min : 1) || 1; if (images.length < pMin) { alert('请上传至少 ' + pMin + ' 张照片'); return; } }
   if (hasReq('file')) { var fr = getReq('file'); var fMin = (typeof fr === 'object' ? fr.min : 1) || 1; if (links.length < fMin) { alert('请提交至少 ' + fMin + ' 个文件链接'); return; } }
-  myClaim.status = 'submitted'; myClaim.submitted_at = Clock.today();
+  myClaim.status = 'submitted'; myClaim.submitted_at = new Date().toISOString().slice(0,10);
   myClaim.submit_note = note;
   myClaim.submission = { note: note, images: images, links: links, submitted_at: myClaim.submitted_at };
   localStorage.setItem('camp_data', JSON.stringify(data));
@@ -5076,7 +5092,7 @@ function confirmSubmit() {
 }
 function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (!myClaim) return; showSubmitModal(idx); }
 function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard();refreshMemberView(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace();var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();var hm=document.getElementById('hubQuestHallModal');if(hm&&!hm.classList.contains('hidden'))openHubQuestHall();setStatus('已放弃：' + t.name); }
-function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var targetName = prompt('输入要触发的冒险者姓名：'); if (!targetName) return; if (!t.claimants) t.claimants = []; var alreadyThere = t.claimants.find(function(c) { return c.name === targetName; }); if (alreadyThere) { alert('该冒险者已被触发'); return; } t.claimants.push({ name: targetName, claimed_at: Clock.today(), status: 'triggered' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已触发隐藏任务给：' + targetName); }
+function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var targetName = prompt('输入要触发的冒险者姓名：'); if (!targetName) return; if (!t.claimants) t.claimants = []; var alreadyThere = t.claimants.find(function(c) { return c.name === targetName; }); if (alreadyThere) { alert('该冒险者已被触发'); return; } t.claimants.push({ name: targetName, claimed_at: new Date().toISOString().slice(0,10), status: 'triggered' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已触发隐藏任务给：' + targetName); }
 // ═══ 撤回任务 ═══
 function withdrawTask(idx) {
   if (!currentUser) return;
@@ -5088,7 +5104,7 @@ function withdrawTask(idx) {
   if (hasCompleted) { alert('已有领取者审核通过，无法撤回'); return; }
   if (!confirm('撤回「' + t.name + '」？审核通过后 NT 将退回。')) return;
   t.status = 'withdrawing';
-  t.withdraw_requested_at = Clock.today();
+  t.withdraw_requested_at = new Date().toISOString().slice(0,10);
   localStorage.setItem('camp_data', JSON.stringify(data));
   updateAll();
   setStatus('已申请撤回：' + t.name);
@@ -5117,13 +5133,13 @@ function reviewWithdrawal(idx, action) {
   setStatus(action === 'approve' ? '已通过撤回：' + t.name : '已拒绝撤回：' + t.name);
 }
 
-function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; if (t.reviewer && currentUser.name !== t.reviewer && currentUser.name !== t.poster) { alert('该任务指定由 ' + t.reviewer + ' 审核'); return; } if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = Clock.today(); recordTransaction({ type: TX_TYPES.TASK_REWARD, from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
+function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; if (t.reviewer && currentUser.name !== t.reviewer && currentUser.name !== t.poster) { alert('该任务指定由 ' + t.reviewer + ' 审核'); return; } if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = new Date().toISOString().slice(0,10); recordTransaction({ type: TX_TYPES.TASK_REWARD, from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
 function showPostTask() {
   if (!currentUser) { alert('请先登录'); return; }
   document.getElementById('postTaskName').value = '';
   document.getElementById('postTaskPoints').value = '5';
   document.getElementById('postTaskSlots').value = '0';
-  var today = Clock.today();
+  var today = new Date().toISOString().slice(0,10);
   document.getElementById('postTaskStart').value = today;
   document.getElementById('postTaskDeadline').value = '';
   document.getElementById('postTaskReviewer').value = currentUser ? currentUser.name : '';
@@ -5210,7 +5226,7 @@ function confirmPostTask() {
     deadline: document.getElementById('postTaskDeadline').value.trim(),
     note: document.getElementById('postTaskNote').value.trim(),
     source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '',
-    posted_at: Clock.today(), claimants: [], status: 'active',
+    posted_at: new Date().toISOString().slice(0,10), claimants: [], status: 'active',
     visibility: visibility, target_claimant: targetClaimant, reviewer: reviewer, submit_requirements: submitReqs, min_season: 0
   };
   if (!data.tasks) data.tasks = [];
@@ -5522,7 +5538,7 @@ function _addItemToWarehouse(source) {
   var cat = (document.getElementById('addItemQuickCat')||{}).value||'其他';
   var price = parseInt((document.getElementById('addItemQuickPrice')||{}).value) || 0;
   if (!data.inventory) data.inventory = [];
-  data.inventory.push({ id:'bi_'+Clock.stamp()+Math.random().toString(36).slice(2,6), owner:currentUser.name, name:n.trim(), category:cat, price:price, description:'', status:'unlisted', created_at:Clock.today(), listed_at:'', sold_to:'', sold_at:'' });
+  data.inventory.push({ id:'bi_'+Clock.stamp()+Math.random().toString(36).slice(2,6), owner:currentUser.name, name:n.trim(), category:cat, price:price, description:'', status:'unlisted', created_at:new Date().toISOString().slice(0,10), listed_at:'', sold_to:'', sold_at:'' });
   localStorage.setItem('camp_data',JSON.stringify(data));
   if (source === 'bazaar') { window._bazaarAddFormOpen = false; openHubSub('bazaar'); }
   else { window._invAddFormOpen = false; renderWorkspace(); }
@@ -5576,7 +5592,7 @@ function bazaarWarehouseAdd() {
   var cat = (document.getElementById('bazaarQuickCat')||{}).value||'其他';
   var price = parseInt((document.getElementById('bazaarQuickPrice')||{}).value) || 0;
   if (!data.inventory) data.inventory = [];
-  data.inventory.push({ id:'bi_'+Clock.stamp()+Math.random().toString(36).slice(2,6), owner:currentUser.name, name:name.trim(), category:cat, price:price, description:'', status:'unlisted', created_at:Clock.today(), listed_at:'', sold_to:'', sold_at:'' });
+  data.inventory.push({ id:'bi_'+Clock.stamp()+Math.random().toString(36).slice(2,6), owner:currentUser.name, name:name.trim(), category:cat, price:price, description:'', status:'unlisted', created_at:new Date().toISOString().slice(0,10), listed_at:'', sold_to:'', sold_at:'' });
   localStorage.setItem('camp_data',JSON.stringify(data));
   window._bazaarAddFormOpen = false;
   renderHubSlideContent('bazaar'); renderHubDropdown();
@@ -5585,7 +5601,7 @@ function bazaarWarehouseAdd() {
 function bazaarQuickList(itemId) {
   var it = (data.inventory||[]).find(function(x){return x.id===itemId;});
   if (!it) return;
-  it.status='listed'; it.listed_at=Clock.today();
+  it.status='listed'; it.listed_at=new Date().toISOString().slice(0,10);
   localStorage.setItem('camp_data',JSON.stringify(data));
   renderHubSlideContent('bazaar'); renderHubDropdown();
   setStatus('已上架：'+it.name);
@@ -5631,7 +5647,7 @@ function confirmItemPublish(itemId) {
   it.category = document.getElementById('itemPickCategory').value;
   it.price = parseInt(document.getElementById('itemPickPrice').value) || 0;
   it.description = document.getElementById('itemPickDesc').value.trim();
-  it.status = 'listed'; it.listed_at = Clock.today();
+  it.status = 'listed'; it.listed_at = new Date().toISOString().slice(0,10);
   localStorage.setItem('camp_data', JSON.stringify(data));
   closeItemPicker();
   if (window._hubSubPage === 'bazaar') renderHubSlideContent('bazaar');
@@ -5686,9 +5702,9 @@ document.addEventListener('click', function(e) {
 });
 
 // ═══ Camp Task (NT Admin) ═══
-function showCampTask() { if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'builder')) { alert('仅管理员和共建者可发布营队任务'); return; } document.getElementById('campTaskName').value = ''; document.getElementById('campTaskType').value = '支线'; document.getElementById('campTaskCategory').value = '其他'; document.getElementById('campTaskPoints').value = '15'; document.getElementById('campTaskSlots').value = '0'; var today = Clock.today(); document.getElementById('campTaskStart').value = today; document.getElementById('campTaskDeadline').value = ''; document.getElementById('campTaskReviewer').value = ''; document.getElementById('campReqNote').checked = true; document.getElementById('campReqPhoto').checked = false; document.getElementById('campReqFile').checked = false; document.getElementById('campReqPhotoCount').value = '1'; document.getElementById('campReqFileCount').value = '1'; document.getElementById('campTaskNote').value = ''; var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); document.getElementById('campTaskPoolInfo').textContent = '💡 使用营地资金池 · 剩余：' + (poolTotal - totalIssued).toLocaleString() + ' / ' + poolTotal.toLocaleString() + ' NT · 提交后需审核'; document.getElementById('campTaskModal').classList.add('show'); }
+function showCampTask() { if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'builder')) { alert('仅管理员和共建者可发布营队任务'); return; } document.getElementById('campTaskName').value = ''; document.getElementById('campTaskType').value = '支线'; document.getElementById('campTaskCategory').value = '其他'; document.getElementById('campTaskPoints').value = '15'; document.getElementById('campTaskSlots').value = '0'; var today = new Date().toISOString().slice(0,10); document.getElementById('campTaskStart').value = today; document.getElementById('campTaskDeadline').value = ''; document.getElementById('campTaskReviewer').value = ''; document.getElementById('campReqNote').checked = true; document.getElementById('campReqPhoto').checked = false; document.getElementById('campReqFile').checked = false; document.getElementById('campReqPhotoCount').value = '1'; document.getElementById('campReqFileCount').value = '1'; document.getElementById('campTaskNote').value = ''; var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); document.getElementById('campTaskPoolInfo').textContent = '💡 使用营地资金池 · 剩余：' + (poolTotal - totalIssued).toLocaleString() + ' / ' + poolTotal.toLocaleString() + ' NT · 提交后需审核'; document.getElementById('campTaskModal').classList.add('show'); }
 function closeCampTaskModal() { document.getElementById('campTaskModal').classList.remove('show'); }
-function confirmCampTask() { var name = document.getElementById('campTaskName').value.trim(); if (!name) { alert('请输入任务名称'); return; } var points = parseInt(document.getElementById('campTaskPoints').value) || 0; var reviewer = document.getElementById('campTaskReviewer').value.trim(); var reqNote = document.getElementById('campReqNote').checked; var reqPhoto = document.getElementById('campReqPhoto').checked; var reqFile = document.getElementById('campReqFile').checked; var photoCount = parseInt(document.getElementById('campReqPhotoCount').value) || 1; var fileCount = parseInt(document.getElementById('campReqFileCount').value) || 1; var submitReqs = []; if (reqNote) submitReqs.push('note'); if (reqPhoto) submitReqs.push({ type: 'photo', min: photoCount }); if (reqFile) submitReqs.push({ type: 'file', min: fileCount }); var task = { name: name, scope: 'camp', type: document.getElementById('campTaskType').value, category: document.getElementById('campTaskCategory').value, points: points || 15, max_slots: parseInt(document.getElementById('campTaskSlots').value) || 0, start: document.getElementById('campTaskStart').value.trim(), deadline: document.getElementById('campTaskDeadline').value.trim(), note: document.getElementById('campTaskNote').value.trim(), source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '', posted_at: Clock.today(), claimants: [], status: 'pending_approval', visibility: 'all', reviewer: reviewer, submit_requirements: submitReqs, min_season: 0 }; if (!data.tasks) data.tasks = []; data.tasks.push(task); localStorage.setItem('camp_data', JSON.stringify(data)); closeCampTaskModal(); renderNTAdmin(); setStatus('已提交审核：' + name); }
+function confirmCampTask() { var name = document.getElementById('campTaskName').value.trim(); if (!name) { alert('请输入任务名称'); return; } var points = parseInt(document.getElementById('campTaskPoints').value) || 0; var reviewer = document.getElementById('campTaskReviewer').value.trim(); var reqNote = document.getElementById('campReqNote').checked; var reqPhoto = document.getElementById('campReqPhoto').checked; var reqFile = document.getElementById('campReqFile').checked; var photoCount = parseInt(document.getElementById('campReqPhotoCount').value) || 1; var fileCount = parseInt(document.getElementById('campReqFileCount').value) || 1; var submitReqs = []; if (reqNote) submitReqs.push('note'); if (reqPhoto) submitReqs.push({ type: 'photo', min: photoCount }); if (reqFile) submitReqs.push({ type: 'file', min: fileCount }); var task = { name: name, scope: 'camp', type: document.getElementById('campTaskType').value, category: document.getElementById('campTaskCategory').value, points: points || 15, max_slots: parseInt(document.getElementById('campTaskSlots').value) || 0, start: document.getElementById('campTaskStart').value.trim(), deadline: document.getElementById('campTaskDeadline').value.trim(), note: document.getElementById('campTaskNote').value.trim(), source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '', posted_at: new Date().toISOString().slice(0,10), claimants: [], status: 'pending_approval', visibility: 'all', reviewer: reviewer, submit_requirements: submitReqs, min_season: 0 }; if (!data.tasks) data.tasks = []; data.tasks.push(task); localStorage.setItem('camp_data', JSON.stringify(data)); closeCampTaskModal(); renderNTAdmin(); setStatus('已提交审核：' + name); }
 function approveCampTask(idx, approve) { var t = data.tasks[idx]; if (!t || t.status !== 'pending_approval') return; if (approve) { t.status = 'active'; setStatus('✅ 已通过：' + t.name); } else { t.status = 'rejected'; t.review_note = prompt('退回原因（可选）：') || ''; setStatus('❌ 已退回：' + t.name); } localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); if (!document.getElementById('tab-workspace').classList.contains('hidden')) renderWorkspace(); }
 
 function doUpgrade() {
@@ -6475,7 +6491,7 @@ function showAddMaterialTx(personName) {
   var existingForm = document.getElementById('inlineMaterialTxForm');
   if (existingForm) { existingForm.remove(); return; }
   var detailDiv = document.getElementById('memberDetail');
-  var today = Clock.today();
+  var today = new Date().toISOString().slice(0,10);
   var formHTML = '<div id="inlineMaterialTxForm" style="margin:8px 0;padding:12px;border:2px solid var(--accent);border-radius:10px;background:#fefdf8">' +
     '<div style="font-weight:700;font-size:.82rem;margin-bottom:8px">📝 记录实际支出 — ' + esc(personName) + '</div>' +
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
@@ -6502,7 +6518,7 @@ function saveMaterialTx(personName) {
   data.finance_cny.transactions.push({
     type: '物料', person: personName, desc: item || '未命名',
     rmb: rmb, nt: nt,
-    date: date || Clock.today()
+    date: date || new Date().toISOString().slice(0,10)
   });
   recalcFinanceByPerson();
   localStorage.setItem('camp_data', JSON.stringify(data));
@@ -6701,7 +6717,7 @@ function saveTask() {
     task.claimants = [];
     task.active = 'yes';
     task.poster = currentUser ? currentUser.name : '';
-    task.posted_at = Clock.today();
+    task.posted_at = new Date().toISOString().slice(0,10);
     data.tasks.push(task);
   }
 
@@ -10034,7 +10050,7 @@ function exportBudgetExcel() {
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = '预算表_' + Clock.today() + '.xlsx';
+    a.download = '预算表_' + new Date().toISOString().slice(0,10) + '.xlsx';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setStatus('✅ 预算表已导出');
