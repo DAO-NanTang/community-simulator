@@ -1113,7 +1113,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
       <div style="text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15)">
         <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px">
-          <button class="btn pri" onclick="enterVillagerMain()" style="font-size:.8rem">🏠 我的主界面</button>
+          <button class="btn pri" id="btnVillagerMain" onclick="enterVillagerMain()" style="font-size:.8rem">🏠 我的主界面</button>
           <button class="btn" onclick="logoutUser()" style="font-size:.8rem;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">🚪 退出登录</button>
         </div>
         <div style="font-size:.82rem;color:rgba(255,255,255,.7);text-shadow:0 1px 2px rgba(0,0,0,.3)" id="villageUserInfo">—</div>
@@ -2155,6 +2155,9 @@ function showPlazaPlaceholder(user) {
   var pp = document.getElementById('plazaPlaceholder');
   var users = getUsers(), u = users[user.name];
   var vi = document.getElementById('villageUserInfo'); if (vi) vi.textContent = '👤 ' + user.name + ' · ' + getUserTitle(user) + ' · 注册于 ' + ((u && u.created) || '—');
+  // 只对 NPC/云村民显示「我的主界面」按钮
+  var bvm = document.getElementById('btnVillagerMain');
+  if (bvm) bvm.style.display = (user.role === 'npc' || user.role === 'visitor') ? '' : 'none';
   pp.classList.remove('hidden');
 }
 function hidePlazaPlaceholder() {
