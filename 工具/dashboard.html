@@ -3640,7 +3640,7 @@ function renderInnHub() {
     var occ = cur.length;
     var bg = selRoom === r.id ? '#fdf5e0' : (occ ? '#f0ebe0' : '#fafaf5');
     var bd = selRoom === r.id ? '2px solid var(--accent)' : '1px solid var(--border)';
-    h += '<div onclick="_innSelRoom=\''+r.id+'\';renderInnHub();openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 6px;text-align:center;font-size:.72rem;transition:.12s">';
+    h += '<div onclick="_innSelRoom=\''+r.id+'\';openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 6px;text-align:center;font-size:.72rem;transition:.12s">';
     h += '<div style="font-size:1.3rem">'+({mei:'🏵️',lan:'🌿',zhu:'🎋',ju:'🌼'}[r.id]||'🏠')+'</div>';
     h += '<div style="font-weight:600">'+esc(r.label)+'</div>';
     h += '<div style="color:'+(occ?'var(--accent)':'var(--green)')+'">'+(occ?'● 已入住':'○ 空房')+'</div>';
@@ -3656,7 +3656,7 @@ function renderInnHub() {
     var bd = selRoom === r.id ? '2px solid var(--accent)' : '1px solid var(--border)';
     var guests = ['','','',''];
     cur.forEach(function(b) { guests[0] = b.guest; }); // simplified - just first guest
-    h += '<div onclick="_innSelRoom=\''+r.id+'\';renderInnHub();openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 8px;text-align:center;font-size:.72rem;transition:.12s">';
+    h += '<div onclick="_innSelRoom=\''+r.id+'\';openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 8px;text-align:center;font-size:.72rem;transition:.12s">';
     h += '<div style="font-weight:600;margin-bottom:4px">'+({a:'🅰️',b:'🅱️'}[r.id]||'')+' '+esc(r.label)+'</div>';
     h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">';
     for (var bi = 1; bi <= 4; bi++) {
@@ -3851,6 +3851,7 @@ function renderHubSlideContent(page) {
         h += '</div>';
       });
     } else if (lunchOpen) { h += '<button class="btn pri" onclick="preorderCanteen(\'lunch\')" style="font-size:.72rem;padding:4px 12px">🔔 预定午餐 10 NT</button>'; }
+    else { h += '<button class="btn" disabled style="font-size:.72rem;padding:4px 12px;opacity:.4;cursor:not-allowed">🔔 预定午餐 10 NT（已截止）</button>'; }
     h += '</div>';
 
     // ── 晚餐 ──
@@ -3869,6 +3870,7 @@ function renderHubSlideContent(page) {
         h += '</div>';
       });
     } else if (dinnerOpen) { h += '<button class="btn pri" onclick="preorderCanteen(\'dinner\')" style="font-size:.72rem;padding:4px 12px">🔔 预定晚餐 10 NT</button>'; }
+    else { h += '<button class="btn" disabled style="font-size:.72rem;padding:4px 12px;opacity:.4;cursor:not-allowed">🔔 预定晚餐 10 NT（已截止）</button>'; }
     h += '</div>';
 
     // ── 建议 ──
@@ -3973,24 +3975,27 @@ function openHubSub(page, el) {
   var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
 
-  // Position sub-panel: 一级菜单左侧, 左上角固定, 不遮挡一级菜单
-  var menu = document.getElementById('hubMenu');
-  if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
-  if (menu && sp) {
-    var mr = menu.getBoundingClientRect();
-    sp.style.top = mr.top + 'px';
-    sp.style.left = Math.max(4, mr.left - 332) + 'px'; // 320px panel + 12px gap
-    sp.style.right = 'auto';
-    sp.style.maxHeight = Math.min(500, window.innerHeight - mr.top - 20) + 'px';
-  }
-
-  // Render content
+  // Render content first (so panel gets correct height)
   renderHubSlideContent(page);
+
+  // Position sub-panel: 一级菜单左侧, 固定位置不跳动
+  // Only reposition if not already visible (prevent jumping on content switch)
+  var isVisible = sp && sp.classList.contains('show');
+  if (!isVisible) {
+    var menu = document.getElementById('hubMenu');
+    if (!menu || menu.classList.contains('hidden')) menu = document.getElementById('hubMenu2');
+    if (menu && sp) {
+      var mr = menu.getBoundingClientRect();
+      sp.style.top = mr.top + 'px';
+      sp.style.left = Math.max(4, mr.left - 332) + 'px';
+      sp.style.right = 'auto';
+      sp.style.maxHeight = Math.min(500, window.innerHeight - mr.top - 20) + 'px';
+    }
+  }
 
   // Show sub panel + backdrop, keep dropdown visible
   if (sp) sp.classList.add('show');
   document.getElementById('hubSlideBackdrop').classList.add('show');
-  // Do NOT hide dropdown - it stays visible as the first-level menu
 }
 
 function closeHubSlide() {
