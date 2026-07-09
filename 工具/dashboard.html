@@ -1926,7 +1926,7 @@ function showRegister(role) {
   updateRegAvatarPreview();
 }
 function cycleRegAvatar() { regAvatarSeed = (regAvatarSeed + 1) % 60; updateRegAvatarPreview(); }
-function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 40, 0); }
+function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 400, 0); }
 function doRegister() {
   var name = document.getElementById('regName').value.trim();
   var password = document.getElementById('regPassword').value;
@@ -2125,6 +2125,8 @@ function resetAllData() {
 // ── World Entry & Routing ──
 function enterWorld(user) {
   document.getElementById('loginPage').style.display = 'none'; document.getElementById('worldHUD').classList.remove('hidden');
+  // 管理员种子资金：首次登录且余额为0时赠送1000 NT
+  if (user.role === 'admin') { var bal = calcNtTotal(user.name); if (bal <= 0) { recordTransaction({ type: TX_TYPES.ADMIN_ADJUST, from: '系统', to: user.name, amount: 1000, scope: 'camp', note: '管理员初始资金' }); } }
   refreshUserHUD();
   // Update workspace tab buttons to show user's name
   var bwt = document.getElementById('builderWorkspaceTab'); if (bwt) bwt.textContent = '👤 ' + user.name;
@@ -2345,6 +2347,12 @@ function renderVillageQuestHall() {
   var urgent = active.filter(function(t){ if(!t.deadline)return false; var d=parseDL(t.deadline); var td=new Date(today+'T00:00:00'); return (d-td)/86400000<=2&&(d-td)/86400000>=0; }).length;
 
   var filtered = active.filter(function(t) {
+    var vis = t.visibility || 'all'; var r = currentUser?currentUser.role:'';
+    if (vis==='adventurer'&&r!=='adventurer') return false;
+    if (vis==='builder'&&r!=='builder'&&r!=='admin') return false;
+    if (vis==='npc'&&r!=='npc') return false;
+    if (vis==='visitor'&&r!=='visitor') return false;
+    if (vis==='specific'&&t.target_claimant&&currentUser&&currentUser.name!==t.target_claimant) return false;
     if (villageSearchText && t.name.toLowerCase().indexOf(villageSearchText)===-1 && t.deadline.indexOf(villageSearchText)===-1) return false;
     if (villageScopeFilter!=='all' && (t.scope||'camp')!==villageScopeFilter) return false;
     if (villageCatFilter && villageCatFilter!=='全部' && t.type!==villageCatFilter) return false;
@@ -4649,6 +4657,12 @@ function renderQuestBoard() {
     if (t.type === '隐藏' && !myClaim) return false;
     // scope filter
     if (questScopeFilter !== 'all' && (t.scope||'camp') !== questScopeFilter) return false;
+    var vis = t.visibility || 'all'; var r = currentUser?currentUser.role:'';
+    if (vis==='adventurer'&&r!=='adventurer') return false;
+    if (vis==='builder'&&r!=='builder'&&r!=='admin') return false;
+    if (vis==='npc'&&r!=='npc') return false;
+    if (vis==='visitor'&&r!=='visitor') return false;
+    if (vis==='specific'&&t.target_claimant&&currentUser&&currentUser.name!==t.target_claimant) return false;
     // quick filters
     if (questQuickFilter === 'today' && t.deadline !== today) return false;
     if (questQuickFilter === 'urgent') { var dl = t.deadline ? parseDL(t.deadline) : null; var td = new Date(today+'T00:00:00'); if (!dl || (dl-td)/86400000 > 2) return false; }
@@ -4785,7 +4799,7 @@ function renderNTAdmin() {
 }
 
 // ── Task Actions ──
-function claimTask(idx) { if (!currentUser) { alert('请先登录'); return; } var t = data.tasks[idx]; if (!t || !t.claimants) return; var alreadyClaimed = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (alreadyClaimed) { alert('你已经领取过该委托'); return; } var activeCount = t.claimants.filter(function(c) { return c.status !== 'dropped'; }).length; if (t.max_slots > 0 && activeCount >= t.max_slots) { alert('名额已满'); return; } t.claimants.push({ name: currentUser.name, claimed_at: new Date().toISOString().slice(0,10), status: 'in_progress' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard();refreshMemberView(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace();var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();var hm=document.getElementById('hubQuestHallModal');if(hm&&!hm.classList.contains('hidden'))openHubQuestHall();setStatus('已领取：' + t.name); }
+function claimTask(idx) { if (!currentUser) { alert('请先登录'); return; } var t = data.tasks[idx]; if (!t || !t.claimants) return; var alreadyClaimed = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (alreadyClaimed) { alert('你已经领取过该委托'); return; } // Visibility check var vis=t.visibility||'all'; var role=currentUser.role; if(vis==='adventurer'&&role!=='adventurer'){alert('仅冒险者可领取');return;} if(vis==='builder'&&role!=='builder'&&role!=='admin'){alert('仅共建者可领取');return;} if(vis==='npc'&&role!=='npc'){alert('仅在地伙伴可领取');return;} if(vis==='visitor'&&role!=='visitor'){alert('仅云村民可领取');return;} if(vis==='specific'&&t.target_claimant&&currentUser.name!==t.target_claimant){alert('仅指定领取人可领取');return;} var activeCount = t.claimants.filter(function(c) { return c.status !== 'dropped'; }).length; if (t.max_slots > 0 && activeCount >= t.max_slots) { alert('名额已满'); return; } t.claimants.push({ name: currentUser.name, claimed_at: new Date().toISOString().slice(0,10), status: 'in_progress' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard();refreshMemberView(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace();var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();var hm=document.getElementById('hubQuestHallModal');if(hm&&!hm.classList.contains('hidden'))openHubQuestHall();setStatus('已领取：' + t.name); }
 var submitIdx = -1;
 function showSubmitModal(idx) {
   submitIdx = idx;
