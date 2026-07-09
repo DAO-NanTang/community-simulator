@@ -58,7 +58,7 @@ h2 { font-family: var(--pixel); font-size: .65rem; }
 /* Header */
 header { padding:14px 24px;border-bottom:1.5px solid #4a3828;position:relative;overflow:hidden;min-height:160px;
   background:linear-gradient(0deg,rgba(0,0,0,.25),rgba(0,0,0,.05) 40%,rgba(0,0,0,.15) 100%),
-  url('ai_expand_image1783014990973.png') center 70%/80% no-repeat; }
+  linear-gradient(135deg, #4a6a3a 0%, #5a7a4a 50%, #3a5a2a 100%) center 70%/80% no-repeat; }
 header h1 { font-size: 1.2rem; color: #fff; text-shadow: 2px 2px 6px rgba(0,0,0,.5); }
 header .toolbar { display: flex; gap: 6px; flex-wrap: wrap; }
 
@@ -120,7 +120,7 @@ select.inline-input { cursor: pointer; }
 .modal-overlay.show { display: flex; }
 /* Village Square — full-page immersive like login */
 #plazaPlaceholder:not(.hidden) { display: block; position: fixed; inset: 0; z-index: 90; overflow-y: auto; background: #5a4a3a; }
-#plazaPlaceholder:not(.hidden)::before { content: ''; position: fixed; inset: 0; background: url(ai_expand_image1783014990973.png) center/cover no-repeat; filter: blur(3px) brightness(.55); z-index: -1; }
+#plazaPlaceholder:not(.hidden)::before { content: ''; position: fixed; inset: 0; background: linear-gradient(180deg, #4a6a3a, #3a5a2a); filter: blur(3px) brightness(.55); z-index: -1; }
 #plazaPlaceholder:not(.hidden)::after { content: ''; position: fixed; inset: 0; background: linear-gradient(0deg,rgba(0,0,0,.25),rgba(0,0,0,.05) 40%,rgba(0,0,0,.15) 100%); z-index: -1; pointer-events: none; }
 .village-modal { z-index: 130; }
 .village-card { background: rgba(255,255,255,.92); border: 1px solid rgba(0,0,0,.08); border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; color: #3d3629; }
@@ -324,7 +324,7 @@ select.inline-input { cursor: pointer; }
 body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6b7d60; --accent: #5a8a3c; --green: #4a7c32; --red: #c05540; --yellow: #b8862e; --border: #c8d8b8; --tab-bg: #d8e8cc; --tab-hover: #c8dcb8; --tab-active-bg: #f8fbf5; --btn-bg: #dce8d0; --btn-hover: #cde0bc; --btn-border: #8aa878; --header-start: #d8e8cc; --header-end: #eef5e8; }
 
 /* ── Login page ── */
-.login-page { position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:url('ai_expand_image1783014990973.png') center/cover; }
+.login-page { position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, #5a7a4a, #3a5a2a); }
 .login-page::after { content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(25,15,8,.62),rgba(20,12,6,.72),rgba(15,8,4,.78));z-index:1; }
 .login-card { position:relative;z-index:2;background:rgba(252,248,240,.92);border:1px solid rgba(180,150,110,.2);border-radius:24px;padding:24px 20px 32px;max-width:400px;width:90%;box-shadow:0 4px 24px rgba(0,0,0,.2); }
 .login-card .login-decor { width:min(220px,65%);height:auto;margin:0 auto 2px;display:block; }
@@ -398,7 +398,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 <body>
 
 <header style="padding:0;border-bottom:1.5px solid #4a3828;position:relative;overflow:hidden;min-height:180px;">
-  <img src="ai_expand_image1783014990973.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 70%;z-index:0">
+  <div style="position:absolute;inset:0;width:100%;height:100%;background:linear-gradient(135deg,#4a6a3a,#5a7a4a,#3a5a2a);z-index:0"></div>
   <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.25),rgba(0,0,0,.05) 40%,rgba(0,0,0,.15) 100%);z-index:1"></div>
   <div style="position:relative;z-index:2;padding:18px 32px">
     <span style="font-size:2.2rem;filter:drop-shadow(2px 2px 3px rgba(0,0,0,.35))">⚔️</span>
