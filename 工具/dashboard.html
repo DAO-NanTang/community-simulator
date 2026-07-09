@@ -4038,6 +4038,11 @@ function _repositionHubSub() {
   }
 }
 window.addEventListener('resize', _repositionHubSub);
+var _hubScrollTimer = null;
+window.addEventListener('scroll', function() {
+  if (_hubScrollTimer) return;
+  _hubScrollTimer = setTimeout(function() { _hubScrollTimer = null; _repositionHubSub(); }, 50);
+});
 
 function closeHubSlide() {
   window._hubSubPage = '';
