@@ -1833,7 +1833,7 @@ var ROLE_TITLES = { admin:'🧙管理员',builder:'🧱共建者',adventurer:'�
 var ROLE_BADGE_ICONS = { builder:'🏅',adventurer:'🎖️',npc:'🌟',visitor:'🏕️' };
 function getUserTitle(u){ return u?ROLE_TITLES[u.role]||u.role:''; }
 function getUserBadges(u){ if(!u||!u.season_history)return[];return u.season_history.slice().reverse(); }
-function refreshUserHUD(){ if(!currentUser)return;var el=document.getElementById('hudCurrentUser');if(el)el.textContent=currentUser.name+' · '+getUserTitle(currentUser);updateWorldHUD(); }
+function refreshUserHUD(){ if(!currentUser)return;var el=document.getElementById('hudCurrentUser');if(el)el.textContent=currentUser.name+' · '+getUserTitle(currentUser);updateWorldHUD();if(currentUser.role==='builder'){var mb=document.querySelector('#builderTabs .tab[data-tab=\"members\"]');if(mb)mb.classList.add('hidden');var nt=document.querySelector('#builderTabs .tab[data-tab=\"ntadmin\"]');if(nt)nt.classList.add('hidden');var ib=document.getElementById('btnInviteCode');if(ib)ib.classList.add('hidden');} }
 function getWorldCodes() { try { return JSON.parse(localStorage.getItem('nt_world_codes')) || []; } catch(e) { return []; } }
 function saveWorldCodes(codes) { localStorage.setItem('nt_world_codes', JSON.stringify(codes)); }
 function getInviteCodes() { try { return JSON.parse(localStorage.getItem(NT_INVITE_KEY)) || []; } catch(e) { return []; } }
@@ -5177,7 +5177,7 @@ function switchTab(name, opts) {
   // ── 身份权限白名单 ──
   var roleTabs = {
     admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map','leaderboard'],
-    builder: ['workspace','questboard','taskhall','ntadmin','timeline','budget','settlement','leaderboard'],
+    builder: ['workspace','questboard','taskhall','timeline','budget','settlement','leaderboard'],
     adventurer: ['workspace','questboard','timeline','leaderboard'],
     npc: ['workspace','questboard','timeline','leaderboard'], visitor: ['workspace','timeline','leaderboard']
   };
