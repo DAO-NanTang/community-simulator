@@ -4495,6 +4495,7 @@ function showItemPicker(target) {
     dd.style.width = '260px';
   }
   dd.classList.remove('hidden');
+  _itemPickerJustOpened = true;
   document.getElementById('itemPickerSearch').value = '';
   document.getElementById('itemPickerDetail').style.display = 'none';
   renderItemPickerList();
@@ -4549,11 +4550,13 @@ function confirmItemPublish(itemId) {
   renderHubDropdown();
   setStatus('已发布：' + it.name);
 }
-// 点击外部关闭 itemPicker
+// 点击外部关闭 itemPicker（延迟注册避免按钮click立即关闭）
+var _itemPickerJustOpened = false;
 document.addEventListener('click', function(e) {
   var dd = document.getElementById('itemPickerDropdown');
   if (!dd || dd.classList.contains('hidden')) return;
-  if (!dd.contains(e.target)) { closeItemPicker(); }
+  if (_itemPickerJustOpened) { _itemPickerJustOpened = false; return; }
+  if (!dd.contains(e.target) && e.target.id !== 'itemPickerSearch') { closeItemPicker(); }
 });
 
 function renderReviewerList() {
