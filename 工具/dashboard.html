@@ -489,6 +489,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <span id="builderModeBar" class="hidden" style="display:flex;gap:6px;flex-wrap:wrap"><span class="dropdown" style="position:relative"><button class="btn" onclick="toggleDropdown('previewMenu')" style="font-size:.8rem;padding:5px 10px">👁️ 预览 ▾</button><div id="previewMenu" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:120px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px"><button class="btn" onclick="switchToPreview('builder');toggleDropdown('previewMenu')" style="text-align:left;font-size:.8rem">🧱 共建者</button><button class="btn" onclick="switchToPreview('adventurer');toggleDropdown('previewMenu')" style="text-align:left;font-size:.8rem">⚔️ 冒险者</button><button class="btn" onclick="switchToPreview('npc');toggleDropdown('previewMenu')" style="text-align:left;font-size:.8rem">👥 NPC</button><button class="btn" onclick="switchToPreview('visitor');toggleDropdown('previewMenu')" style="text-align:left;font-size:.8rem">🏕️ 游客</button></div></span></span>
     </div>
     <button id="btnInbox" onclick="toggleInbox()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;position:relative;padding:4px 8px" title="信箱">📬</button>
+    <span style="font-size:.68rem;color:var(--muted);align-self:center;margin-left:4px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="statusDot"></span>
   </div></div>
 
   <!-- ═══ Builder Tabs ═══ -->
@@ -518,7 +519,6 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <button class="btn" onclick="logoutUser();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-sign-out"></i> 退出</button>
       </div>
     </span>
-    <span style="font-size:.68rem;color:var(--muted);align-self:center" id="statusDot"></span>
   </div>
 
   <!-- ═══ Adventurer Tabs ═══ -->
