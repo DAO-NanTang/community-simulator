@@ -1921,6 +1921,89 @@ function seedAdminAccount() {
   saveUsers(users);
 }
 
+// ═══ 统一角色变更：所有身份升级走这里 ═══
+var adminNames = ['砚仁'];
+function changeUserRole(name, newRole, opts) {
+  opts = opts || {};
+  var users = getUsers();
+  if (!users[name]) return { ok: false, error: '用户不存在' };
+
+  // Step 0: 校验
+  var validRoles = ['admin', 'builder', 'adventurer', 'npc', 'visitor'];
+  if (validRoles.indexOf(newRole) === -1) return { ok: false, error: '无效的角色：' + newRole };
+  var oldRole = opts.fromRole || users[name].role;
+  if (adminNames.indexOf(name) !== -1 && newRole !== 'admin') {
+    return { ok: false, error: '管理员不可被降级' };
+  }
+  if (newRole === 'builder') {
+    var history = users[name].season_history || [];
+    var wasAdventurer = history.some(function(h) { return h.role === 'adventurer'; });
+    if (!wasAdventurer && oldRole !== 'adventurer') {
+      return { ok: false, error: '共建者需先有冒险者经历' };
+    }
+  }
+  // 邀请码校验（必须在修改数据前完成，避免无效码导致半途修改）
+  if (opts.inviteCode) {
+    var wc = getWorldCodes();
+    var ic = getInviteCodes();
+    var codeValid = false;
+    if (newRole === 'adventurer') {
+      codeValid = wc.indexOf(opts.inviteCode) !== -1;
+    } else if (newRole === 'npc') {
+      codeValid = wc.indexOf(opts.inviteCode) !== -1 || ic.indexOf(opts.inviteCode) !== -1;
+    }
+    if (!codeValid) return { ok: false, error: '邀请码无效（冒险者池' + wc.length + '个，NBC池' + ic.length + '个）' };
+  }
+
+  // Step 1: 写 season_history
+  if (!users[name].season_history) users[name].season_history = [];
+  users[name].season_history.push({
+    role: oldRole,
+    period: opts.period || '',
+    changed_at: new Date().toISOString().slice(0, 10)
+  });
+
+  // Step 2: 更新 users 表
+  users[name].role = newRole;
+  if (opts.inviteCode && (newRole === 'adventurer' || newRole === 'npc')) {
+    users[name].world_id = opts.inviteCode;
+  }
+  if (opts.staffCard) {
+    users[name].staff_card = opts.staffCard;
+  }
+  saveUsers(users);
+
+  // Step 3: 更新 data.members
+  if (!data.members) data.members = {};
+  if (!data.members[name]) data.members[name] = {};
+  data.members[name].role = newRole;
+  localStorage.setItem('camp_data', JSON.stringify(data));
+
+  // Step 4: 如果改的是当前登录用户，刷新界面
+  if (currentUser && currentUser.name === name) {
+    currentUser.role = newRole;
+    refreshUserHUD();
+    showMainInterface(newRole, 'workspace');
+  }
+
+  // Step 5: 消耗邀请码（校验已在 Step 0 完成，这里只消费）
+  if (opts.inviteCode) {
+    var wc = getWorldCodes();
+    var ic = getInviteCodes();
+    if (newRole === 'adventurer') {
+      saveWorldCodes(wc.filter(function(c) { return c !== opts.inviteCode; }));
+    } else if (newRole === 'npc') {
+      if (wc.indexOf(opts.inviteCode) !== -1) {
+        saveWorldCodes(wc.filter(function(c) { return c !== opts.inviteCode; }));
+      } else {
+        saveInviteCodes(ic.filter(function(c) { return c !== opts.inviteCode; }));
+      }
+    }
+  }
+
+  return { ok: true };
+}
+
 // ── Login/Register Flow ──
 function showRegister(role) {
   regRole = role; regAvatarSeed = Math.floor(Math.random() * 60);
@@ -1964,10 +2047,10 @@ function registerUser(name, password, role, avatarSeed, inviteCode) {
     if (!codes.includes(inviteCode)) return { ok: false, error: '邀请码无效' };
     saveWorldCodes(codes.filter(function(c) { return c !== inviteCode; }));
   }
-  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, season: '', created: new Date().toISOString().slice(0, 10), world_id: (role === 'adventurer') ? inviteCode : null, uid: generateUID() };
+  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, season: '', created: new Date().toISOString().slice(0, 10), world_id: (role === 'adventurer') ? inviteCode : null, uid: generateUID(), season_history: [{ role: role, period: '', changed_at: new Date().toISOString().slice(0, 10) }] };
   saveUsers(users);
   if (!data.members) data.members = {};
-  if (!data.members[name]) { data.members[name] = { name: name, role: '', avatar_seed: avatarSeed, gender: '' }; localStorage.setItem('camp_data', JSON.stringify(data)); }
+  if (!data.members[name]) { data.members[name] = { name: name, role: role, avatar_seed: avatarSeed, gender: '' }; localStorage.setItem('camp_data', JSON.stringify(data)); }
   return { ok: true };
 }
 
@@ -2304,8 +2387,8 @@ function showVillageSquare() {
 
 function showMapInvite(){document.getElementById('mapInviteInput').value='';document.getElementById('mapInviteCard').classList.remove('hidden');}
 function closeMapInvite(){document.getElementById('mapInviteCard').classList.add('hidden');openVillageModal('map');}
-function submitMapInvite(){var code=document.getElementById('mapInviteInput').value.trim().toUpperCase();if(code){var wc=getWorldCodes();var ic=getInviteCodes();if(wc.includes(code)){saveWorldCodes(wc.filter(function(c){return c!==code}));upgradeToNPC(code);}else if(ic.includes(code)){saveInviteCodes(ic.filter(function(c){return c!==code}));upgradeToNPC(code);}else{alert('邀请码无效（冒险者池'+wc.length+'个，NBC池'+ic.length+'个）');}}closeMapInvite();}
-function upgradeToNPC(code){if(!currentUser)return;currentUser.role='npc';currentUser.world_id=code;var users=getUsers();if(users[currentUser.name]){users[currentUser.name].role='npc';users[currentUser.name].world_id=code;saveUsers(users);}refreshUserHUD();var vi=document.getElementById('villageUserInfo');if(vi)vi.textContent='👤 '+currentUser.name+' · '+getUserTitle(currentUser);setStatus('已升级为在地伙伴！');}
+function submitMapInvite(){var code=document.getElementById('mapInviteInput').value.trim().toUpperCase();if(code&&currentUser){var result=changeUserRole(currentUser.name,'npc',{inviteCode:code});if(!result.ok){alert(result.error);}}closeMapInvite();}
+function upgradeToNPC(code){if(!currentUser)return;var result=changeUserRole(currentUser.name,'npc',{inviteCode:code});if(!result.ok){alert(result.error);return;}setStatus('已升级为在地伙伴！');}
 function enterVillagerMain() {
   var role = currentUser ? currentUser.role : '';
   var tab = (role === 'npc' || role === 'visitor') ? 'leaderboard' : 'workspace';
@@ -2523,17 +2606,10 @@ function renderVillageActivityList() {
 }
 
 function doUpgradeWithCode(code) {
-  var codes = getWorldCodes();
-  if (!code) return {ok:false};
-  if (!codes.includes(code)) { alert('邀请码无效'); return {ok:false}; }
-  saveWorldCodes(codes.filter(function(c) { return c !== code; }));
-  var users = getUsers();
   if (!currentUser) return {ok:false};
-  users[currentUser.name].role = 'adventurer';
-  users[currentUser.name].world_id = code;
-  saveUsers(users);
-  currentUser.role = 'adventurer';
-  refreshUserHUD();
+  if (!code) return {ok:false};
+  var result = changeUserRole(currentUser.name, 'adventurer', { period: '第四期', inviteCode: code });
+  if (!result.ok) { alert(result.error); return {ok:false}; }
   alert('✅ 已升级为冒险者！即将进入营队界面');
   return {ok:true};
 }
@@ -5478,12 +5554,11 @@ function approveCampTask(idx, approve) { var t = data.tasks[idx]; if (!t || t.st
 
 function doUpgrade() {
   var code = document.getElementById('upgradeCode').value.trim(); if (!code) return; if (!currentUser) return;
-  var users = getUsers();
-  var worldCodes = getWorldCodes();
-  if (worldCodes.includes(code)) { saveWorldCodes(worldCodes.filter(function(c) { return c !== code; })); users[currentUser.name].role = 'adventurer'; users[currentUser.name].world_id = code; saveUsers(users); currentUser.role = 'adventurer'; refreshUserHUD(); enterWorld(currentUser); return; }
-  var npcCodes = getInviteCodes();
-  if (npcCodes.includes(code)) { users[currentUser.name].role = 'npc'; saveUsers(users); saveInviteCodes(npcCodes.filter(function(c) { return c !== code; })); currentUser.role = 'npc'; alert('✅ 已升级为南塘在地伙伴！'); enterWorld(currentUser); return; }
-  alert('邀请码无效');
+  var result = changeUserRole(currentUser.name, 'adventurer', { period: '第四期', inviteCode: code });
+  if (result.ok) { enterWorld(currentUser); return; }
+  result = changeUserRole(currentUser.name, 'npc', { inviteCode: code });
+  if (result.ok) { alert('✅ 已升级为南塘在地伙伴！'); enterWorld(currentUser); return; }
+  alert(result.error || '邀请码无效');
 }
 
 // ── Legacy entry point (redirects to login page) ──
