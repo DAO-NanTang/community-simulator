@@ -2107,7 +2107,7 @@ function enterWorld(user) {
     document.body.classList.add('adventurer-mode');
     document.getElementById('adventurerTabs').classList.remove('hidden');
     switchTab('workspace');
-  } else { document.body.classList.add('adventurer-mode'); var _inMain = localStorage.getItem('nt_npc_in_main'); if ((user.role==='npc'&&user.world_id)||_inMain==='1') { document.getElementById('adventurerTabs').classList.remove('hidden'); switchTab('workspace'); } else { showPlazaPlaceholder(user); } }
+  } else { document.body.classList.add('adventurer-mode'); var _inMain = localStorage.getItem('nt_npc_in_main'); if ((user.role==='npc'&&user.world_id)||_inMain==='1') { document.getElementById('adventurerTabs').classList.remove('hidden'); switchTab('leaderboard'); } else { showPlazaPlaceholder(user); } }
   updateInboxBadge();
 }
 
@@ -2184,7 +2184,7 @@ function enterVillagerMain() {
   var qb = document.querySelector('#adventurerTabs .tab[data-tab="questboard"]');
   if (qb) { if (currentUser && currentUser.role === 'visitor') qb.classList.add('hidden'); else qb.classList.remove('hidden'); }
   localStorage.setItem('nt_npc_in_main', '1');
-  switchTab('workspace');
+  switchTab('leaderboard');
 }
 
 // ── Village modals ──
