@@ -2422,7 +2422,7 @@ function renderVillageQuestHall() {
 
   // ── Publish area ──
   var publishHTML = '';
-  if (isMember) {
+  if (currentUser) {
     publishHTML += '<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:10px;text-align:center">'+
       '<button class="btn" onclick="showPostTask()" style="font-size:.78rem">📝 发布私人任务（需要 ≥1 NT）</button></div>';
   }
@@ -4595,7 +4595,7 @@ function renderQuestBoard() {
     fhtml += '<input id="questNewTag" placeholder="+标签" style="width:48px;font-size:.68rem;padding:2px 4px;border:1px dashed var(--border);border-radius:4px;background:transparent" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v&&(!data.custom_tags||data.custom_tags.indexOf(v)<0)){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(v);localStorage.setItem(\'camp_data\',JSON.stringify(data));this.value=\'\';renderQuestBoard()}}">';
   }
   fhtml += '<span style="flex:1"></span>';
-  fhtml += '<button class="btn pri" onclick="showPostTask()" style="font-size:.78rem;padding:5px 14px">＋ 发布委托</button>';
+  if (currentUser) fhtml += '<button class="btn pri" onclick="showPostTask()" style="font-size:.78rem;padding:5px 14px">＋ 发布委托</button>';
   fhtml += '</div>';
 
   // ── Unclaimed reminder ──
