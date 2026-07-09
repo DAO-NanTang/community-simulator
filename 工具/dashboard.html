@@ -4942,7 +4942,7 @@ function closeSubmitModal() { document.getElementById('submitTaskModal').classLi
 function confirmSubmit() {
   var idx = submitIdx; if (idx < 0) return;
   var note = document.getElementById('submitNote').value.trim();
-  var t = data.tasks[idx]; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; });
+  var t = data.tasks[idx]; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; });
   var reqs = t.submit_requirements || ['note'];
   var hasReq = function(type) { return reqs.some(function(r) { return (typeof r === 'string' ? r : r.type) === type; }); };
   var getReq = function(type) { var found = reqs.filter(function(r) { return (typeof r === 'string' ? r : r.type) === type; }); return found.length > 0 ? found[0] : null; };
@@ -4961,8 +4961,8 @@ function confirmSubmit() {
   setStatus('已提交：' + t.name);
   closeSubmitModal();
 }
-function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; showSubmitModal(idx); }
-function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard();refreshMemberView(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace();var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();var hm=document.getElementById('hubQuestHallModal');if(hm&&!hm.classList.contains('hidden'))openHubQuestHall();setStatus('已放弃：' + t.name); }
+function submitTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (!myClaim) return; showSubmitModal(idx); }
+function dropTask(idx) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var myClaim = t.claimants.find(function(c) { return c.name === currentUser.name && c.status !== 'dropped'; }); if (!myClaim) return; if (!confirm('确定放弃该委托「' + t.name + '」？')) return; myClaim.status = 'dropped'; localStorage.setItem('camp_data', JSON.stringify(data)); renderQuestBoard();refreshMemberView(); renderMyProfile(); if (!document.getElementById("tab-workspace").classList.contains("hidden")) renderWorkspace();var vm=document.getElementById('villageModalQuesthall');if(vm&&!vm.classList.contains('hidden'))renderVillageQuestHall();var hm=document.getElementById('hubQuestHallModal');if(hm&&!hm.classList.contains('hidden'))openHubQuestHall();setStatus('已放弃：' + t.name); }
 function triggerHiddenTask(idx) { var t = data.tasks[idx]; if (!t) return; var targetName = prompt('输入要触发的冒险者姓名：'); if (!targetName) return; if (!t.claimants) t.claimants = []; var alreadyThere = t.claimants.find(function(c) { return c.name === targetName; }); if (alreadyThere) { alert('该冒险者已被触发'); return; } t.claimants.push({ name: targetName, claimed_at: new Date().toISOString().slice(0,10), status: 'triggered' }); localStorage.setItem('camp_data', JSON.stringify(data)); renderNTAdmin(); setStatus('已触发隐藏任务给：' + targetName); }
 // ═══ 撤回任务 ═══
 function withdrawTask(idx) {
