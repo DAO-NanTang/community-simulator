@@ -5213,7 +5213,7 @@ function switchTab(name, opts) {
     admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map','leaderboard'],
     builder: ['workspace','questboard','taskhall','timeline','budget','settlement','leaderboard'],
     adventurer: ['workspace','questboard','timeline','leaderboard'],
-    npc: ['workspace','questboard','timeline','leaderboard'], visitor: ['workspace','timeline','leaderboard']
+    npc: ['questboard','timeline','leaderboard'], visitor: ['timeline','leaderboard']
   };
   if (currentUser && !previewMode) {
     var allowed = roleTabs[currentUser.role];
