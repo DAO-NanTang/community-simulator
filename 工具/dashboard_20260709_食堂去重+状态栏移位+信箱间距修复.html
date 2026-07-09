@@ -3836,7 +3836,7 @@ function renderHubSlideContent(page) {
     var listed = (data.inventory || []).filter(function(it) { return it.status === 'listed'; });
     var byOwner = {}; listed.forEach(function(it) { if (!byOwner[it.owner]) byOwner[it.owner] = []; byOwner[it.owner].push(it); });
     var owners = Object.keys(byOwner).sort();
-    if (currentUser) h += '<div style="margin-bottom:10px"><button class="btn pri" onclick="showItemPicker(\'bazaar\')" style="font-size:.72rem;padding:4px 12px">＋ 发布物品</button></div>';
+    if (currentUser) h += '<div style="margin-bottom:10px"><button class="btn pri" onclick="workspacePanel=\'items\';switchTab(\'workspace\')" style="font-size:.72rem;padding:4px 12px">＋ 发布物品</button></div>';
     if (owners.length === 0) {
       h += '<div style="text-align:center;color:var(--muted);padding:30px 0">📭 暂无物品在售</div>';
     } else {
@@ -4024,7 +4024,7 @@ function renderBazaarContent() {
   var byOwner = {}; listed.forEach(function(it) { if (!byOwner[it.owner]) byOwner[it.owner] = []; byOwner[it.owner].push(it); });
   var owners = Object.keys(byOwner).sort();
   var h = '';
-  if (currentUser) h += '<button class="btn pri" onclick="showItemPicker(\'bazaar\')" style="font-size:.75rem;margin-bottom:10px">＋ 发布物品</button>';
+  if (currentUser) h += '<button class="btn pri" onclick="workspacePanel=\'items\';switchTab(\'workspace\')" style="font-size:.75rem;margin-bottom:10px">＋ 发布物品</button>';
   if (owners.length === 0) {
     h += '<div class="card" style="text-align:center;padding:40px"><div style="font-size:2rem">📭</div><div style="color:var(--muted)">暂无物品在售</div></div>';
   } else {
@@ -4481,81 +4481,6 @@ function showReviewerPicker(targetId) {
   setTimeout(function() { document.getElementById('pickerSearch').focus(); }, 100);
 }
 function closeReviewerPicker() { document.getElementById('pickerDropdown').classList.add('hidden'); }
-
-// ═══ 物品选择器（集市发布，复用审核人选择器模式）═══
-var _itemPickTarget = '';
-function showItemPicker(target) {
-  _itemPickTarget = target;
-  var dd = document.getElementById('itemPickerDropdown');
-  var sp = document.getElementById('hubSubPanel');
-  if (sp) {
-    var r = sp.getBoundingClientRect();
-    dd.style.top = Math.max(8, r.top) + 'px';
-    dd.style.left = Math.max(8, r.left - 272) + 'px';
-    dd.style.width = '260px';
-  }
-  dd.classList.remove('hidden');
-  document.getElementById('itemPickerSearch').value = '';
-  document.getElementById('itemPickerDetail').style.display = 'none';
-  renderItemPickerList();
-  setTimeout(function() { document.getElementById('itemPickerSearch').focus(); }, 100);
-}
-function closeItemPicker() { document.getElementById('itemPickerDropdown').classList.add('hidden'); }
-function renderItemPickerList() {
-  var q = (document.getElementById('itemPickerSearch').value || '').trim().toLowerCase();
-  var items = (data.inventory || []).filter(function(it) { return it.owner === (currentUser?currentUser.name:'') && it.status !== 'sold'; });
-  if (q) { items = items.filter(function(it) { return it.name.toLowerCase().indexOf(q) !== -1 || it.category.toLowerCase().indexOf(q) !== -1; }); }
-  var list = document.getElementById('itemPickerList');
-  if (items.length === 0) {
-    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:16px;font-size:.75rem">'+(q?'无匹配物品':'暂无物品')+'</div><div style="text-align:center;padding-bottom:8px"><button class="btn pri" onclick="closeItemPicker();workspacePanel=\'items\';switchTab(\'workspace\')" style="font-size:.7rem;padding:3px 10px">＋ 去🎒添加物品</button></div>';
-    return;
-  }
-  var catIcons = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
-  var h = '';
-  items.forEach(function(it) {
-    var isListed = it.status === 'listed';
-    h += '<div class="pk-row" onclick="selectItemToPublish(\''+escAttr(it.id)+'\')" style="display:flex;align-items:center;gap:6px">';
-    h += '<span style="font-size:1.1rem">'+(catIcons[it.category]||'📦')+'</span>';
-    h += '<span class="pk-name">'+esc(it.name)+'</span>';
-    h += '<span style="font-size:.62rem;color:var(--muted)">'+(it.price>0?it.price+' NT':'免费')+'</span>';
-    h += '<span style="font-size:.62rem;color:'+(isListed?'var(--green)':'var(--muted)')+'">'+(isListed?'已上架':'未上架')+'</span>';
-    h += '</div>';
-  });
-  list.innerHTML = h;
-}
-function selectItemToPublish(itemId) {
-  var it = (data.inventory || []).find(function(x) { return x.id === itemId; });
-  if (!it) return;
-  var detail = document.getElementById('itemPickerDetail');
-  detail.style.display = 'block';
-  detail.innerHTML = '<div style="font-weight:600;font-size:.76rem;margin-bottom:6px">发布：'+esc(it.name)+'</div>'+
-    '<div style="margin-bottom:4px"><label style="font-size:.65rem;color:var(--muted)">分类</label><select id="itemPickCategory" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card)">'+
-    ['艺术品','文具','手工','书籍','工具','食材','交换','其他'].map(function(c){return '<option value="'+c+'"'+(c===it.category?' selected':'')+'>'+c+'</option>';}).join('')+
-    '</select></div>'+
-    '<div style="margin-bottom:4px"><label style="font-size:.65rem;color:var(--muted)">价格 (NT)</label><input id="itemPickPrice" type="number" value="'+(it.price||0)+'" min="0" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card)"></div>'+
-    '<div style="margin-bottom:6px"><label style="font-size:.65rem;color:var(--muted)">描述</label><input id="itemPickDesc" value="'+escAttr(it.description||'')+'" style="width:100%;padding:4px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;font-family:var(--font);background:var(--card)"></div>'+
-    '<button class="btn pri" onclick="confirmItemPublish(\''+escAttr(itemId)+'\')" style="font-size:.7rem;padding:4px 12px;width:100%">📤 确认发布到集市</button>';
-}
-function confirmItemPublish(itemId) {
-  var it = (data.inventory || []).find(function(x) { return x.id === itemId; });
-  if (!it) return;
-  it.category = document.getElementById('itemPickCategory').value;
-  it.price = parseInt(document.getElementById('itemPickPrice').value) || 0;
-  it.description = document.getElementById('itemPickDesc').value.trim();
-  it.status = 'listed'; it.listed_at = new Date().toISOString().slice(0,10);
-  localStorage.setItem('camp_data', JSON.stringify(data));
-  closeItemPicker();
-  if (window._hubSubPage === 'bazaar') renderHubSlideContent('bazaar');
-  renderHubDropdown();
-  setStatus('已发布：' + it.name);
-}
-// 点击外部关闭 itemPicker
-document.addEventListener('click', function(e) {
-  var dd = document.getElementById('itemPickerDropdown');
-  if (!dd || dd.classList.contains('hidden')) return;
-  if (!dd.contains(e.target)) { closeItemPicker(); }
-});
-
 function renderReviewerList() {
   var q = (document.getElementById('pickerSearch').value || '').trim().toLowerCase();
   var users = getUsers();
