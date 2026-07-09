@@ -3640,7 +3640,7 @@ function renderInnHub() {
     var occ = cur.length;
     var bg = selRoom === r.id ? '#fdf5e0' : (occ ? '#f0ebe0' : '#fafaf5');
     var bd = selRoom === r.id ? '2px solid var(--accent)' : '1px solid var(--border)';
-    h += '<div onclick="_innSelRoom=\''+r.id+'\';openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 6px;text-align:center;font-size:.72rem;transition:.12s">';
+    h += '<div onclick="_innSelBed=\'\';_innSelRoom=\''+r.id+'\';openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 6px;text-align:center;font-size:.72rem;transition:.12s">';
     h += '<div style="font-size:1.3rem">'+({mei:'🏵️',lan:'🌿',zhu:'🎋',ju:'🌼'}[r.id]||'🏠')+'</div>';
     h += '<div style="font-weight:600">'+esc(r.label)+'</div>';
     h += '<div style="color:'+(occ?'var(--accent)':'var(--green)')+'">'+(occ?'● 已入住':'○ 空房')+'</div>';
@@ -3656,7 +3656,7 @@ function renderInnHub() {
     var bd = selRoom === r.id ? '2px solid var(--accent)' : '1px solid var(--border)';
     var guests = ['','','',''];
     cur.forEach(function(b) { guests[0] = b.guest; }); // simplified - just first guest
-    h += '<div onclick="_innSelRoom=\''+r.id+'\';openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 8px;text-align:center;font-size:.72rem;transition:.12s">';
+    h += '<div onclick="_innSelBed=\'\';_innSelRoom=\''+r.id+'\';openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 8px;text-align:center;font-size:.72rem;transition:.12s">';
     h += '<div style="font-weight:600;margin-bottom:4px">'+({a:'🅰️',b:'🅱️'}[r.id]||'')+' '+esc(r.label)+'</div>';
     h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">';
     for (var bi = 1; bi <= 4; bi++) {
@@ -3676,22 +3676,40 @@ function renderInnHub() {
     if (sr) {
       var srCur = bookings.filter(function(b) { return b.room === selRoom && b.status === 'confirmed'; });
       var isFull = srCur.length >= sr.beds;
-      // 床位详情
-      h += '<div class="card" style="padding:10px 12px;margin-bottom:10px;border-color:var(--accent)"><div style="font-weight:600;font-size:.78rem;margin-bottom:8px">'+esc(sr.label)+' · 床位（'+srCur.length+'/'+sr.beds+'）</div>';
+      // 床位详情 — 可点选空床位
+      var selBed = window._innSelBed || '';
+      h += '<div class="card" style="padding:10px 12px;margin-bottom:10px;border-color:var(--accent)"><div style="font-weight:600;font-size:.78rem;margin-bottom:8px">'+esc(sr.label)+' · 选择床位（'+srCur.length+'/'+sr.beds+'）</div>';
       h += '<div style="display:grid;grid-template-columns:repeat('+(sr.beds>1?'4':'1')+',1fr);gap:6px;margin-bottom:8px">';
       for (var bi = 1; bi <= sr.beds; bi++) {
+        var bedId = selRoom+'-'+bi;
         var bedGuest = srCur.length >= bi ? srCur[bi-1] : null;
-        h += '<div style="background:'+(bedGuest?'#f0ebe0':'#e8f5e0')+';border:1px solid '+(bedGuest?'#d5c8a0':'var(--green)')+';border-radius:6px;padding:8px 6px;text-align:center;font-size:.7rem">';
-        h += '<div style="font-weight:600;margin-bottom:2px">'+bi+'号床</div>';
-        h += (bedGuest ? '<div>'+esc(bedGuest.guest)+'</div><div style="font-size:.62rem;color:var(--muted)">'+_md(bedGuest.check_in)+'→'+_md(bedGuest.check_out)+'</div>' : '<div style="color:var(--green);font-weight:600">空</div>');
+        var isSel = selBed === bedId;
+        var canClick = !bedGuest && currentUser;
+        var bg = bedGuest ? '#f0ebe0' : (isSel ? '#fdf5e0' : '#e8f5e0');
+        var bd = bedGuest ? '1px solid #d5c8a0' : (isSel ? '2px solid var(--accent)' : '1px solid var(--green)');
+        var onclick = canClick ? ' onclick="_innSelBed=\''+bedId+'\';renderInnHub();openHubSub(\'inn\')"' : '';
+        h += '<div'+onclick+' style="cursor:'+(canClick?'pointer':'default')+';background:'+bg+';border:'+bd+';border-radius:6px;padding:8px 6px;text-align:center;font-size:.7rem;transition:.1s">';
+        h += '<div style="font-weight:600;margin-bottom:2px">'+(sr.type==='quad'?({a:'🅰️',b:'🅱️'}[selRoom]||'')+bi:bi)+'号床</div>';
+        if (bedGuest) {
+          h += '<div>'+esc(bedGuest.guest)+'</div><div style="font-size:.62rem;color:var(--muted)">'+_md(bedGuest.check_in)+'→'+_md(bedGuest.check_out)+'</div>';
+        } else if (isSel) {
+          h += '<div style="color:var(--accent);font-weight:600">已选 ✓</div>';
+        } else {
+          h += '<div style="color:var(--green);font-weight:600">空</div>';
+        }
         h += '</div>';
       }
       h += '</div>';
-      // 直接申请（无需再选房型）
+      // 直接申请（已选房间+床位）
       if (currentUser && !isFull) {
-        h += '<div style="border-top:1px dotted var(--border);padding-top:8px"><div style="font-weight:600;font-size:.74rem;margin-bottom:6px">📝 申请入住 '+esc(sr.label)+'</div>';
+        var canApply = selBed || sr.beds === 1;
+        var bedNote = selBed ? ' · 床位 '+selBed.split('-')[1]+'号' : '';
+        h += '<div style="border-top:1px dotted var(--border);padding-top:8px"><div style="font-weight:600;font-size:.74rem;margin-bottom:6px">📝 申请入住 '+esc(sr.label)+bedNote+'</div>';
         h += '<div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><label style="font-size:.66rem;color:var(--muted);white-space:nowrap">入住</label><input id="innCheckIn" type="date" style="flex:1;min-width:0;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:.7rem;font-family:var(--font);background:var(--card)"><label style="font-size:.66rem;color:var(--muted);white-space:nowrap">离开</label><input id="innCheckOut" type="date" style="flex:1;min-width:0;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:.7rem;font-family:var(--font);background:var(--card)"></div>';
-        h += '<button class="btn pri" onclick="applyInnBooking(\''+escAttr(selRoom)+'\')" style="font-size:.72rem;padding:4px 12px;width:100%">提交申请</button></div>';
+        if (sr.beds > 1 && !selBed) {
+          h += '<div style="color:var(--muted);font-size:.66rem;text-align:center;margin-bottom:4px">请先点选上方空床位</div>';
+        }
+        h += '<button class="btn pri" onclick="applyInnBooking(\''+escAttr(selRoom)+'\')" style="font-size:.72rem;padding:4px 12px;width:100%" '+(canApply?'':'disabled')+'>提交申请</button></div>';
       } else if (isFull) {
         h += '<div style="color:var(--muted);font-size:.72rem;text-align:center;padding:4px">🚫 该房型已满</div>';
       }
@@ -3726,6 +3744,7 @@ function renderInnHub() {
 function applyInnBooking(roomId) {
   if (!currentUser) { alert('请先登录'); return; }
   var room = roomId || (document.getElementById('innRoomInput') || {}).value || window._innSelRoom || '';
+  var bed = window._innSelBed || '';
   var ci = (document.getElementById('innCheckIn') || {}).value || '';
   var co = (document.getElementById('innCheckOut') || {}).value || '';
   if (!room || !ci || !co) { alert('请填写房型和日期'); return; }
@@ -3733,7 +3752,7 @@ function applyInnBooking(roomId) {
   if (!isRoomAvailable(room, ci, co)) { alert('该房型在所选日期已满，请更换房型或日期'); return; }
   var id = 'bk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   if (!data.inn_bookings) data.inn_bookings = [];
-  data.inn_bookings.push({ id: id, guest: currentUser.name, room: room, check_in: ci, check_out: co, status: 'pending', note: '', created_at: new Date().toISOString().slice(0, 10), confirmed_by: '' });
+  data.inn_bookings.push({ id: id, guest: currentUser.name, room: room, bed: bed, check_in: ci, check_out: co, status: 'pending', note: '', created_at: new Date().toISOString().slice(0, 10), confirmed_by: '' });
   localStorage.setItem('camp_data', JSON.stringify(data)); updateAll(); refreshHub();
   setStatus('入住申请已提交，等待摊主确认');
 }
