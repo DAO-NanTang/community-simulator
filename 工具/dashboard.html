@@ -504,6 +504,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="budget" onclick="switchTab('budget')">💰 资源金库</button>
     <button class="tab" data-tab="settlement" onclick="switchTab('settlement')">🧾 通关结算</button>
+    <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
     <span style="flex:1"></span>
     <span class="dropdown" style="position:relative;align-self:center">
       <button class="tab" onclick="if(!document.getElementById('hubSubPanel').classList.contains('show'))toggleDropdown('hubMenu');renderHubDropdown()" style="cursor:pointer">🗺️ 南塘云村</button>
@@ -1112,6 +1113,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <div style="text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15)">
         <div style="font-size:.82rem;color:rgba(255,255,255,.7);text-shadow:0 1px 2px rgba(0,0,0,.3)" id="villageUserInfo">—</div>
         <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+          <button class="btn pri" onclick="enterVillagerMain()" style="font-size:.8rem">🏠 进入我的主界面</button>
           <button class="btn" onclick="logoutUser()" style="font-size:.8rem;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)">🚪 退出</button>
         </div>
       </div>
@@ -1544,7 +1546,7 @@ var TX_TYPES = {
   AUCTION_SETTLE:   'auction_settle'
 };
 var AUCTION_ESCROW = '拍卖行托管';
-var DEFAULT_COUNCIL_ROOM = { url: 'https://meet.nantang.org/nbc', key: 'nbc2026' };
+var COUNCIL_BASE_URL = 'https://imeeting.co/';
 
 // ═══ 会计系统：统一记账入口 ═══
 function recordTransaction(opts) {
@@ -1639,7 +1641,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!data.game_sessions) data.game_sessions = [];
     if (!data.auctions) data.auctions = [];
     if (!data.council_meetings) data.council_meetings = [];
-    if (!data.council_room) data.council_room = DEFAULT_COUNCIL_ROOM;
+    if (!data.council_room) data.council_room = {};
     // 种子测试数据：首次加载时自动填充示例物品
     if (!data.inventory || data.inventory.length === 0) {
       data.inventory = [
@@ -2154,6 +2156,12 @@ function wsSelectAvatar(seed) {
 function showVillageSquare() {
   if (!currentUser) return;
   showPlazaPlaceholder(currentUser);
+}
+function enterVillagerMain() {
+  hidePlazaPlaceholder();
+  document.getElementById('adventurerTabs').classList.remove('hidden');
+  document.getElementById('worldHUD').classList.remove('hidden');
+  switchTab('leaderboard');
 }
 
 // ── Village modals ──
@@ -2792,8 +2800,11 @@ function switchToPreview(role) {
     document.getElementById('builderTabs').classList.remove('hidden');
     switchTab('workspace');
   } else {
+    // NPC/visitor: show main interface (leaderboard), not village square
     document.body.classList.add('adventurer-mode');
-    showPlazaPlaceholder({ name: currentUser ? currentUser.name : '', role: role });
+    document.getElementById('adventurerTabs').classList.remove('hidden');
+    document.getElementById('worldHUD').classList.remove('hidden');
+    switchTab('leaderboard');
   }
   showPreviewBanner(role);
 }
@@ -3018,6 +3029,12 @@ function renderWorkspace() {
     html += '<div class="card"><h3>⚙️ 设置</h3>';
     html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" disabled style="width:100%"><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">身份</label><br><select id="wsIdentity" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].identity=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;font-family:var(--font);background:var(--card)"><option value="">未设置</option>'+[\'在地成员\',\'原村民\',\'共建者\',\'冒险者\',\'云村民\'].map(function(v){return \'<option value="\'+v+\'"\'+(memInfo.identity===v?\' selected\':\'\')+\'>\'+v+\'</option>\';}).join(\'\')+\'</select></div>\';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">电话</label><br><input class="inline-input" value="'+escAttr(memInfo.phone||'')+'" id="wsPhone" style="width:100%" placeholder="138****6789" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].phone=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">住址</label><br><input class="inline-input" value="'+escAttr(memInfo.address||'')+'" id="wsAddress" style="width:100%" placeholder="福建南平…" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].address=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">技能标签（逗号分隔）</label><br><input class="inline-input" value="'+escAttr((memInfo.skills||[]).join(\', \'))+'" id="wsSkills" style="width:100%" placeholder="水墨, 书法, 策展" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].skills=this.value.split(\',\').map(function(s){return s.trim()}).filter(Boolean);localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
+    var _pff=[\'identity\',\'phone\',\'address\',\'skills\'];var _pfc=_pff.filter(function(f){return memInfo[f]||(f===\'skills\'?memInfo.skills&&memInfo.skills.length:false)}).length;var _pct=Math.round(_pfc/_pff.length*100);
+    html += '<div style="margin-bottom:10px;padding:8px;background:#fef9ee;border-radius:6px;border:1px solid #e8d5a0"><div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📋 档案完整度</div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:\'+_pct+\'%;background:var(--accent);border-radius:3px;transition:.3s"></div></div><div style="font-size:.65rem;color:var(--muted)">\'+_pct+\'%\'+(_pct===100?\' 🎉\':\'\')+\'</div></div>\';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
     html += '</div>';
@@ -3894,27 +3911,37 @@ function renderCouncilHub() {
   } else { h += '<div style="color:var(--muted);text-align:center;padding:20px">📭 暂无近期会议</div>'; }
   return h;
 }
+window._councilAudience = 'builders';
 function createMeeting() {
   var topic = document.getElementById('councilTopic').value.trim(); if (!topic) { alert('请输入议题'); return; }
   var date = document.getElementById('councilDate').value; if (!date) { alert('请选择日期'); return; }
   var time = document.getElementById('councilTime').value || '20:00';
+  var rn = document.getElementById('councilRoomNumber').value.trim(); if (!rn) { alert('请输入会议号'); return; }
   var note = document.getElementById('councilNote').value.trim();
-  var cbs = document.querySelectorAll('.councilCb:checked');
-  var attendees = []; cbs.forEach(function(cb){ attendees.push(cb.value); });
+  var audience = window._councilAudience || 'builders';
+  var attendees = [];
+  if (audience === 'custom') {
+    var cbs = document.querySelectorAll('.councilCb:checked'); cbs.forEach(function(cb){ attendees.push(cb.value); });
+    if (attendees.length === 0) { alert('请至少勾选一位参会人'); return; }
+  } else if (audience === 'builders') {
+    var users = getUsers(); Object.keys(users).forEach(function(n){ if (users[n].role==='admin'||users[n].role==='builder') attendees.push(n); });
+  } else if (audience === 'all_members') {
+    attendees = Object.keys(data.members||{});
+  }
   var copySelf = document.getElementById('councilCopySelf').checked;
   if (copySelf && currentUser && attendees.indexOf(currentUser.name)===-1) attendees.push(currentUser.name);
-  if (attendees.length === 0) { alert('请至少勾选一位参会人'); return; }
   if (!data.council_meetings) data.council_meetings = [];
-  data.council_meetings.push({ id:'cm_'+Date.now().toString(36), topic:topic, time:date+'T'+time, host:currentUser?currentUser.name:'', note:note, attendees:attendees, created_at:new Date().toISOString() });
+  data.council_meetings.push({ id:'cm_'+Date.now().toString(36), topic:topic, time:date+'T'+time, host:currentUser?currentUser.name:'', room_number:rn, note:note, audience:audience, attendees:attendees, created_at:new Date().toISOString() });
   localStorage.setItem('camp_data',JSON.stringify(data));
-  window._councilFormOpen = false;
+  window._councilFormOpen = false; window._councilAudience = 'builders';
   openHubSub('council');
 }
 function computeCouncilReminders() {
   var msgs = []; if (!currentUser) return msgs;
   var now = new Date(); var today = now.toISOString().slice(0,10);
   (data.council_meetings||[]).forEach(function(m){
-    if (m.attendees.indexOf(currentUser.name)===-1) return;
+    var isInvited = m.audience==='public' || (m.attendees||[]).indexOf(currentUser.name)!==-1;
+    if (!isInvited) return;
     var mt = new Date(m.time); var diff = (mt - now) / 60000;
     if (m.time >= today) {
       if (diff <= 30 && diff > 0) msgs.push({ type:'meeting_soon', topic:m.topic, time:m.time, host:m.host, id:'council_'+m.id, createdAt:m.created_at, jump:null });
@@ -4972,10 +4999,10 @@ function switchTab(name, opts) {
   tabHighlight = (opts && opts.highlight) ? opts.highlight : null;
   // ── 身份权限白名单 ──
   var roleTabs = {
-    admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map'],
-    builder: ['workspace','questboard','taskhall','ntadmin','timeline','budget','settlement'],
+    admin: ['workspace','questboard','settings','members','players','taskhall','ntadmin','timeline','budget','settlement','map','leaderboard'],
+    builder: ['workspace','questboard','taskhall','ntadmin','timeline','budget','settlement','leaderboard'],
     adventurer: ['workspace','questboard','timeline','leaderboard'],
-    npc: ['workspace'], visitor: ['workspace']
+    npc: ['leaderboard'], visitor: ['leaderboard']
   };
   if (currentUser && !previewMode) {
     var allowed = roleTabs[currentUser.role];
