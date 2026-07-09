@@ -490,6 +490,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     </div>
     <span style="display:flex;align-items:center;gap:2px">
       <button id="btnInbox" onclick="toggleInbox()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;position:relative;padding:4px 4px" title="信箱">📬</button>
+      <button id="btnContacts" onclick="showContactSidebar()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;padding:4px 4px" title="常联系">👥</button>
       <span style="font-size:.7rem;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="statusDot"></span>
     </span>
   </div></div>
@@ -1335,6 +1336,13 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div class="hs-body" id="hubSlideBody"></div>
 </div>
 
+<!-- Contact Sidebar -->
+<div class="invite-backdrop" id="contactBackdrop" onclick="closeContactSidebar()"></div>
+<div class="invite-sidebar" id="contactSidebar">
+  <div class="is-header"><span style="font-weight:700;font-size:.85rem">👥 常联系</span><button onclick="closeContactSidebar()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:2px 4px">✕</button></div>
+  <div class="is-body" id="contactSidebarBody"></div>
+</div>
+
 <!-- Invite Code Sidebar -->
 <div class="invite-backdrop" id="inviteBackdrop" onclick="dismissInviteSidebar()"></div>
 <div class="invite-sidebar" id="inviteSidebar">
@@ -1347,6 +1355,15 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 <div class="picker-dropdown hidden" id="pickerDropdown">
   <div class="pk-header"><input type="text" id="pickerSearch" placeholder="🔍 搜索…" oninput="renderReviewerList()"></div>
   <div class="pk-list" id="pickerList"></div>
+</div>
+
+<!-- Contact Card Dropdown -->
+<div class="picker-dropdown hidden" id="contactCardDropdown">
+  <div class="pk-header" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+    <span id="contactCardTitle" style="font-weight:700;font-size:.85rem"></span>
+    <button onclick="closeContactCard()" style="background:none;border:none;font-size:1rem;cursor:pointer;color:var(--muted)">✕</button>
+  </div>
+  <div class="pk-list" id="contactCardBody" style="padding:4px 10px 10px"></div>
 </div>
 
 <!-- Item Picker (集市选物品，复用 picker-dropdown 样式) -->
@@ -3029,12 +3046,16 @@ function renderWorkspace() {
     html += '<div class="card"><h3>⚙️ 设置</h3>';
     html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" disabled style="width:100%"><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">身份</label><br><select id="wsIdentity" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].identity=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;font-family:var(--font);background:var(--card)"><option value="">未设置</option>'+[\'在地成员\',\'原村民\',\'共建者\',\'冒险者\',\'云村民\'].map(function(v){return \'<option value="\'+v+\'"\'+(memInfo.identity===v?\' selected\':\'\')+\'>\'+v+\'</option>\';}).join(\'\')+\'</select></div>\';
+    var identities = ['在地成员','原村民','共建者','冒险者','云村民'];
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">身份</label><br><select id="wsIdentity" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].identity=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;font-family:var(--font);background:var(--card)"><option value="">未设置</option>';
+    identities.forEach(function(v){ html += '<option value="'+v+'"'+(memInfo.identity===v?' selected':'')+'>'+v+'</option>'; });
+    html += '</select></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">电话</label><br><input class="inline-input" value="'+escAttr(memInfo.phone||'')+'" id="wsPhone" style="width:100%" placeholder="138****6789" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].phone=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">住址</label><br><input class="inline-input" value="'+escAttr(memInfo.address||'')+'" id="wsAddress" style="width:100%" placeholder="福建南平…" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].address=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">技能标签（逗号分隔）</label><br><input class="inline-input" value="'+escAttr((memInfo.skills||[]).join(\', \'))+'" id="wsSkills" style="width:100%" placeholder="水墨, 书法, 策展" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].skills=this.value.split(\',\').map(function(s){return s.trim()}).filter(Boolean);localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
-    var _pff=[\'identity\',\'phone\',\'address\',\'skills\'];var _pfc=_pff.filter(function(f){return memInfo[f]||(f===\'skills\'?memInfo.skills&&memInfo.skills.length:false)}).length;var _pct=Math.round(_pfc/_pff.length*100);
-    html += '<div style="margin-bottom:10px;padding:8px;background:#fef9ee;border-radius:6px;border:1px solid #e8d5a0"><div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📋 档案完整度</div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:\'+_pct+\'%;background:var(--accent);border-radius:3px;transition:.3s"></div></div><div style="font-size:.65rem;color:var(--muted)">\'+_pct+\'%\'+(_pct===100?\' 🎉\':\'\')+\'</div></div>\';
+    var skillsStr = (memInfo.skills||[]).join(', ');
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">技能标签（逗号分隔）</label><br><input class="inline-input" value="'+escAttr(skillsStr)+'" id="wsSkills" style="width:100%" placeholder="水墨, 书法, 策展" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].skills=this.value.split(\',\').map(function(s){return s.trim()}).filter(Boolean);localStorage.setItem(\'camp_data\',JSON.stringify(data))"></div>';
+    var _pff = ['identity','phone','address','skills']; var _pfc = _pff.filter(function(f){ return memInfo[f] || (f==='skills' ? memInfo.skills && memInfo.skills.length : false); }).length; var _pct = Math.round(_pfc/_pff.length*100);
+    html += '<div style="margin-bottom:10px;padding:8px;background:#fef9ee;border-radius:6px;border:1px solid #e8d5a0"><div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📋 档案完整度</div><div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:'+_pct+'%;background:var(--accent);border-radius:3px;transition:.3s"></div></div><div style="font-size:.65rem;color:var(--muted)">'+_pct+'%'+(_pct===100?' 🎉':'')+'</div></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
     html += '</div>';
@@ -4794,6 +4815,57 @@ function showItemPicker(target, el) {
   setTimeout(function() { document.getElementById('itemPickerSearch').focus(); }, 100);
 }
 function closeItemPicker() { document.getElementById('itemPickerDropdown').classList.add('hidden'); }
+
+// ═══ 名片弹窗 ═══
+var _contactCardJustOpened = false;
+function showContactCard(name, el) {
+  var dd = document.getElementById('contactCardDropdown');
+  if (el) {
+    var r = el.getBoundingClientRect();
+    dd.style.top = Math.min(r.bottom + 4, window.innerHeight - 240) + 'px';
+    dd.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 268)) + 'px';
+    dd.style.width = '260px';
+  }
+  renderContactCard(name);
+  dd.classList.remove('hidden');
+  _contactCardJustOpened = true;
+}
+function closeContactCard() {
+  document.getElementById('contactCardDropdown').classList.add('hidden');
+}
+function renderContactCard(name) {
+  var users = getUsers(); var u = users[name] || {};
+  var mi = (data.members && data.members[name]) ? data.members[name] : {};
+  var nt = calcNtTotal(name);
+  var tasks = (data.tasks || []).filter(function(t) { return t.assignee === name || (t.claimants || []).some(function(c) { return c.name === name; }); });
+  var done = tasks.filter(function(t) { var cl = (t.claimants || []).find(function(c) { return c.name === name; }); return (cl && cl.status === 'completed') || t.status === '已完成' || t.status === '已确认'; }).length;
+  var items = (data.inventory || []).filter(function(it) { return it.owner === name && it.status === 'listed'; });
+  var identity = mi.identity || ROLE_TITLES[u.role] || u.role || '';
+  var season = mi.season || u.season || '';
+  var daysSince = u.created ? Math.ceil((new Date() - new Date(u.created)) / 86400000) : 0;
+  var avSeed = (mi.avatar_seed !== undefined) ? mi.avatar_seed : (u.avatar_seed || 0);
+
+  document.getElementById('contactCardTitle').textContent = name;
+  var h = '';
+  h += '<div style="text-align:center;margin-bottom:8px">'+avatarCircle(avSeed,48,0)+'</div>';
+  h += '<div style="text-align:center;font-weight:700;font-size:.85rem;margin-bottom:2px">'+esc(name)+'</div>';
+  h += '<div style="text-align:center;color:var(--muted);font-size:.72rem;margin-bottom:8px">'+esc(identity)+(season?' · 第'+esc(season)+'期':'')+' · '+daysSince+'天</div>';
+  h += '<div style="border-top:1px dotted var(--border);padding-top:8px;margin-bottom:8px">';
+  h += '<div style="display:flex;justify-content:space-between;font-size:.78rem"><span>💎 NT余额</span><span style="color:var(--accent);font-weight:600">'+nt.toLocaleString()+'</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:.78rem"><span>📋 任务</span><span>'+tasks.length+'项 · 完成'+done+'项</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:.78rem"><span>🎒 在售</span><span>'+items.length+'件</span></div>';
+  h += '</div>';
+  if (mi.phone) h += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">📞 '+esc(mi.phone)+'</div>';
+  if (mi.address) h += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">📍 '+esc(mi.address)+'</div>';
+  if (mi.skills && mi.skills.length) h += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:8px">🏷️ '+mi.skills.map(function(s){return esc(s)}).join(' · ')+'</div>';
+  document.getElementById('contactCardBody').innerHTML = h;
+}
+document.addEventListener('click', function(e) {
+  var dd = document.getElementById('contactCardDropdown');
+  if (!dd || dd.classList.contains('hidden')) return;
+  if (_contactCardJustOpened) { _contactCardJustOpened = false; return; }
+  if (!dd.contains(e.target)) { closeContactCard(); }
+});
 // ═══ 物品渲染共用（集市+工作台同步）═══
 var _CAT_ICONS = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
 
