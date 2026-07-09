@@ -3397,6 +3397,7 @@ function _timeAgo(iso) {
   return Math.floor(hh / 24) + '天前';
 }
 function _md(d) { if (!d) return ''; var p = ('' + d).split('-'); return p.length === 3 ? (parseInt(p[1]) + '/' + parseInt(p[2])) : d; }
+function _addDays(d, n) { var dt = new Date(d + 'T00:00:00'); dt.setDate(dt.getDate() + n); return dt.toISOString().slice(0, 10); }
 
 // —— 🍵 茶馆 ——
 function archiveTeahousePosts() {
@@ -3624,7 +3625,68 @@ function renderInnHub() {
   var rooms = getInnRooms();
   var isVendor = _hasVendorPanel('inn');
   var bookings = data.inn_bookings || [];
+  var selRoom = window._innSelRoom || '';
   var h = '';
+
+  // ═══ 房间格子视图 ═══
+  var singles = rooms.filter(function(r) { return r.type === 'single'; });
+  var quads = rooms.filter(function(r) { return r.type === 'quad'; });
+  // 单人间行
+  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px">';
+  singles.forEach(function(r) {
+    var cur = bookings.filter(function(b) { return b.room === r.id && b.status === 'confirmed'; });
+    var occ = cur.length;
+    var bg = selRoom === r.id ? '#fdf5e0' : (occ ? '#f0ebe0' : '#fafaf5');
+    var bd = selRoom === r.id ? '2px solid var(--accent)' : '1px solid var(--border)';
+    h += '<div onclick="_innSelRoom=\''+r.id+'\';renderInnHub();openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 6px;text-align:center;font-size:.72rem;transition:.12s">';
+    h += '<div style="font-size:1.3rem">'+({mei:'🏵️',lan:'🌿',zhu:'🎋',ju:'🌼'}[r.id]||'🏠')+'</div>';
+    h += '<div style="font-weight:600">'+esc(r.label)+'</div>';
+    h += '<div style="color:'+(occ?'var(--accent)':'var(--green)')+'">'+(occ?'● 已入住':'○ 空房')+'</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  // 四人间行
+  h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px">';
+  quads.forEach(function(r) {
+    var cur = bookings.filter(function(b) { return b.room === r.id && b.status === 'confirmed'; });
+    var occ = cur.length;
+    var bg = selRoom === r.id ? '#fdf5e0' : (occ ? '#f0ebe0' : '#fafaf5');
+    var bd = selRoom === r.id ? '2px solid var(--accent)' : '1px solid var(--border)';
+    var guests = ['','','',''];
+    cur.forEach(function(b) { guests[0] = b.guest; }); // simplified - just first guest
+    h += '<div onclick="_innSelRoom=\''+r.id+'\';renderInnHub();openHubSub(\'inn\')" style="cursor:pointer;background:'+bg+';border:'+bd+';border-radius:8px;padding:10px 8px;text-align:center;font-size:.72rem;transition:.12s">';
+    h += '<div style="font-weight:600;margin-bottom:4px">'+({a:'🅰️',b:'🅱️'}[r.id]||'')+' '+esc(r.label)+'</div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">';
+    for (var bi = 1; bi <= 4; bi++) {
+      var bedGuest = ''; cur.forEach(function(b) { if (!bedGuest) bedGuest = b.guest; });
+      var bedOcc = bi <= occ;
+      h += '<div style="background:'+(bedOcc?'#e0d0b0':'#f8f6f0')+';border-radius:3px;padding:3px 2px;font-size:.6rem;color:'+(bedOcc?'var(--text)':'var(--muted)')+'">'+(bedOcc?esc(bedGuest).charAt(0):bi)+'</div>';
+    }
+    h += '</div>';
+    h += '<div style="color:var(--muted);font-size:.62rem;margin-top:3px">'+occ+'/'+r.beds+'人</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+
+  // ═══ 选中房间：床位详情 ═══
+  if (selRoom) {
+    var sr = rooms.find(function(r) { return r.id === selRoom; });
+    if (sr) {
+      var srCur = bookings.filter(function(b) { return b.room === selRoom && b.status === 'confirmed'; });
+      h += '<div class="card" style="padding:8px 10px;margin-bottom:8px;border-color:var(--accent)"><div style="font-weight:600;font-size:.76rem;margin-bottom:6px">'+esc(sr.label)+' · 床位详情</div>';
+      h += '<div style="display:grid;grid-template-columns:repeat('+(sr.beds>1?'4':'1')+',1fr);gap:6px;margin-bottom:6px">';
+      for (var bi = 1; bi <= sr.beds; bi++) {
+        var bedGuest = srCur.length >= bi ? srCur[bi-1] : null;
+        h += '<div style="background:'+(bedGuest?'#f0ebe0':'#f8faf5')+';border:1px solid '+(bedGuest?'#d5c8a0':'var(--border)')+';border-radius:6px;padding:8px 6px;text-align:center;font-size:.7rem">';
+        h += '<div style="font-weight:600;margin-bottom:2px">'+bi+'号床</div>';
+        h += (bedGuest ? '<div>'+esc(bedGuest.guest)+'</div><div style="font-size:.62rem;color:var(--muted)">'+_md(bedGuest.check_in)+'→'+_md(bedGuest.check_out)+'</div>' : '<div style="color:var(--green)">空</div>');
+        h += '</div>';
+      }
+      h += '</div></div>';
+    }
+  }
+
+  // ═══ 房型列表（原有功能，精简）═══
   h += '<div style="font-weight:600;font-size:.76rem;margin-bottom:5px">房型总览</div>';
   rooms.forEach(function(r) {
     var cur = bookings.filter(function(b) { return b.room === r.id && b.status === 'confirmed'; });
@@ -3816,6 +3878,37 @@ function renderHubSlideContent(page) {
     // ── 建议 ──
     h += '<div><div style="font-size:.75rem;font-weight:600;margin-bottom:4px">💬 明天想吃什么？</div>';
     h += '<div style="display:flex;gap:6px"><input id="canteenSuggestion" placeholder="比如：素饺子…" style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-size:.75rem;font-family:var(--font);background:var(--card)"><button class="btn" onclick="submitCanteenSuggestion()" style="font-size:.7rem">提交</button></div></div>';
+
+    // ── 历史记录 + 结账 ──
+    var histDate = window._canteenHistDate || today;
+    h += '<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px"><div style="font-weight:600;font-size:.76rem;margin-bottom:8px">📜 用餐记录</div>';
+    // Date nav
+    var prevD = _addDays(histDate, -1); var nextD = _addDays(histDate, 1);
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+    h += '<button class="btn" onclick="window._canteenHistDate=\''+prevD+'\';openHubSub(\'canteen\')" style="font-size:.7rem;padding:3px 8px">◀</button>';
+    h += '<span style="flex:1;text-align:center;font-weight:600;font-size:.78rem">'+esc(histDate)+(histDate===today?' 今天':'')+'</span>';
+    h += '<button class="btn" onclick="window._canteenHistDate=\''+nextD+'\';openHubSub(\'canteen\')" style="font-size:.7rem;padding:3px 8px" '+(histDate===today?'disabled':'')+'>▶</button>';
+    h += '</div>';
+    // Orders for selected date
+    var histOrders = (data.canteen_orders || []).filter(function(o) { return o.person === (currentUser?currentUser.name:'') && o.date === histDate; });
+    if (histOrders.length === 0) {
+      h += '<div style="color:var(--muted);font-size:.72rem;text-align:center;padding:10px">当天无用餐记录</div>';
+    } else {
+      histOrders.forEach(function(o) {
+        var mealLabel = o.meal==='lunch'?'午餐':'晚餐';
+        var itemsStr = (o.items||[]).map(function(it){return getFoodIcon(it)+esc(it);}).join(' ');
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px dotted var(--border);font-size:.73rem">';
+        h += '<span>'+mealLabel+' '+itemsStr+' · <b>'+o.price+' NT</b></span>';
+        if (o.status === 'ordered') {
+          h += '<span style="display:flex;gap:4px"><span style="color:var(--accent);font-size:.68rem">⏳待付</span>';
+          h += '<button class="btn green" onclick="confirmCanteenPayment(\''+escAttr(o.id)+'\');openHubSub(\'canteen\')" style="font-size:.62rem;padding:2px 8px">💳 结账</button></span>';
+        } else {
+          h += '<span style="color:var(--green);font-size:.68rem">✅ 已付</span>';
+        }
+        h += '</div>';
+      });
+    }
+    h += '</div>';
 
     // 摊主：编辑菜单 + 统计 + 建议
     if (_hasVendorPanel('canteen')) {
