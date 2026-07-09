@@ -2188,7 +2188,7 @@ function openHubQuestHall() {
   if (vql && hql) hql.innerHTML = vql.innerHTML;
   // NPC dialogue
   var npc = document.getElementById('npcDialogue'); var hn = document.getElementById('hubNpcText');
-  if (npc && hn) hn.textContent = npc.textContent;
+  if (npc && hn) hn.innerHTML = npc.innerHTML;
 }
 function closeHubQuestHall() { document.getElementById('hubQuestHallModal').classList.add('hidden'); }
 
@@ -5510,7 +5510,7 @@ function switchTab(name, opts) {
   if (name === 'taskhall') { renderDailyView('staff'); renderTasks(); renderCompleteness(); }
   if (name === 'ntadmin') { renderNTAdmin(); }
   if (name === 'profile') renderMyProfile();
-  if (name === 'questboard') { renderVillageQuestHall(); document.getElementById('villageModalQuesthall').classList.remove('hidden'); refreshMemberView(); }
+  if (name === 'questboard') { renderQuestBoard(); refreshMemberView(); }
   if (name === 'leaderboard') renderLeaderboard();
   if (name === 'map') renderDailyView('player'); // backward compat
   if (name === 'workspace') renderWorkspace();
