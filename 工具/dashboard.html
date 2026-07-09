@@ -3338,6 +3338,8 @@ function preorderCanteen(meal) {
   recordTransaction({ type: TX_TYPES.CANTEEN_PREORDER, from: currentUser.name, to: '高琳姐', amount: 10, ref_id: orderId, item_name: (meal==='lunch'?'午餐':'晚餐'), scope: 'personal' });
   localStorage.setItem('camp_data', JSON.stringify(data));
   updateAll();
+  // Refresh sub panel if canteen is open
+  if (window._hubSubPage === 'canteen') renderHubSlideContent('canteen');
   setStatus('已预定今日'+(meal==='lunch'?'午餐':'晚餐')+'（10 NT）');
 }
 
@@ -3668,39 +3670,33 @@ function renderInnHub() {
   });
   h += '</div>';
 
-  // ═══ 选中房间：床位详情 ═══
+  // ═══ 选中房间 → 床位详情 + 直接申请 ═══
   if (selRoom) {
     var sr = rooms.find(function(r) { return r.id === selRoom; });
     if (sr) {
       var srCur = bookings.filter(function(b) { return b.room === selRoom && b.status === 'confirmed'; });
-      h += '<div class="card" style="padding:8px 10px;margin-bottom:8px;border-color:var(--accent)"><div style="font-weight:600;font-size:.76rem;margin-bottom:6px">'+esc(sr.label)+' · 床位详情</div>';
-      h += '<div style="display:grid;grid-template-columns:repeat('+(sr.beds>1?'4':'1')+',1fr);gap:6px;margin-bottom:6px">';
+      var isFull = srCur.length >= sr.beds;
+      // 床位详情
+      h += '<div class="card" style="padding:10px 12px;margin-bottom:10px;border-color:var(--accent)"><div style="font-weight:600;font-size:.78rem;margin-bottom:8px">'+esc(sr.label)+' · 床位（'+srCur.length+'/'+sr.beds+'）</div>';
+      h += '<div style="display:grid;grid-template-columns:repeat('+(sr.beds>1?'4':'1')+',1fr);gap:6px;margin-bottom:8px">';
       for (var bi = 1; bi <= sr.beds; bi++) {
         var bedGuest = srCur.length >= bi ? srCur[bi-1] : null;
-        h += '<div style="background:'+(bedGuest?'#f0ebe0':'#f8faf5')+';border:1px solid '+(bedGuest?'#d5c8a0':'var(--border)')+';border-radius:6px;padding:8px 6px;text-align:center;font-size:.7rem">';
+        h += '<div style="background:'+(bedGuest?'#f0ebe0':'#e8f5e0')+';border:1px solid '+(bedGuest?'#d5c8a0':'var(--green)')+';border-radius:6px;padding:8px 6px;text-align:center;font-size:.7rem">';
         h += '<div style="font-weight:600;margin-bottom:2px">'+bi+'号床</div>';
-        h += (bedGuest ? '<div>'+esc(bedGuest.guest)+'</div><div style="font-size:.62rem;color:var(--muted)">'+_md(bedGuest.check_in)+'→'+_md(bedGuest.check_out)+'</div>' : '<div style="color:var(--green)">空</div>');
+        h += (bedGuest ? '<div>'+esc(bedGuest.guest)+'</div><div style="font-size:.62rem;color:var(--muted)">'+_md(bedGuest.check_in)+'→'+_md(bedGuest.check_out)+'</div>' : '<div style="color:var(--green);font-weight:600">空</div>');
         h += '</div>';
       }
-      h += '</div></div>';
+      h += '</div>';
+      // 直接申请（无需再选房型）
+      if (currentUser && !isFull) {
+        h += '<div style="border-top:1px dotted var(--border);padding-top:8px"><div style="font-weight:600;font-size:.74rem;margin-bottom:6px">📝 申请入住 '+esc(sr.label)+'</div>';
+        h += '<div style="display:flex;gap:4px;margin-bottom:6px;align-items:center"><label style="font-size:.66rem;color:var(--muted);white-space:nowrap">入住</label><input id="innCheckIn" type="date" style="flex:1;min-width:0;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:.7rem;font-family:var(--font);background:var(--card)"><label style="font-size:.66rem;color:var(--muted);white-space:nowrap">离开</label><input id="innCheckOut" type="date" style="flex:1;min-width:0;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:.7rem;font-family:var(--font);background:var(--card)"></div>';
+        h += '<button class="btn pri" onclick="applyInnBooking(\''+escAttr(selRoom)+'\')" style="font-size:.72rem;padding:4px 12px;width:100%">提交申请</button></div>';
+      } else if (isFull) {
+        h += '<div style="color:var(--muted);font-size:.72rem;text-align:center;padding:4px">🚫 该房型已满</div>';
+      }
+      h += '</div>';
     }
-  }
-
-  // ═══ 房型列表（原有功能，精简）═══
-  h += '<div style="font-weight:600;font-size:.76rem;margin-bottom:5px">房型总览</div>';
-  rooms.forEach(function(r) {
-    var cur = bookings.filter(function(b) { return b.room === r.id && b.status === 'confirmed'; });
-    var occ = cur.map(function(b) { return esc(b.guest) + '(' + _md(b.check_in) + '→' + _md(b.check_out) + ')'; }).join('、');
-    h += '<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dotted var(--border);font-size:.75rem">';
-    h += '<span style="white-space:nowrap">' + esc(r.label) + ' <span style="color:var(--muted)">(' + cur.length + '/' + r.beds + ')</span></span>';
-    h += '<span style="color:var(--muted);text-align:right">' + (occ || '空') + '</span></div>';
-  });
-  if (currentUser) {
-    var opts = rooms.map(function(r) { return '<option value="' + escAttr(r.id) + '">' + esc(r.label) + '</option>'; }).join('');
-    h += '<div class="card" style="padding:8px 10px;margin-top:8px"><div style="font-weight:600;font-size:.76rem;margin-bottom:5px">＋ 申请入住</div>';
-    h += '<select id="innRoomInput" style="width:100%;margin-bottom:4px;padding:5px;border:1px solid var(--border);border-radius:5px;font-size:.72rem;font-family:var(--font);background:var(--card)">' + opts + '</select>';
-    h += '<div style="display:flex;gap:4px;margin-bottom:4px;align-items:center"><label style="font-size:.66rem;color:var(--muted)">入住</label><input id="innCheckIn" type="date" style="flex:1;min-width:0;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:.7rem;font-family:var(--font);background:var(--card)"><label style="font-size:.66rem;color:var(--muted)">离开</label><input id="innCheckOut" type="date" style="flex:1;min-width:0;padding:4px;border:1px solid var(--border);border-radius:5px;font-size:.7rem;font-family:var(--font);background:var(--card)"></div>';
-    h += '<button class="btn pri" onclick="applyInnBooking()" style="font-size:.7rem;padding:3px 12px;width:100%">提交申请</button></div>';
   }
   if (isVendor) {
     var pending = bookings.filter(function(b) { return b.status === 'pending'; });
@@ -3727,9 +3723,9 @@ function renderInnHub() {
   }
   return h;
 }
-function applyInnBooking() {
+function applyInnBooking(roomId) {
   if (!currentUser) { alert('请先登录'); return; }
-  var room = (document.getElementById('innRoomInput') || {}).value || '';
+  var room = roomId || (document.getElementById('innRoomInput') || {}).value || window._innSelRoom || '';
   var ci = (document.getElementById('innCheckIn') || {}).value || '';
   var co = (document.getElementById('innCheckOut') || {}).value || '';
   if (!room || !ci || !co) { alert('请填写房型和日期'); return; }
