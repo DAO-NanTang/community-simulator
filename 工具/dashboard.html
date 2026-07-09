@@ -1885,7 +1885,7 @@ function showRegister(role) {
   updateRegAvatarPreview();
 }
 function cycleRegAvatar() { regAvatarSeed = (regAvatarSeed + 1) % 60; updateRegAvatarPreview(); }
-function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 64, 0); }
+function updateRegAvatarPreview() { document.getElementById('regAvatarPreview').innerHTML = avatarCircle(regAvatarSeed, 120, 0); }
 function doRegister() {
   var name = document.getElementById('regName').value.trim();
   var password = document.getElementById('regPassword').value;
