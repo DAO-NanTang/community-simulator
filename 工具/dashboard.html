@@ -4941,6 +4941,7 @@ function savePostDraft() {
   if (!currentUser) { alert('请先登录'); return; }
   var name = document.getElementById('postTaskName').value.trim();
   if (!name) { alert('请输入任务名称'); return; }
+  var existing = (data.tasks||[]).filter(function(t){ return t.status==='draft' && t.poster===currentUser.name && draftEditIdx<0; }); if (existing.length >= 10) { alert('草稿箱已满（上限 10 个），请删除旧草稿或直接发布'); return; }
   var visibility = document.getElementById('postTaskVisibility').value;
   var targetClaimant = '';
   if (visibility === 'specific') targetClaimant = document.getElementById('postTaskTarget').value.trim();
