@@ -4226,7 +4226,22 @@ function renderAuctionHub() {
       if (isBidder) h += '<span style="font-size:.7rem;color:var(--accent)">✅ 已报名</span> ';
       else if (currentUser && a.status==='signup') h += '<button class="btn pri" onclick="showAuctionSignup(\''+a.id+'\')" style="font-size:.7rem;padding:3px 10px;margin-top:4px">🙋 报名参拍</button> ';
       var isHost = currentUser && (currentUser.name===a.host||currentUser.role==='admin');
-      if (isHost && (a.status==='signup'||a.status==='pending')) h += '<button class="btn green" onclick="settleAuction(\''+a.id+'\')" style="font-size:.68rem;padding:2px 8px;margin-top:4px">🏁 结算</button> <button class="btn danger" onclick="passAuction(\''+a.id+'\')" style="font-size:.68rem;padding:2px 8px;margin-top:4px">🚫 流拍</button>';
+      if (isHost && (a.status==='signup'||a.status==='pending')) h += '<button class="btn green" onclick="showSettleForm(\''+a.id+'\')" style="font-size:.68rem;padding:2px 8px;margin-top:4px">🏁 结算</button> <button class="btn danger" onclick="passAuction(\''+a.id+'\')" style="font-size:.68rem;padding:2px 8px;margin-top:4px">🚫 流拍</button>';
+      if (window._settleAuctionId === a.id && isHost) {
+        h += '<div class="card" style="padding:10px 14px;margin-top:6px;border:1px solid var(--accent);border-radius:6px">';
+        h += '<div style="font-weight:600;font-size:.78rem;margin-bottom:6px">🏁 录入成交结果</div>';
+        h += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:6px">💡 选择中标人 → 输入成交价 → 确认后自动结算（退保证金+转账）</div>';
+        h += '<select id="aucSettleWinner_'+a.id+'" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;margin-bottom:6px;box-sizing:border-box">';
+        h += '<option value="">-- 选择中标人 --</option>';
+        (a.bidders||[]).forEach(function(b){
+          h += '<option value="'+escAttr(b.name)+'">'+esc(b.name)+(b.anon?'（匿名报名）':'')+'</option>';
+        });
+        h += '</select>';
+        h += '<div style="display:flex;gap:6px;margin-bottom:6px"><input type="number" id="aucSettlePrice_'+a.id+'" placeholder="成交价 NT" min="1" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem"></div>';
+        h += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:6px">📋 结算预览：所有报名者先退保证金 '+a.deposit+' NT，中标人「<span id="aucPreviewName_'+a.id+'"></span>」付全款 '+a.start_price+' NT → <span style="color:var(--green)">卖家收 '+a.start_price+' NT</span></div>';
+        h += '<button class="btn green" onclick="settleAuction(\''+a.id+'\',document.getElementById(\'aucSettleWinner_'+a.id+'\').value,parseInt(document.getElementById(\'aucSettlePrice_'+a.id+'\').value)||0)" style="font-size:.75rem;padding:6px 14px;width:100%">✅ 确认成交并结算</button>';
+        h += '</div>';
+      }
       if (a.status==='done') h += '<span style="font-size:.7rem;color:var(--green)">🏁 已成交 · '+esc(a.winner)+' · '+a.final_price+' NT</span>';
       if (a.status==='passed') h += '<span style="font-size:.7rem;color:var(--muted)">🚫 已流拍</span>';
       h += '</div>';
@@ -4279,17 +4294,26 @@ function showAuctionSignup(id) {
   localStorage.setItem('camp_data',JSON.stringify(data));
   openHubSub('auction');
 }
-function settleAuction(id) {
+function settleAuction(id, winner, price) {
   var a = (data.auctions||[]).find(function(x){return x.id===id;}); if (!a||a.status==='done'||a.status==='passed') return;
   if (currentUser && currentUser.name!==a.host && (currentUser.role!=='admin')) { alert('仅主持人可结算'); return; }
-  var winner = prompt('中标人姓名：'); if (!winner) return;
-  var price = parseInt(prompt('成交价 (NT)：')); if (!price||price<=0) return;
+  // 校验：中标人必须在报名名单中
+  if (!winner) return;
+  var inBidders = (a.bidders||[]).some(function(b){ return b.name===winner; });
+  if (!inBidders) { alert('中标人不在报名名单中！请从下拉列表选择。'); return; }
+  price = parseInt(price)||0;
+  if (price<=0) { alert('请输入有效的成交价'); return; }
   // 退所有人保证金
   (a.bidders||[]).forEach(function(b){ recordTransaction({ type:TX_TYPES.AUCTION_REFUND, from:AUCTION_ESCROW, to:b.name, amount:a.deposit, ref_id:id, item_name:'退保证金·'+a.title, scope:'personal' }); });
   // 中标人付款
   recordTransaction({ type:TX_TYPES.AUCTION_SETTLE, from:winner, to:a.seller, amount:price, ref_id:id, item_name:a.title, scope:'personal' });
   a.winner = winner; a.final_price = price; a.status = 'done';
+  window._settleAuctionId = null;
   localStorage.setItem('camp_data',JSON.stringify(data));
+  openHubSub('auction');
+}
+function showSettleForm(id) {
+  window._settleAuctionId = (window._settleAuctionId === id) ? null : id;
   openHubSub('auction');
 }
 function passAuction(id) {
