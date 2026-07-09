@@ -5233,7 +5233,7 @@ function switchTab(name, opts) {
   // ── 渲染内容 ──
   if (name === 'members') { memViewType = 'members'; renderMembers(); }
   if (name === 'players') { memViewType = 'players'; renderPlayers(); }
-  if (name === 'timeline') { renderTimeline(); renderCalendar(); switchScheduleView('calendar'); }
+  if (name === 'timeline') { renderTimeline(); renderCalendar(); var isNpc = currentUser && (currentUser.role==='npc'||currentUser.role==='visitor'); switchScheduleView(isNpc?'timeline':'calendar'); }
   if (name === 'budget') renderBudget();
   if (name === 'settlement') renderSettlementAll();
   if (name === 'settings') { renderWizardNav(); switchStep(data.camp_progress.step || 1); }
@@ -6444,14 +6444,15 @@ function renderTimeline() {
       return false;
     });
   }
-  // Hide calendar toggle + progress bars for NPC/visitor
-  var isStaff = role === 'admin' || role === 'builder';
+  // NPC/visitor: only timeline (no calendar, no progress bars)
+  // Admin/builder/adventurer: calendar + timeline + progress bars
+  var isNpc = role === 'npc' || role === 'visitor';
   var calBtn = document.getElementById('btnCalendarView');
   var tlBtn = document.getElementById('btnTimelineView');
   var progBar = document.getElementById('progressBars');
-  if (calBtn) calBtn.style.display = isStaff ? '' : 'none';
-  if (tlBtn) tlBtn.style.display = isStaff ? '' : 'none';
-  if (progBar) progBar.style.display = isStaff ? '' : 'none';
+  if (calBtn) calBtn.style.display = isNpc ? 'none' : '';
+  if (tlBtn) tlBtn.style.display = '';
+  if (progBar) progBar.style.display = isNpc ? 'none' : '';
 
   if (tasks.length === 0) {
     container.innerHTML = '';
