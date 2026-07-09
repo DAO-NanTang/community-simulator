@@ -3872,7 +3872,7 @@ function openHubSlide(page) {
   var panel = document.getElementById('hubSlidePanel');
   var bd = document.getElementById('hubSlideBackdrop');
   var title = document.getElementById('hubSlideTitle');
-  var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
+  var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',archive:'📚 档案室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
   // Position like invite sidebar - relative to hub dropdown
   var hubBtn = document.getElementById('hubMenu'); if (!hubBtn || hubBtn.classList.contains('hidden')) hubBtn = document.getElementById('hubMenu2');
@@ -4231,6 +4231,8 @@ function renderHubSlideContent(page) {
     h += renderCouncilHub();
   } else if (page === 'auction') {
     h += renderAuctionHub();
+  } else if (page === 'archive') {
+    h += renderArchiveHub();
   } else {
     h += '<div style="text-align:center;color:var(--muted);padding:30px 0"><div style="font-size:2.5rem;margin-bottom:8px">🧭</div><div style="font-weight:600;font-size:.85rem">实景地图</div><div style="font-size:.72rem;margin-top:4px">真正的南塘村落地图 · 敬请期待</div></div>';
   }
@@ -4239,6 +4241,38 @@ function renderHubSlideContent(page) {
 
 // ═══ Hub cascade menus ═══
 window._hubSubPage = '';
+
+function renderArchiveHub() {
+  var users = getUsers();
+  var members = data.members || {};
+  var groups = {};
+  Object.keys(users).forEach(function(name) {
+    var u = users[name];
+    var mi = members[name] || {};
+    var identity = mi.identity || ROLE_TITLES[u.role] || u.role || '云村民';
+    if (!groups[identity]) groups[identity] = [];
+    groups[identity].push({ name: name, nt: calcNtTotal(name), days: u.created ? Math.ceil((new Date() - new Date(u.created)) / 86400000) : 0, season: mi.season || u.season || '' });
+  });
+  var h = '';
+  var order = ['在地成员','原村民','共建者','冒险者','云村民'];
+  order.forEach(function(identity) {
+    var list = groups[identity] || [];
+    if (list.length === 0) return;
+    list.sort(function(a, b) { return b.nt - a.nt; });
+    h += '<div style="margin-bottom:12px"><div style="font-weight:600;font-size:.78rem;margin-bottom:6px;color:var(--text)">📂 '+esc(identity)+'（'+list.length+'人）</div>';
+    list.forEach(function(p) {
+      var si = (members[p.name] && members[p.name].avatar_seed !== undefined) ? members[p.name].avatar_seed : ((users[p.name]||{}).avatar_seed || 0);
+      h += '<div onclick="showContactCard(\''+escAttr(p.name)+'\',this)" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;font-size:.75rem" onmouseover="this.style.background=\'#f8f4ec\'" onmouseout="this.style.background=\'\'">';
+      h += avatarCircle(si, 24, 0);
+      h += '<span style="flex:1;font-weight:500">'+esc(p.name)+'</span>';
+      h += '<span style="color:var(--muted);font-size:.68rem">💎'+p.nt.toLocaleString()+'</span>';
+      h += '<span style="color:var(--muted);font-size:.65rem">'+p.days+'天</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+  return h;
+}
 
 function renderHubDropdown() {
   var listedCount = (data.inventory || []).filter(function(it) { return it.status === 'listed'; }).length;
@@ -4256,6 +4290,7 @@ function renderHubDropdown() {
     { id:'bazaar', icon:'🏪', label:'集市', info:listedCount+'件在售', ok:true },
     { id:'teahouse', icon:'🍵', label:'茶馆', info:teahouseCount+'条', ok:true },
     { id:'games', icon:'🎲', label:'桌游室', info:openGames+'局', ok:true },
+    { id:'archive', icon:'📚', label:'档案室', info:'查阅成员', ok:true },
     { id:'auction', icon:'🔨', label:'白菜拍卖行', info:activeAuctions+'场', ok:true },
     { id:'council', icon:'🥕', label:'萝卜议事厅', info:upcomingMeetings+'场', ok:true }
   ];
@@ -4279,7 +4314,7 @@ function openHubSub(page, el) {
   window._hubSubPage = page;
   var sp = document.getElementById('hubSubPanel');
   var title = document.getElementById('hubSlideTitle');
-  var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',map:'🧭 实景地图'};
+  var titles = {bazaar:'🏪 集市',canteen:'🥬 素社食堂',inn:'🏨 客栈',teahouse:'🍵 茶馆',games:'🎲 桌游室',archive:'📚 档案室',map:'🧭 实景地图'};
   if (title) title.textContent = titles[page] || page;
 
   // Show + anchor to 一级菜单
@@ -4866,6 +4901,68 @@ document.addEventListener('click', function(e) {
   if (_contactCardJustOpened) { _contactCardJustOpened = false; return; }
   if (!dd.contains(e.target)) { closeContactCard(); }
 });
+
+// ═══ 常联系侧边栏 ═══
+function showContactSidebar() {
+  document.getElementById('contactBackdrop').classList.add('show');
+  document.getElementById('contactSidebar').classList.add('show');
+  renderContactSidebar();
+}
+function closeContactSidebar() {
+  document.getElementById('contactBackdrop').classList.remove('show');
+  document.getElementById('contactSidebar').classList.remove('show');
+}
+function renderContactSidebar() {
+  var contacts = getContacts();
+  var body = document.getElementById('contactSidebarBody');
+  var users = getUsers();
+  var members = data.members || {};
+  if (contacts.length === 0) {
+    body.innerHTML = '<div class="is-empty">暂无联系人<br><span style="font-size:.68rem">交易或合作后自动出现</span></div>';
+    return;
+  }
+  var h = '';
+  contacts.slice(0, 15).forEach(function(name) {
+    var u = users[name] || {};
+    var mi = members[name] || {};
+    var nt = calcNtTotal(name);
+    var si = (mi.avatar_seed !== undefined) ? mi.avatar_seed : (u.avatar_seed || 0);
+    h += '<div class="pk-row" onclick="showContactCard(\''+escAttr(name)+'\',this)" style="cursor:pointer">';
+    h += '<div class="pk-avatar">'+avatarCircle(si, 28, 0)+'</div>';
+    h += '<span class="pk-name">'+esc(name)+'</span>';
+    h += '<span class="pk-role">'+(ROLE_TITLES[u.role]||u.role||'')+'</span>';
+    h += '<span style="font-size:.62rem;color:var(--accent);margin-left:auto">'+nt+' NT</span>';
+    h += '</div>';
+  });
+  h += '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;text-align:center">';
+  h += '<button class="btn" onclick="closeContactSidebar();openHubSlide(\'archive\')" style="font-size:.72rem;width:100%">📚 查看全部档案 →</button></div>';
+  body.innerHTML = h;
+}
+function getContacts() {
+  var contacts = {};
+  var me = currentUser ? currentUser.name : '';
+  (data.finance || []).forEach(function(tx) {
+    if (tx.to === me && tx.from && tx.from !== '系统') contacts[tx.from] = true;
+    if (tx.from === me && tx.to && tx.to !== '系统') contacts[tx.to] = true;
+  });
+  (data.tasks || []).forEach(function(t) {
+    var hasMe = (t.claimants || []).some(function(c) { return c.name === me; });
+    if (hasMe) (t.claimants || []).forEach(function(c) { if (c.name !== me) contacts[c.name] = true; });
+    if (t.assignee === me && t.confirmer) contacts[t.confirmer] = true;
+  });
+  var users = getUsers();
+  var mySeason = (users[me] || {}).season || '';
+  Object.keys(users).forEach(function(n) {
+    if (n !== me && users[n].season && mySeason && users[n].season === mySeason) contacts[n] = true;
+  });
+  delete contacts[me];
+  return Object.keys(contacts).sort(function(a, b) {
+    var ua = users[a] || {}, ub = users[b] || {};
+    var sa = (ua.season === mySeason ? 0 : 1), sb = (ub.season === mySeason ? 0 : 1);
+    if (sa !== sb) return sa - sb;
+    return (calcNtTotal(b) || 0) - (calcNtTotal(a) || 0);
+  });
+}
 // ═══ 物品渲染共用（集市+工作台同步）═══
 var _CAT_ICONS = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
 
