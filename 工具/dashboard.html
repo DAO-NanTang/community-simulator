@@ -2176,6 +2176,9 @@ function showVillageSquare() {
 }
 function enterVillagerMain() {
   hidePlazaPlaceholder();
+  document.body.classList.add('adventurer-mode');
+  document.getElementById('builderTabs').classList.add('hidden');
+  document.getElementById('builderModeBar').classList.add('hidden');
   document.getElementById('adventurerTabs').classList.remove('hidden');
   document.getElementById('worldHUD').classList.remove('hidden');
   switchTab('leaderboard');
@@ -2819,6 +2822,8 @@ function switchToPreview(role) {
   } else {
     // NPC/visitor: show main interface (leaderboard), not village square
     document.body.classList.add('adventurer-mode');
+    document.getElementById('builderTabs').classList.add('hidden');
+    document.getElementById('builderModeBar').classList.add('hidden');
     document.getElementById('adventurerTabs').classList.remove('hidden');
     document.getElementById('worldHUD').classList.remove('hidden');
     switchTab('leaderboard');
