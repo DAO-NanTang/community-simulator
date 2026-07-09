@@ -4795,7 +4795,8 @@ function confirmPostTask() {
   if (!data.tasks) data.tasks = [];
   data.tasks.push(task);
   if (points > 0) {
-    recordTransaction({ type: TX_TYPES.TASK_POST, from: currentUser.name, to: '任务池', amount: points, task_name: name, scope: 'personal' });
+    var taskScope = document.getElementById('postTaskScope').value;
+    recordTransaction({ type: TX_TYPES.TASK_POST, from: currentUser.name, to: '任务池', amount: points, task_name: name, scope: taskScope });
   }
   localStorage.setItem('camp_data', JSON.stringify(data));
   closePostTaskModal();
