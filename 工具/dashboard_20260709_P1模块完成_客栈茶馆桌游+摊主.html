@@ -527,9 +527,11 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
     <button class="tab" data-tab="questboard" onclick="switchTab('questboard')">📋 任务大厅</button>
     <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">📅 时间线</button>
     <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 排行榜</button>
-    <button class="tab" data-tab="realmMap" onclick="switchTab('realmMap')">🗺️ 南塘云村</button>
-    <button class="tab" data-tab="bazaar" onclick="switchTab('bazaar')">🏪 集市</button>
     <span style="flex:1"></span>
+    <span class="dropdown" style="position:relative;align-self:center">
+      <button class="tab" onclick="toggleDropdown('hubMenu2');renderHubDropdown()" style="cursor:pointer">🗺️ 南塘云村</button>
+      <div id="hubMenu2" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px"></div>
+    </span>
     <span class="dropdown" style="position:relative;align-self:center;margin-left:12px">
       <button class="btn" onclick="toggleDropdown('gearMenuAdventure')" title="工具" style="font-size:.8rem;padding:4px 8px"><i class="ph-duotone ph-gear"></i></button>
       <div id="gearMenuAdventure" class="dropdown-menu hidden" style="position:absolute;right:0;top:100%;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:140px;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:2px">
@@ -2386,65 +2388,6 @@ function updateInboxBadge() {
   }
 }
 
-// ═══ 社区空间提醒（方案第九节 · 拆分子函数，对所有角色生效）═══
-// 纯前端限制：仅在用户打开页面时计算生效（方案 13.6）
-function computeMealReminders() {
-  var out = [];
-  if (!currentUser) return out;
-  var me = currentUser.name;
-  var now = new Date();
-  var hour = now.getHours();
-  var today = now.toISOString().slice(0, 10);
-  var menu = (data.canteen_menus || {})[today];
-  var orders = (data.canteen_orders || []).filter(function(o) { return o.person === me && o.date === today; });
-  function orderedFor(meal) { return orders.some(function(o) { return o.meal === meal; }); }
-  function paidFor(meal) { return orders.some(function(o) { return o.meal === meal && o.status === 'paid'; }); }
-  if (menu && (menu.lunch || []).length) {
-    if (hour === 10 && !orderedFor('lunch')) out.push({ type: 'meal_reminder', text: '⏰ 午餐预定还有约 30 分钟截止（10:30）', createdAt: today, jump: { tab: '', highlight: null } });
-    if (hour === 11 && orderedFor('lunch')) out.push({ type: 'meal_time', text: '🍽️ 午餐时间到了！已预定请前往素社', createdAt: today, jump: { tab: '', highlight: null } });
-    if ((hour === 12 || hour === 13) && orderedFor('lunch') && !paidFor('lunch')) out.push({ type: 'meal_pay', text: '✅ 吃过午餐了吗？到素社食堂确认支付', createdAt: today, jump: { tab: '', highlight: null } });
-  }
-  if (menu && (menu.dinner || []).length) {
-    if (hour === 16 && !orderedFor('dinner')) out.push({ type: 'meal_reminder', text: '⏰ 晚餐预定还有约 30 分钟截止（16:30）', createdAt: today, jump: { tab: '', highlight: null } });
-    if (hour === 17 && orderedFor('dinner')) out.push({ type: 'meal_time', text: '🍽️ 晚餐时间到了！已预定请前往素社', createdAt: today, jump: { tab: '', highlight: null } });
-    if ((hour === 18 || hour === 19) && orderedFor('dinner') && !paidFor('dinner')) out.push({ type: 'meal_pay', text: '✅ 吃过晚餐了吗？到素社食堂确认支付', createdAt: today, jump: { tab: '', highlight: null } });
-  }
-  return out;
-}
-function computeGameReminders() {
-  var out = [];
-  if (!currentUser) return out;
-  var me = currentUser.name;
-  var now = new Date();
-  var today = now.toISOString().slice(0, 10);
-  (data.game_sessions || []).forEach(function(g) {
-    if (g.status !== 'open' && g.status !== 'full') return;
-    if ((g.players || []).indexOf(me) === -1) return;
-    if (!g.time) return;
-    var t = new Date(('' + g.time).replace(' ', 'T'));
-    if (isNaN(t.getTime())) return;
-    var mins = Math.floor((t - now) / 60000);
-    if (mins > 0 && mins <= 30) {
-      out.push({ type: 'game_soon', text: '🎲「' + g.game + '」约 ' + mins + ' 分钟后在 ' + _locLabel(g.location) + ' 开始', createdAt: today, jump: { tab: '', highlight: null } });
-    }
-  });
-  return out;
-}
-function computeInnReminders() {
-  var out = [];
-  if (!currentUser) return out;
-  var me = currentUser.name;
-  var now = new Date();
-  var today = now.toISOString().slice(0, 10);
-  var tmr = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
-  (data.inn_bookings || []).forEach(function(b) {
-    if (b.guest !== me || b.status !== 'confirmed') return;
-    if (b.check_in === today) out.push({ type: 'inn_checkin', text: '🏨 今天入住！房间：' + _roomLabel(b.room), createdAt: today, jump: { tab: '', highlight: null } });
-    if (b.check_out === tmr) out.push({ type: 'inn_checkout', text: '🏨 明天退房（' + _roomLabel(b.room) + '），记得收拾行李', createdAt: today, jump: { tab: '', highlight: null } });
-  });
-  return out;
-}
-
 function computeInboxMessages() {
   var msgs = [];
   if (!currentUser) return msgs;
@@ -2590,9 +2533,6 @@ function computeInboxMessages() {
     });
   }
 
-  // 社区空间提醒（素社/桌游/客栈，对所有角色生效）
-  msgs = msgs.concat(computeMealReminders(), computeGameReminders(), computeInnReminders());
-
   // Assign unique IDs for per-message read tracking
   msgs.forEach(function(m, i) {
     m.id = m.type + '_' + (m.person || '') + '_' + (m.task || '') + '_' + i;
@@ -2625,13 +2565,11 @@ function renderInbox() {
 
   var TYPE_ICON = {
     submitted: '🆕', overdue: '⚠️', progress_low: '📉', pool_low: '🔴',
-    review_approved: '✅', review_rejected: '❌', deadline_close: '⏰', nt_received: '💰',
-    meal_reminder: '⏰', meal_time: '🍽️', meal_pay: '💳', game_soon: '🎲', inn_checkin: '🏨', inn_checkout: '🧳'
+    review_approved: '✅', review_rejected: '❌', deadline_close: '⏰', nt_received: '💰'
   };
   var TYPE_LABEL = {
     submitted: '待审核', overdue: '逾期', progress_low: '进度掉队', pool_low: 'NT池预警',
-    review_approved: '审核通过', review_rejected: '审核退回', deadline_close: '截止临近', nt_received: 'NT到账',
-    meal_reminder: '订餐提醒', meal_time: '用餐提醒', meal_pay: '用餐支付', game_soon: '桌游开局', inn_checkin: '入住', inn_checkout: '退房'
+    review_approved: '审核通过', review_rejected: '审核退回', deadline_close: '截止临近', nt_received: 'NT到账'
   };
 
   function renderMsg(m) {
@@ -2663,7 +2601,7 @@ function renderInbox() {
       case 'nt_received':
         body = '收到 NT ' + m.amount.toLocaleString() + (m.task ? '（来自「' + esc(m.task) + '」）' : '');
         break;
-      default: body = m.text || '';
+      default: body = '';
     }
     return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px" onclick="jumpFromInbox(\'' + escAttr(m.jump.tab) + '\', ' + (m.jump.highlight ? JSON.stringify(m.jump.highlight).replace(/"/g, '&quot;') : 'null') + ', \'' + escAttr(m.id) + '\')" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">' +
       '<span style="font-size:1rem">' + icon + '</span>' +
@@ -2690,7 +2628,6 @@ function renderInbox() {
   }
 
   html += '<div style="text-align:center;margin-top:10px"><button class="btn" onclick="markAllRead();renderInbox();closeInbox()" style="font-size:.75rem;padding:4px 12px">✅ 全部标为已读</button></div>';
-  html += '<div style="font-size:.64rem;color:var(--muted);text-align:center;margin-top:6px">🔔 素社/桌游/客栈提醒仅在打开页面时生效（纯前端限制）</div>';
 
   document.getElementById('inboxContent').innerHTML = html;
   panel.classList.remove('hidden');
@@ -2711,7 +2648,6 @@ function toggleInbox() {
 function jumpFromInbox(tab, highlight, msgId) {
   closeInbox();
   if (msgId) markInboxMsgSeen(msgId);
-  if (!tab) return;
   if (highlight) {
     switchTab(tab, { highlight: highlight });
   } else {
@@ -2720,10 +2656,7 @@ function jumpFromInbox(tab, highlight, msgId) {
 }
 
 function markAllRead() {
-  var msgs = computeInboxMessages();
-  var ids = getInboxSeenIds();
-  msgs.forEach(function(m) { if (ids.indexOf(m.id) === -1) ids.push(m.id); });
-  localStorage.setItem('inbox_seen_ids', JSON.stringify(ids));
+  updateInboxLastOpened();
   updateInboxBadge();
 }
 
