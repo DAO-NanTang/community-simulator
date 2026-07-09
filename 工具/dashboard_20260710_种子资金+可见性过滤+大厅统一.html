@@ -1887,7 +1887,7 @@ var ROLE_CAPABILITIES = {
 };
 function userCan(user, cap) { if (!user) return false; var c = ROLE_CAPABILITIES[user.role]; return c ? !!c[cap] : false; }
 function userTabs(user) { if (!user) return []; var c = ROLE_CAPABILITIES[user.role]; return c ? c.tabs : []; }
-function refreshUserHUD(){ if(!currentUser)return;var el=document.getElementById('hudCurrentUser');if(el)el.textContent=currentUser.name+' · '+getUserTitle(currentUser);updateWorldHUD(); }
+function refreshUserHUD(){ if(!currentUser)return;var el=document.getElementById('hudCurrentUser');if(el)el.textContent=currentUser.name+' · '+getUserTitle(currentUser);updateWorldHUD();if(currentUser.role==='builder'){var mb=document.querySelector('#builderTabs .tab[data-tab=\"members\"]');if(mb)mb.classList.add('hidden');var nt=document.querySelector('#builderTabs .tab[data-tab=\"ntadmin\"]');if(nt)nt.classList.add('hidden');var ib=document.getElementById('btnInviteCode');if(ib)ib.classList.add('hidden');} }
 function getWorldCodes() { try { return JSON.parse(localStorage.getItem('nt_world_codes')) || []; } catch(e) { return []; } }
 function saveWorldCodes(codes) { localStorage.setItem('nt_world_codes', JSON.stringify(codes)); }
 function getInviteCodes() { try { return JSON.parse(localStorage.getItem(NT_INVITE_KEY)) || []; } catch(e) { return []; } }
@@ -2138,56 +2138,45 @@ function resetAllData() {
   location.reload();
 }
 
-// ═══ 统一主界面入口：所有路径都走这里，保证展示一致 ═══
-// role: 角色名  targetTab: 要打开的 tab（默认 workspace）
-function showMainInterface(role, targetTab) {
-  hidePlazaPlaceholder();
-  document.getElementById('worldHUD').classList.remove('hidden');
-  hideAllTabs();
-  ['builderTabs','adventurerTabs','builderModeBar'].forEach(function(id) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); });
-  document.getElementById('hudGenesisBtn').classList.add('hidden');
-  document.body.classList.remove('builder-mode', 'adventurer-mode');
-  var tab = targetTab || 'workspace';
-
-  if (role === 'admin' || role === 'builder') {
-    document.body.classList.add('builder-mode');
-    document.getElementById('builderTabs').classList.remove('hidden');
-    if (role === 'admin') {
-      document.getElementById('hudGenesisBtn').classList.remove('hidden');
-      document.getElementById('builderModeBar').classList.remove('hidden');
-    }
-    // 共建者：隐藏成员档案、NT管理、邀请码按钮
-    if (role === 'builder') {
-      var mb = document.querySelector('#builderTabs .tab[data-tab="members"]');
-      if (mb) mb.classList.add('hidden');
-      var nt = document.querySelector('#builderTabs .tab[data-tab="ntadmin"]');
-      if (nt) nt.classList.add('hidden');
-      var ib = document.getElementById('btnInviteCode');
-      if (ib) ib.classList.add('hidden');
-    }
-  } else {
-    document.body.classList.add('adventurer-mode');
-    document.getElementById('adventurerTabs').classList.remove('hidden');
-    var qb = document.getElementById('advQuestboardBtn');
-    if (qb) qb.classList.toggle('hidden', role === 'visitor');
-  }
-
-  switchTab(tab);
-}
-
 // ── World Entry & Routing ──
 function enterWorld(user) {
-  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'none'; document.getElementById('worldHUD').classList.remove('hidden');
   refreshUserHUD();
+  // Update workspace tab buttons to show user's name
   var bwt = document.getElementById('builderWorkspaceTab'); if (bwt) bwt.textContent = '👤 ' + user.name;
   var awt = document.getElementById('adventurerWorkspaceTab'); if (awt) awt.textContent = '👤 ' + user.name;
+  hideAllTabs();
+  ['builderTabs','adventurerTabs','builderModeBar'].forEach(function(id) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+  var pp = document.getElementById('plazaPlaceholder'); if (pp) pp.classList.add('hidden');
+  document.body.classList.remove('builder-mode', 'adventurer-mode');
+
   var lastPage = getLastPage(user.name);
-  if (lastPage && lastPage !== 'plaza') {
-    // 老用户：直接进主界面，回到上次的 tab
-    showMainInterface(user.role, lastPage);
-    if (user.role === 'npc' || user.role === 'visitor') localStorage.setItem('nt_npc_in_main', '1');
+  if (lastPage) {
+    // 老用户：回到上次退出的页面
+    if (lastPage === 'plaza') {
+      showPlazaPlaceholder(user);
+    } else if (user.role === 'admin' || user.role === 'builder') {
+      document.body.classList.add('builder-mode');
+      document.getElementById('builderTabs').classList.remove('hidden');
+      if (user.role === 'admin') {
+        document.getElementById('hudGenesisBtn').classList.remove('hidden');
+        document.getElementById('builderModeBar').classList.remove('hidden');
+      }
+      switchTab(lastPage);
+    } else if (user.role === 'adventurer') {
+      document.body.classList.add('adventurer-mode');
+      document.getElementById('adventurerTabs').classList.remove('hidden');
+      switchTab(lastPage);
+    } else {
+      document.body.classList.add('adventurer-mode');
+      document.getElementById('adventurerTabs').classList.remove('hidden');
+      var qb = document.getElementById('advQuestboardBtn');
+      if (qb && user.role === 'visitor') qb.classList.add('hidden');
+      localStorage.setItem('nt_npc_in_main', '1');
+      switchTab(lastPage);
+    }
   } else {
-    // 新用户 / 上次在村口：进村口
+    // 新用户：先进村口
     showPlazaPlaceholder(user);
   }
   updateInboxBadge();
@@ -2307,10 +2296,28 @@ function closeMapInvite(){document.getElementById('mapInviteCard').classList.add
 function submitMapInvite(){var code=document.getElementById('mapInviteInput').value.trim().toUpperCase();if(code){var wc=getWorldCodes();var ic=getInviteCodes();if(wc.includes(code)){saveWorldCodes(wc.filter(function(c){return c!==code}));upgradeToNPC(code);}else if(ic.includes(code)){saveInviteCodes(ic.filter(function(c){return c!==code}));upgradeToNPC(code);}else{alert('邀请码无效（冒险者池'+wc.length+'个，NBC池'+ic.length+'个）');}}closeMapInvite();}
 function upgradeToNPC(code){if(!currentUser)return;currentUser.role='npc';currentUser.world_id=code;var users=getUsers();if(users[currentUser.name]){users[currentUser.name].role='npc';users[currentUser.name].world_id=code;saveUsers(users);}refreshUserHUD();var vi=document.getElementById('villageUserInfo');if(vi)vi.textContent='👤 '+currentUser.name+' · '+getUserTitle(currentUser);setStatus('已升级为在地伙伴！');}
 function enterVillagerMain() {
+  hidePlazaPlaceholder();
+  document.getElementById('worldHUD').classList.remove('hidden');
   var role = currentUser ? currentUser.role : '';
-  var tab = (role === 'npc' || role === 'visitor') ? 'leaderboard' : 'workspace';
-  if (role === 'npc' || role === 'visitor') localStorage.setItem('nt_npc_in_main', '1');
-  showMainInterface(role, tab);
+  if (role === 'admin' || role === 'builder') {
+    document.body.classList.add('builder-mode');
+    document.getElementById('builderTabs').classList.remove('hidden');
+    if (role === 'admin') { document.getElementById('builderModeBar').classList.remove('hidden'); }
+    switchTab('workspace');
+  } else if (role === 'adventurer') {
+    document.body.classList.add('adventurer-mode');
+    document.getElementById('adventurerTabs').classList.remove('hidden');
+    switchTab('workspace');
+  } else {
+    document.body.classList.add('adventurer-mode');
+    document.getElementById('builderTabs').classList.add('hidden');
+    document.getElementById('builderModeBar').classList.add('hidden');
+    document.getElementById('adventurerTabs').classList.remove('hidden');
+    var qb = document.getElementById('advQuestboardBtn');
+    if (qb) qb.classList.toggle('hidden', role === 'visitor');
+    localStorage.setItem('nt_npc_in_main', '1');
+    switchTab('leaderboard');
+  }
 }
 
 // ── Village modals ──
@@ -2947,7 +2954,31 @@ var PREVIEW_ROLES = { builder:'🧱共建者', adventurer:'⚔️冒险者', npc
 var PREVIEW_LABELS = { builder:'共建者', adventurer:'冒险者', npc:'在地伙伴', visitor:'云村民' };
 function switchToPreview(role) {
   previewMode = true; previewRole = role;
-  showMainInterface(role, 'workspace');
+  hideAllTabs();
+  document.getElementById('builderTabs').classList.add('hidden');
+  document.getElementById('builderModeBar').classList.add('hidden');
+  document.getElementById('adventurerTabs').classList.add('hidden');
+  var pp = document.getElementById('plazaPlaceholder'); if (pp) pp.classList.add('hidden');
+  document.body.classList.remove('builder-mode', 'adventurer-mode');
+
+  if (role === 'adventurer') {
+    document.body.classList.add('adventurer-mode');
+    document.getElementById('adventurerTabs').classList.remove('hidden');
+    switchTab('workspace');
+  } else if (role === 'builder') {
+    document.body.classList.add('builder-mode');
+    document.getElementById('builderTabs').classList.remove('hidden');
+    switchTab('workspace');
+  } else {
+    document.body.classList.add('adventurer-mode');
+    document.getElementById('builderTabs').classList.add('hidden');
+    document.getElementById('builderModeBar').classList.add('hidden');
+    document.getElementById('adventurerTabs').classList.remove('hidden');
+    document.getElementById('worldHUD').classList.remove('hidden');
+    var qb = document.getElementById('advQuestboardBtn');
+    if (qb) qb.classList.toggle('hidden', role === 'visitor');
+    switchTab('workspace');
+  }
   showPreviewBanner(role);
 }
 var previewRole = 'adventurer';
@@ -2961,7 +2992,7 @@ function showPreviewBanner(role) {
 }
 
 function switchBuilderMode(mode) { if (mode === 'genesis') switchTab('settings'); }
-function exitPreview() { previewMode = false; var banner = document.getElementById('previewBanner'); if (banner) banner.style.display = 'none'; showMainInterface('admin', 'settings'); }
+function exitPreview() { previewMode = false; var banner = document.getElementById('previewBanner'); if (banner) banner.style.display = 'none'; document.body.classList.add('builder-mode'); document.body.classList.remove('adventurer-mode'); document.getElementById('builderTabs').classList.remove('hidden'); document.getElementById('builderModeBar').classList.remove('hidden'); document.getElementById('adventurerTabs').classList.add('hidden'); var pp = document.getElementById('plazaPlaceholder'); if (pp) pp.classList.add('hidden'); switchBuilderMode(currentBuilderMode); }
 
 // ── Member Archive ──
 function filterMembers(type) {
@@ -4052,77 +4083,65 @@ function closeHubSlide() {
 
 // ═══ 🥕 萝卜议事厅 ═══
 function renderCouncilHub() {
+  var room = data.council_room || DEFAULT_COUNCIL_ROOM;
   var meetings = (data.council_meetings || []).slice().sort(function(a,b){ return (a.time||'').localeCompare(b.time||''); });
   var upcoming = meetings.filter(function(m){ return m.time >= new Date().toISOString().slice(0,10); });
   var h = '';
-  // 快速加入（任何人可用）
-  h += '<div class="card" style="padding:12px 14px;margin-bottom:10px"><div style="font-weight:600;margin-bottom:6px">🚪 快速进入</div><div style="font-size:.72rem;color:var(--muted);margin-bottom:8px">输入会议号 → imeeting.co</div>';
-  h += '<div style="display:flex;gap:6px;margin-bottom:6px"><input id="councilQuickJoin" placeholder="会议号（如 123-456-789）" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v)window.open(\''+COUNCIL_BASE_URL+'\'+v,\'_blank\')}"><button class="btn pri" onclick="var v=document.getElementById(\'councilQuickJoin\').value.trim();if(v)window.open(\''+COUNCIL_BASE_URL+'\'+v,\'_blank\')" style="font-size:.72rem;padding:4px 10px;white-space:nowrap">🚪 进入</button></div>';
-  h += '<button class="btn" onclick="window.open(\''+COUNCIL_BASE_URL+'\',\'_blank\')" style="font-size:.72rem;padding:4px 12px;width:100%">🌐 打开 imeeting.co ↗</button></div>';
-  // 发起通知 — 共建者/管理员专属
-  if (currentUser && (currentUser.role==='admin'||currentUser.role==='builder')) {
-    var showForm = window._councilFormOpen;
-    h += '<button class="btn" onclick="window._councilFormOpen=!window._councilFormOpen;openHubSub(\'council\')" style="font-size:.75rem;padding:5px 12px;width:100%;margin-bottom:8px">'+(showForm?'✕ 收起':'＋ 发起议事通知')+'</button>';
-    if (showForm) {
-      h += '<div class="card" style="padding:10px 14px;margin-bottom:10px"><div style="font-weight:600;margin-bottom:6px">＋ 发起议事通知</div>';
-      h += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:8px">① 去 <a href="'+COUNCIL_BASE_URL+'" target="_blank" style="color:var(--accent)">imeeting.co</a> 建会议室<br>② 拿到会议号，回这里发布</div>';
-      h += '<input id="councilTopic" placeholder="议题 *" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;margin-bottom:6px;box-sizing:border-box">';
-      h += '<div style="display:flex;gap:6px;margin-bottom:6px"><input type="date" id="councilDate" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"><input type="time" id="councilTime" value="20:00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"></div>';
-      h += '<input id="councilRoomNumber" placeholder="会议号 *（如 123-456-789）" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;margin-bottom:6px;box-sizing:border-box">';
-      h += '<textarea id="councilNote" placeholder="说明（可选）" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem;margin-bottom:8px;box-sizing:border-box;min-height:36px"></textarea>';
-      h += '<div style="font-size:.75rem;font-weight:600;margin-bottom:4px">参会人群</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">';
-      [{v:'builders',l:'🧱 共建者'},{v:'all_members',l:'👥 营队全员'},{v:'custom',l:'✏️ 自定义'},{v:'public',l:'🌐 公开'}].forEach(function(o){
-        var sel=(window._councilAudience||'builders')===o.v;
-        h += '<button class="btn'+(sel?' pri':'')+'" onclick="window._councilAudience=\''+o.v+'\';openHubSub(\'council\')" style="font-size:.7rem;padding:3px 8px">'+o.l+'</button>';
-      });h+='</div>';
-      if((window._councilAudience||'builders')==='custom'){
-        h+='<div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">勾选参会人</div><div id="councilAttendees" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;max-height:120px;overflow-y:auto">';
-        var members=data.members||{};Object.keys(members).sort().forEach(function(n){h+='<label style="font-size:.72rem;cursor:pointer;display:flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid var(--border);border-radius:4px"><input type="checkbox" value="'+escAttr(n)+'" class="councilCb">'+esc(n)+'</label>';});
-        h+='</div>';
-      }
-      h+='<label style="font-size:.72rem;cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:8px"><input type="checkbox" id="councilCopySelf" checked> 抄送自己</label>';
-      h+='<button class="btn pri" onclick="createMeeting()" style="font-size:.75rem;padding:6px 14px;width:100%">📤 发布通知</button></div>';
-    }
+  // 会议室入口
+  h += '<div class="card" style="padding:12px 14px;margin-bottom:10px"><div style="font-weight:600;margin-bottom:8px">🚪 进入议事会议室</div>';
+  h += '<div style="font-size:.78rem;color:var(--muted);margin-bottom:4px">地址：'+esc(room.url)+'</div>';
+  h += '<div style="display:flex;gap:6px"><input type="password" value="'+escAttr(room.key)+'" readonly style="flex:1;font-size:.75rem;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg)"><button class="btn" onclick="navigator.clipboard.writeText(\''+escAttr(room.key)+'\');this.textContent=\'✅\';setTimeout(function(){this.textContent=\'📋 复制密钥\'}.bind(this),1500)" style="font-size:.7rem;padding:4px 8px;white-space:nowrap">📋 复制密钥</button></div>';
+  h += '<button class="btn pri" onclick="window.open(\''+escAttr(room.url)+'\',\'_blank\')" style="font-size:.75rem;padding:6px 12px;margin-top:8px;width:100%">🚪 打开会议室 ↗</button>';
+  h += '</div>';
+  // 发起通知（toggle）
+  var showForm = window._councilFormOpen;
+  h += '<button class="btn" onclick="window._councilFormOpen=!window._councilFormOpen;openHubSub(\'council\')" style="font-size:.75rem;padding:5px 12px;width:100%;margin-bottom:8px">'+(showForm?'✕ 收起':'＋ 发起议事通知')+'</button>';
+  if (showForm) {
+    h += '<div class="card" style="padding:10px 14px;margin-bottom:10px"><div style="font-weight:600;margin-bottom:6px">＋ 发起议事通知</div>';
+    h += '<input id="councilTopic" placeholder="议题" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.78rem;margin-bottom:6px;box-sizing:border-box">';
+    h += '<div style="display:flex;gap:6px;margin-bottom:6px"><input type="date" id="councilDate" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"><input type="time" id="councilTime" value="20:00" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"></div>';
+    h += '<textarea id="councilNote" placeholder="说明（可选）" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem;margin-bottom:6px;box-sizing:border-box;min-height:40px"></textarea>';
+    h += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">勾选参会人（将收到信箱通知）</div>';
+    h += '<div id="councilAttendees" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;max-height:120px;overflow-y:auto">';
+    var members = data.members || {};
+    Object.keys(members).sort().forEach(function(n){
+      h += '<label style="font-size:.72rem;cursor:pointer;display:flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid var(--border);border-radius:4px"><input type="checkbox" value="'+escAttr(n)+'" class="councilCb">'+esc(n)+'</label>';
+    });
+    h += '</div>';
+    h += '<label style="font-size:.72rem;cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:8px"><input type="checkbox" id="councilCopySelf" checked> 同时抄送我自己</label>';
+    h += '<button class="btn pri" onclick="createMeeting()" style="font-size:.75rem;padding:6px 14px;width:100%">📤 发布通知</button></div>';
   }
   // 近期会议
-  if(upcoming.length>0){
-    h+='<div style="font-weight:600;font-size:.78rem;margin-bottom:6px">📋 近期会议（'+upcoming.length+'场）</div>';
+  if (upcoming.length > 0) {
+    h += '<div style="font-weight:600;font-size:.78rem;margin-bottom:6px">📋 近期会议（'+upcoming.length+'场）</div>';
     upcoming.forEach(function(m){
-      var al={builders:'🧱共建者',all_members:'👥营队',custom:'✏️指定',public:'🌐公开'}[m.audience]||'';
-      var isInvited=m.audience==='public'||(m.attendees||[]).indexOf(currentUser?currentUser.name:'')!==-1;
-      h+='<div class="card" style="padding:8px 12px;margin-bottom:6px;'+(isInvited?'border-color:var(--accent);background:#fefdf6':'')+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:.8rem">🗳️ '+esc(m.topic)+'</div><div style="font-size:.72rem;color:var(--muted)">'+esc(m.host)+' · 🕐 '+esc(m.time)+' · '+al+(m.note?' · '+esc(m.note):'')+'</div></div>';
-      if(m.room_number)h+='<button class="btn pri" onclick="window.open(\''+COUNCIL_BASE_URL+escAttr(m.room_number)+'\',\'_blank\')" style="font-size:.7rem;padding:3px 10px;white-space:nowrap">🚪 进入</button>';
-      h+='</div></div>';
+      var isAttendee = currentUser && m.attendees.indexOf(currentUser.name) !== -1;
+      h += '<div class="card" style="padding:8px 12px;margin-bottom:6px;'+(isAttendee?'border-color:var(--accent);background:#fefdf6':'')+'"><div style="font-weight:600;font-size:.8rem">🗳️ '+esc(m.topic)+'</div><div style="font-size:.72rem;color:var(--muted)">发起：'+esc(m.host)+' · 🕐 '+esc(m.time)+(m.note?' · '+esc(m.note):'')+'</div><div style="font-size:.7rem;color:var(--muted)">参会：'+m.attendees.length+'人'+(isAttendee?'（含你）':'')+'</div></div>';
     });
-  }else{h+='<div style="color:var(--muted);text-align:center;padding:20px">📭 暂无近期会议</div>';}
+  } else { h += '<div style="color:var(--muted);text-align:center;padding:20px">📭 暂无近期会议</div>'; }
   return h;
 }
-window._councilAudience='builders';
-function createMeeting(){
-  var topic=document.getElementById('councilTopic').value.trim();if(!topic){alert('请输入议题');return;}
-  var date=document.getElementById('councilDate').value;if(!date){alert('请选择日期');return;}
-  var time=document.getElementById('councilTime').value||'20:00';
-  var rn=document.getElementById('councilRoomNumber').value.trim();if(!rn){alert('请输入会议号');return;}
-  var note=document.getElementById('councilNote').value.trim();
-  var audience=window._councilAudience||'builders';
-  var attendees=[];
-  if(audience==='custom'){var cbs=document.querySelectorAll('.councilCb:checked');cbs.forEach(function(cb){attendees.push(cb.value);});if(attendees.length===0){alert('请至少勾选一位参会人');return;}}
-  else if(audience==='builders'){var users=getUsers();Object.keys(users).forEach(function(n){if(users[n].role==='admin'||users[n].role==='builder')attendees.push(n);});}
-  else if(audience==='all_members'){attendees=Object.keys(data.members||{});}
-  var copySelf=document.getElementById('councilCopySelf').checked;
-  if(copySelf&&currentUser&&attendees.indexOf(currentUser.name)===-1)attendees.push(currentUser.name);
-  if(!data.council_meetings)data.council_meetings=[];
-  data.council_meetings.push({id:'cm_'+Date.now().toString(36),topic:topic,time:date+'T'+time,host:currentUser?currentUser.name:'',room_number:rn,note:note,audience:audience,attendees:attendees,created_at:new Date().toISOString()});
+function createMeeting() {
+  var topic = document.getElementById('councilTopic').value.trim(); if (!topic) { alert('请输入议题'); return; }
+  var date = document.getElementById('councilDate').value; if (!date) { alert('请选择日期'); return; }
+  var time = document.getElementById('councilTime').value || '20:00';
+  var note = document.getElementById('councilNote').value.trim();
+  var cbs = document.querySelectorAll('.councilCb:checked');
+  var attendees = []; cbs.forEach(function(cb){ attendees.push(cb.value); });
+  var copySelf = document.getElementById('councilCopySelf').checked;
+  if (copySelf && currentUser && attendees.indexOf(currentUser.name)===-1) attendees.push(currentUser.name);
+  if (attendees.length === 0) { alert('请至少勾选一位参会人'); return; }
+  if (!data.council_meetings) data.council_meetings = [];
+  data.council_meetings.push({ id:'cm_'+Date.now().toString(36), topic:topic, time:date+'T'+time, host:currentUser?currentUser.name:'', note:note, attendees:attendees, created_at:new Date().toISOString() });
   localStorage.setItem('camp_data',JSON.stringify(data));
-  window._councilFormOpen=false;window._councilAudience='builders';
+  window._councilFormOpen = false;
   openHubSub('council');
 }
-function computeCouncilReminders(){
-  var msgs=[];if(!currentUser)return msgs;
-  var now=new Date(),today=now.toISOString().slice(0,10);
+function computeCouncilReminders() {
+  var msgs = []; if (!currentUser) return msgs;
+  var now = new Date(); var today = now.toISOString().slice(0,10);
   (data.council_meetings||[]).forEach(function(m){
-    var isInvited=m.audience==='public'||(m.attendees||[]).indexOf(currentUser.name)!==-1;
-    if(!isInvited)return;
+    if (m.attendees.indexOf(currentUser.name)===-1) return;
     var mt = new Date(m.time); var diff = (mt - now) / 60000;
     if (m.time >= today) {
       if (diff <= 30 && diff > 0) msgs.push({ type:'meeting_soon', topic:m.topic, time:m.time, host:m.host, id:'council_'+m.id, createdAt:m.created_at, jump:null });
