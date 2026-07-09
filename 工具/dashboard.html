@@ -6206,7 +6206,7 @@ function parseDateStr(s) {
 function avatarCircle(seed, size, styleIdx) {
   var name = typeof seed === 'string' ? seed : CHARACTER_SEEDS[seed % CHARACTER_SEEDS.length];
   var url = 'https://api.dicebear.com/7.x/' + AVATAR_STYLE + '/svg?seed=' + encodeURIComponent(name) + '&size=' + (size*2) + '&radius=50';
-  return '<span style="display:inline-block;width:'+size+'px;height:'+size+'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + url + '" width="' + (size*2) + '" height="' + (size*2) + '" style="border-radius:50%;object-fit:cover;display:block;width:100%;height:100%" alt="" onerror="this.style.opacity=\'0\'"></span>';
+  return '<span style="display:inline-block;width:'+size+'px;height:'+size+'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="' + url + '" width="' + size + '" height="' + size + '" style="border-radius:50%;object-fit:cover;display:block" alt="" onerror="this.style.opacity=\'0\'"></span>';
 }
 
 function avatarImg(seed, size, styleIdx) {
