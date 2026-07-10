@@ -443,10 +443,15 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 @keyframes flameGlow { 0%, 100% { filter: drop-shadow(0 0 3px rgba(255,150,30,.5)); } 50% { filter: drop-shadow(0 0 8px rgba(255,150,30,1)); } }
 @keyframes flameIgnite { 0% { transform: scale(.6); opacity: .3; } 100% { transform: scale(1); opacity: 1; } }
 /* ═══ 沉浸工坊 ═══ */
-/* 暗色全屏覆盖层 */
+/* 全屏覆盖层：水彩背景 + 暗色渐变（仿注册页） */
 .workshop-mode::before {
   content: ''; position: fixed; inset: 0; z-index: 100;
-  background: linear-gradient(180deg, rgba(18,12,6,.94), rgba(15,10,5,.96), rgba(10,6,3,.97));
+  background: url('ai_expand_image1783014990973.png') center/cover;
+}
+.workshop-mode::after {
+  content: ''; position: fixed; inset: 0; z-index: 100;
+  background: linear-gradient(180deg, rgba(25,15,8,.62), rgba(20,12,6,.72), rgba(15,8,4,.78));
+  pointer-events: none;
 }
 /* 隐藏页面框架，只留工坊 */
 .workshop-mode header,
@@ -2643,6 +2648,8 @@ function changeUserRole(name, newRole, opts) {
     }
   }
 
+  if (!data.activity_log) data.activity_log = [];
+  data.activity_log.push({ time: Clock.iso(), type: 'role_change', text: name + '：' + (ROLE_LABELS[oldRole]||oldRole) + ' → ' + (ROLE_LABELS[newRole]||newRole) });
   return { ok: true };
 }
 
