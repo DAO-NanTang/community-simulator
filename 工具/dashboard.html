@@ -4592,12 +4592,14 @@ function renderWorkspace() {
   claimArchive.sort(function(a, b) { return (b.doneDate||'').localeCompare(a.doneDate||''); });
   var archiveTotal = pubArchive.length + claimArchive.length;
 
-  // ── 存档：两标签切换 + 共享时间筛选 ──
-  html += '<div class="card" style="padding:16px 18px;margin-bottom:12px"><h3 style="margin:0 0 10px;font-size:1rem">存档</h3>';
+  // ── 存档：折叠标题 + 两标签切换 + 共享时间筛选 ──
+  html += '<div class="card" style="padding:16px 18px;margin-bottom:12px">';
+  html += '<h3 style="margin:0 0 10px;font-size:1rem;cursor:pointer" data-archive-toggle="wsArchiveRoot" data-count="' + archiveTotal + '" onclick="toggleArchive(\'wsArchiveRoot\')">存档（' + archiveTotal + '项）▾</h3>';
+  html += '<div id="wsArchiveRoot" style="display:none">';
   // 标签切换
   html += '<div style="display:flex;gap:4px;margin-bottom:8px">';
   [{k:'published',l:'📤 我发布的',n:pubArchive.length},{k:'claimed',l:'📥 我领取的',n:claimArchive.length}].forEach(function(tab) {
-    html += '<button class="btn' + (wsArchiveTab===tab.k?' pri':'') + '" onclick="wsArchiveTab=\''+tab.k+'\';var d=document.getElementById(\'wsArchiveList\');if(d){var data=d._allData||{};renderArchiveList(\'wsArchiveList\',data[tab.k]||[],wsPubArchiveView)}" style="font-size:.85rem;padding:5px 14px">'+tab.l+'（'+tab.n+'）</button>';
+    html += '<button class="btn' + (wsArchiveTab===tab.k?' pri':'') + '" onclick="wsArchiveTab=\''+tab.k+'\';var d=document.getElementById(\'wsArchiveList\');if(d){var data=d._allData||{};renderArchiveList(\'wsArchiveList\',data[tab.k]||[],wsPubArchiveView)}" style="font-size:.78rem;padding:4px 10px">'+tab.l+'（'+tab.n+'）</button>';
   });
   html += '</div>';
   // 共享时间筛选
@@ -4609,6 +4611,7 @@ function renderWorkspace() {
   // 列表容器
   html += '<div id="wsArchiveList"></div>';
   if (archiveTotal === 0) html += '<div style="font-size:.85rem;color:var(--muted);padding:8px;text-align:center">任务完成后自动归入存档</div>';
+  html += '</div>'; // close wsArchiveRoot
   html += '</div>';
 
   html += '</div>'; // close right
