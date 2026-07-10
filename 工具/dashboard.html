@@ -1533,10 +1533,10 @@ var Clock = (function () {
     stamp: function () { return _wall().toString(36); },               // ID 前缀；后缀 Math.random() 由调用处保留；恒真实，不受冻结影响
     // NT-TEST:START
     // ── 第三期内测接口（真实模式下永不调用）──
-    ,_setFrozen: function (ms) { _frozenMs = ms; _persistV(); },       // 跳到并冻结在某毫秒
-    ,_step: function (deltaMs) { if (_frozenMs == null) _frozenMs = _wall(); _frozenMs += deltaMs; _persistV(); }, // 步进（±小时/天/周）
-    ,_reset: function () { _frozenMs = null; _persistV(); },           // 恢复真实时间
-    ,_state: function () { return { virtual: _frozenMs != null, ms: _now() }; }
+    _setFrozen: function (ms) { _frozenMs = ms; _persistV(); },        // 跳到并冻结在某毫秒
+    _step: function (deltaMs) { if (_frozenMs == null) _frozenMs = _wall(); _frozenMs += deltaMs; _persistV(); }, // 步进（±小时/天/周）
+    _reset: function () { _frozenMs = null; _persistV(); },            // 恢复真实时间
+    _state: function () { return { virtual: _frozenMs != null, ms: _now() }; },
     // NT-TEST:END
   };
 })();
