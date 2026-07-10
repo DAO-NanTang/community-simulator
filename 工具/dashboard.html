@@ -392,6 +392,59 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   .login-card { padding: 18px 10px 24px; }
   .login-card .login-decor { width: min(140px, 50%); }
 }
+
+/* ═══ Phase C: 仪式动画系统 ═══ */
+.ceremony-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #0d0a06;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  overscroll-behavior: contain;
+  transition: opacity .5s ease;
+  font-family: var(--font);
+}
+.ceremony-overlay.hidden { display: none; }
+.ceremony-overlay.fade-out { opacity: 0; pointer-events: none; }
+.ceremony-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.ceremony-bg .star { position: absolute; width: 3px; height: 3px; background: #fff; border-radius: 50%; animation: stardrift var(--drift-dur, 10s) linear infinite; animation-delay: var(--drift-delay, 0s); opacity: 0; }
+.ceremony-flame { font-size: 64px; position: relative; z-index: 2; transition: all .5s ease; }
+.ceremony-flame.breathing { animation: flamebreathe 2s ease-in-out infinite; }
+.ceremony-flame.ignited { font-size: 80px; }
+.ceremony-flame.roaring { font-size: 96px; }
+.ceremony-title { color: #f0d080; font-size: 1.2rem; margin-top: 20px; z-index: 2; text-align: center; }
+.ceremony-subtitle { color: rgba(240,208,128,.6); font-size: .85rem; margin-top: 6px; z-index: 2; }
+.ceremony-btn { margin-top: 30px; padding: 14px 36px; font-size: 1.1rem; font-family: var(--font); background: linear-gradient(135deg, #f0a030, #e08020); color: #fff; border: none; border-radius: 12px; cursor: pointer; z-index: 2; transition: all .3s ease; }
+.ceremony-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(240,160,48,.5); }
+.ceremony-btn.done { background: #555; cursor: default; }
+.ceremony-btn.done:hover { transform: none; box-shadow: none; }
+.ceremony-done { text-align: center; z-index: 2; }
+.ceremony-done .done-title { color: #f0d080; font-size: 1.4rem; margin-bottom: 8px; }
+.ceremony-done .done-date { color: rgba(240,208,128,.5); font-size: .8rem; margin-bottom: 6px; }
+.ceremony-skip { position: fixed; bottom: 20px; right: 24px; z-index: 10; color: rgba(255,255,255,.25); font-size: .7rem; cursor: pointer; opacity: 0; transition: opacity .5s 1.5s; background: none; border: none; font-family: var(--font); }
+.ceremony-skip.visible { opacity: 1; }
+.ceremony-skip:hover { color: rgba(255,255,255,.5); }
+.ceremony-stars { display: flex; gap: 60px; flex-wrap: wrap; justify-content: center; z-index: 2; margin: 30px 0; }
+.ceremony-star-card { text-align: center; transition: all .5s ease; }
+.ceremony-star-card .star-icon { font-size: 36px; display: block; transition: all .3s ease; }
+.ceremony-star-card.ready .star-icon { color: #ffd700; filter: drop-shadow(0 0 8px rgba(255,215,0,.8)); transform: scale(1.2); }
+.ceremony-star-card .star-name { color: rgba(240,208,128,.7); font-size: .85rem; margin-top: 4px; }
+.ceremony-star-card .star-status { color: rgba(240,208,128,.4); font-size: .7rem; }
+.ceremony-star-card.ready .star-status { color: #ffd700; }
+.ceremony-status { color: rgba(240,208,128,.5); font-size: .8rem; z-index: 2; margin-top: 10px; }
+.ceremony-ripple { position: absolute; border-radius: 50%; border: 1px solid rgba(255,180,50,.3); animation: ripple 1.5s ease-out forwards; pointer-events: none; }
+@keyframes stardrift { 0% { opacity: 0; transform: translate(0, 0) scale(.8); } 10% { opacity: .8; } 90% { opacity: .3; } 100% { opacity: 0; transform: translate(var(--drift-x, 30px), var(--drift-y, -40px)) scale(1.2); } }
+@keyframes flamebreathe { 0%, 100% { transform: scale(.9); filter: drop-shadow(0 0 8px rgba(255,150,30,.4)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 18px rgba(255,150,30,.8)); } }
+@keyframes ripple { 0% { width: 20px; height: 20px; opacity: .6; } 100% { width: 350px; height: 350px; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ceremony-overlay { transition: none; } .ceremony-overlay * { animation: none !important; transition: none !important; } }
+/* ═══ 火苗指示器 ═══ */
+.nav-flame { font-size: 1rem; display: block; text-align: center; line-height: 1; }
+.nav-flame.editing { animation: flameGlow 2s ease-in-out infinite; }
+.nav-flame.just-lit { animation: flameIgnite .6s ease-out; }
+.nav-flame.dim { opacity: .35; }
+@keyframes flameGlow { 0%, 100% { filter: drop-shadow(0 0 3px rgba(255,150,30,.5)); } 50% { filter: drop-shadow(0 0 8px rgba(255,150,30,1)); } }
+@keyframes flameIgnite { 0% { transform: scale(.6); opacity: .3; } 100% { transform: scale(1); opacity: 1; } }
+/* ═══ 沉浸工坊 ═══ */
+.workshop-mode .tabs { max-height: 0 !important; opacity: 0; overflow: hidden; transition: max-height .3s ease, opacity .3s ease; }
+.workshop-status-bar { text-align: center; font-size: .7rem; color: var(--muted); margin-top: 6px; padding: 4px 0; border-top: 1px solid var(--border); }
 </style>
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.1" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" defer></script>
@@ -781,6 +834,21 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div id="tab-settings" class="hidden">
     <div id="wizardNav" style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:16px;flex-wrap:nowrap;overflow-x:auto;padding:4px 0"></div>
 
+<!-- Step 0: Camp Creation (Phase B 新增) -->
+<div id="wiz-step0" class="wiz-step">
+  <div class="card" style="max-width:600px;margin:0 auto">
+    <h3 style="text-align:center;margin:0 0 4px">🌍 创营 · 创建营队</h3>
+    <p style="text-align:center;color:var(--muted);font-size:.82rem;margin:0 0 20px">填入营队的基本信息，点燃属于你们的共创火种。</p>
+    <div style="margin-bottom:16px"><label style="font-size:.85rem;font-weight:600">营队名称</label><input type="text" id="wizCampName" placeholder="例：第四期南塘共创营" style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-family:var(--font);font-size:.9rem;margin-top:4px;box-sizing:border-box"></div>
+    <div style="margin-bottom:16px"><label style="font-size:.85rem;font-weight:600">期数</label><select id="wizCampPeriod" style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-family:var(--font);font-size:.9rem;margin-top:4px;box-sizing:border-box"><option value="">-- 选择期数 --</option><option value="第一期">第一期</option><option value="第二期">第二期</option><option value="第三期">第三期</option><option value="第四期">第四期</option><option value="第五期">第五期</option><option value="第六期">第六期</option><option value="第七期">第七期</option><option value="第八期">第八期</option><option value="特别期">特别期</option></select></div>
+    <div style="margin-bottom:16px"><label style="font-size:.85rem;font-weight:600">类型</label><div style="display:flex;gap:16px;margin-top:6px"><label style="font-size:.85rem;cursor:pointer"><input type="radio" name="wizCampType" value="regular" checked onchange="document.getElementById('wizCampTypeVal').value=this.value"> 常规共创营</label><label style="font-size:.85rem;cursor:pointer"><input type="radio" name="wizCampType" value="special" onchange="document.getElementById('wizCampTypeVal').value=this.value"> 特别活动营</label></div><input type="hidden" id="wizCampTypeVal" value="regular"></div>
+    <div style="margin-bottom:16px"><label style="font-size:.85rem;font-weight:600">一句话主题</label><input type="text" id="wizCampTheme" placeholder="例：南塘有风，共创有光" style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-family:var(--font);font-size:.9rem;margin-top:4px;box-sizing:border-box"></div>
+    <div style="margin-bottom:20px"><label style="font-size:.85rem;font-weight:600">描述 <span style="color:var(--muted);font-weight:400">（可选）</span></label><textarea id="wizCampDesc" rows="3" placeholder="更详细的说明…" style="width:100%;padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-family:var(--font);font-size:.9rem;margin-top:4px;resize:vertical;box-sizing:border-box"></textarea></div>
+    <div style="margin-bottom:16px"><label style="font-size:.82rem;cursor:pointer;display:flex;align-items:center;gap:6px"><input type="checkbox" id="wizCampTestMode" style="width:16px;height:16px"> 🧪 测试模式（测试营队可删除）</label></div>
+    <div style="text-align:center"><button class="btn pri" onclick="saveStep0()" style="font-size:1rem;padding:12px 32px">✨ 点燃火种 · 创建营队</button></div>
+  </div>
+</div>
+
     <!-- Step 1: Framework -->
     <div id="wiz-step1" class="wiz-step">
       <div class="card"><h3>📅 营期时间</h3>
@@ -966,66 +1034,31 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       <div style="text-align:right;margin-top:8px"><button class="btn" onclick="switchStep(2)">← ②任务池</button> <button class="btn" onclick="saveWizDraft()">💾 暂存</button> <button class="btn pri" onclick="saveStep3()">保存并进入下一步 → ④</button></div>
     </div>
 
-    <!-- Step 4: Role Card Filling -->
-    <div id="wiz-step4" class="wiz-step hidden">
-      <!-- Big avatar row -->
-      <div class="card" style="text-align:center;padding:12px">
-        <div id="wizStep4Avatars" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:4px"></div>
-        <div id="wizStep4SelectedName" style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-top:4px"></div>
-      </div>
-      <!-- Detail panel for selected person -->
-      <div id="wizStep4Detail" class="card hidden" style="display:flex;gap:14px;flex-wrap:wrap">
-        <!-- Left: big avatar + info -->
-        <div style="flex:0 0 160px;text-align:center">
-          <div id="wizStep4BigAvatar" style="width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 6px;background:#e0d8c8"></div>
-          <div id="wizStep4Name" style="font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:2px"></div>
-          <div id="wizStep4Role" style="font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:2px"></div>
-          <div id="wizStep4Note" style="font-size:.73rem;color:var(--muted);font-style:italic;margin-bottom:8px"></div>
-          <div style="font-size:.78rem;font-weight:600">预计获得</div>
-          <div id="wizStep4NT" style="font-size:.9rem;color:var(--accent);font-weight:700"></div>
-          <div id="wizStep4RMB" style="font-size:.82rem;font-weight:600"></div>
-        </div>
-        <!-- Right: task list with expandable details -->
-        <div style="flex:1;min-width:280px;overflow-y:auto;max-height:300px" id="wizStep4Tasks"></div>
-      </div>
-      <!-- Unified budget material table -->
-      <div id="wizStep4MatTable" class="card hidden" style="margin-top:8px"></div>
-      <!-- NT Design Panel (NT role only) -->
-      <div id="wizNTDesignPanel" class="hidden">
-        <div class="card" style="border:2px solid var(--accent);background:linear-gradient(180deg,#fefdf8,#fdf8ee)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
-            <h3 style="margin:0">🎯 NT 任务设计表</h3>
-            <div style="display:flex;gap:6px;align-items:center">
-              <select id="wizNTDesignTemplate" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:.75rem"><option value="">-- 从模板导入 --</option></select>
-              <button class="btn" onclick="importNTDesignTemplate()" style="font-size:.75rem;padding:4px 10px">📥 导入</button>
-              <button class="btn" onclick="exportNTDesignTemplate()" style="font-size:.75rem;padding:4px 10px">💾 导出模板</button>
-            </div>
-          </div>
-          <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px" id="wizNTDesignPoolInfo"></div>
-          <div id="wizNTDesignTables"></div>
-          <div style="margin-top:8px;padding-top:8px;border-top:2px solid var(--accent);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-            <span style="font-size:.85rem;font-weight:700">已分配 NT 合计：<b id="wizNTDesignAllocated">0</b> NT</span>
-            <span style="font-size:.85rem;font-weight:700">冒险者任务NT池：<b id="wizNTDesignPool">0</b> NT</span>
-            <span style="font-size:.9rem;font-weight:700" id="wizNTDesignRemaining"></span>
-          </div>
-        </div>
-      </div>
-      <div style="text-align:right;margin-top:8px"><button class="btn" onclick="switchStep(3)">← ③认领</button> <button class="btn" onclick="saveWizDraft()">💾 暂存</button> <button class="btn pri" onclick="saveStep4()">保存并进入下一步 → ⑤</button></div>
-    </div>
+<!-- Step 4: Launch (Phase B 重写) -->
+<div id="wiz-step4" class="wiz-step hidden">
+  <div id="wiz4a-review" class="card" style="max-width:650px;margin:0 auto">
+    <h3>🔍 审核 · 发包前确认</h3>
+    <div id="wiz4aSummary" style="font-size:.85rem;line-height:1.8;margin:12px 0"></div>
+    <div style="margin:12px 0"><label style="font-size:.85rem">审核人：<select id="wiz4aReviewer" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px"></select></label></div>
+    <div style="text-align:right"><button class="btn" onclick="switchStep(3)">← ③选将</button> <button class="btn pri" onclick="wizSubmitReview()">提交审核 →</button></div>
+  </div>
+  <div id="wiz4b-deploy" class="card hidden" style="max-width:650px;margin:0 auto">
+    <h3>📦 发包 · 推送到工作台</h3>
+    <div id="wiz4bConfirm" style="font-size:.85rem;margin:12px 0;line-height:1.8"></div>
+    <div style="text-align:right"><button class="btn" onclick="wizStep4Phase='review';renderStep4()">← 返回审核</button> <button class="btn pri" onclick="wizDeploy()">📦 确认发包</button></div>
+  </div>
+  <div id="wiz4c-ceremony" class="card hidden" style="max-width:650px;margin:0 auto;text-align:center">
+    <h3>🎊 开营仪式</h3>
+    <p style="color:var(--muted);font-size:.85rem">所有共建者将进入星光汇聚仪式</p>
+    <button class="btn pri" onclick="wizStartCeremony()" style="font-size:1rem;padding:12px 32px;margin:16px 0">🎊 开始开营仪式</button>
+  </div>
+  <div id="wiz4d-launch" class="card hidden" style="max-width:650px;margin:0 auto;text-align:center">
+    <h3>🏁 营队正式启动</h3>
+    <div id="wiz4dConfirm" style="font-size:.85rem;margin:12px 0;line-height:1.8"></div>
+    <button class="btn pri" onclick="wizLaunch()" style="font-size:1rem;padding:12px 32px">🏁 正式启动营队</button>
+  </div>
+</div>
 
-    <!-- Step 5: Sync -->
-    <div id="wiz-step5" class="wiz-step hidden">
-      <!-- Final budget table (top) -->
-      <div id="wizBudgetFinal"></div>
-      <!-- Sync preview (bottom) -->
-      <div class="card"><h3>📊 同步预览</h3>
-        <div style="overflow-x:auto"><table style="width:100%;font-size:.85rem" id="wizSyncTable"><thead><tr><th>目标标签</th><th>内容</th><th>数量</th><th>状态</th></tr></thead><tbody id="wizSyncBody"></tbody></table></div>
-      </div>
-      <div id="wizMaterialSummary"></div>
-      <div class="card hidden" id="wizConflictCard"><h3 style="color:var(--red)">⚠️ 冲突检测</h3><div id="wizConflicts"></div></div>
-      <div class="card hidden" id="wizMissingCard"><h3 style="color:var(--yellow)">🔍 遗漏检查</h3><div id="wizMissingFields"></div></div>
-      <div style="text-align:right;margin-top:8px"><button class="btn" onclick="switchStep(4)">← ④填卡片</button> <button class="btn danger" onclick="resetWizard()">🔄 重置向导</button> <button class="btn pri" onclick="executeSync()" style="font-size:1rem;padding:10px 24px">✅ 同步到全部标签</button></div>
-    </div>
   </div>  <!-- Tab: Settlement -->
   <div id="tab-settlement" class="hidden">
     <!-- 共建者块 -->
@@ -1175,7 +1208,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 <!-- 社区窗口：二级滑出面板（复用 hub-sub-panel 样式）-->
 <div class="hub-slide-backdrop" id="activityBackdrop" onclick="closeActivityCommunity()" style="display:none;z-index:1001"></div>
 <div class="hub-sub-panel" id="activityCommunitySlide" style="z-index:1002">
-  <div class="hs-header"><span style="font-weight:700;font-size:.85rem">👀 浏览营地</span><button onclick="closeActivityCommunity()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:2px 4px">✕</button></div>
+  <div class="hs-header"><span style="font-weight:700;font-size:.85rem">👀 游览营地</span><button onclick="closeActivityCommunity()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:2px 4px">✕</button></div>
   <div class="hs-body" id="activityCommunityBody"></div>
 </div>
 
@@ -1725,7 +1758,7 @@ const AVATAR_STYLE = 'avataaars';
 const DEFAULT_COUNCIL_ROOM = {}; // 议事厅默认值
 
 // ── State (ALL shared variables declared here first) ──
-let data = { tasks: [], decisions: [], members: {}, budget: {}, budget_items: [], finance_cny: {}, finance: [], schedule: {}, camp_progress: { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} }, camp_dates: { start: '', end: '', duration_days: 15, milestones: [] }, staff_cards: [], camp_info: { current: { version: 0, updated_at: '', updated_by: '', identity: { name: '', period: '', description: '', type: 'regular', status: 'draft', created_at: '', created_by: '' }, budget: { nt_total_pool: 0, nt_allocated: 0, nt_remaining: 0, rmb_budget: 0, rmb_items: [], allocation_rules: {} }, calendar: { start_date: '', end_date: '', duration_days: 15, daily_schedule: [], milestones: [], key_dates: [] }, team: { admin: '', staff_cards: [], members: {} }, tasks: { pool: [], assignments: {}, templates: [] }, governance: { council_meetings: [], decisions: [], rules: {} } }, snapshots: [], changelog: [] }, _initialized: false };
+let data = { tasks: [], decisions: [], members: {}, budget: {}, budget_items: [], finance_cny: {}, finance: [], schedule: {}, camp_progress: {step:0,steps:{'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'}}, camp_dates: { start: '', end: '', duration_days: 15, milestones: [] }, staff_cards: [], camp_info: { current: { version: 0, updated_at: '', updated_by: '', identity: { name: '', period: '', description: '', type: 'regular', status: 'draft', created_at: '', created_by: '' }, budget: { nt_total_pool: 0, nt_allocated: 0, nt_remaining: 0, rmb_budget: 0, rmb_items: [], allocation_rules: {} }, calendar: { start_date: '', end_date: '', duration_days: 15, daily_schedule: [], milestones: [], key_dates: [] }, team: { admin: '', staff_cards: [], members: {} }, tasks: { pool: [], assignments: {}, templates: [] }, governance: { council_meetings: [], decisions: [], rules: {} } }, snapshots: [], changelog: [] }, _initialized: false };
 let settleSelected = null;
 let staffData = {}, playerData = {}, selectedStaff = null, selectedPlayer = null;
 let selectedMember = null;
@@ -1892,7 +1925,7 @@ function migrateFinanceRecords() {
   if (migrated > 0) saveData();
 }
 
-function toggleDropdown(id) { var el = document.getElementById(id); el.classList.toggle('hidden'); }
+function toggleDropdown(id) { var el = document.getElementById(id); var wasOpen = el && !el.classList.contains('hidden'); document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); }); if (!wasOpen && el) el.classList.remove('hidden'); }
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) { var so = document.getElementById('inviteSidebar') && document.getElementById('inviteSidebar').classList.contains('show'); var hs = document.getElementById('hubSubPanel') && document.getElementById('hubSubPanel').classList.contains('show'); if (!e.target.closest('.dropdown') && !so && !hs) { document.querySelectorAll('.dropdown-menu').forEach(function(m) { m.classList.add('hidden'); }); } });
 
@@ -1923,7 +1956,7 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('⚠️ 数据损坏，已重置为空白数据。\n错误：' + e.message);
       data = { tasks:[], decisions:[], members:{}, budget:{}, budget_items:[],
                finance_cny:{}, finance:[], schedule:{},
-               camp_progress:{step:1,steps:{'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'}},
+               camp_progress:{step:0,steps:{'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'}},
                camp_dates:{start:'',end:'',duration_days:15,milestones:[]}, staff_cards:[],
                inventory:[], canteen_menus:{}, canteen_orders:[], canteen_suggestions:[],
                inn_rooms:[], inn_bookings:[], teahouse_posts:[], game_sessions:[], camp_info:{current:{version:0,updated_at:'',updated_by:'',identity:{name:'',period:'',description:'',type:'regular',status:'draft',created_at:'',created_by:''},budget:{nt_total_pool:0,nt_allocated:0,nt_remaining:0,rmb_budget:0,rmb_items:[],allocation_rules:{}},calendar:{start_date:'',end_date:'',duration_days:15,daily_schedule:[],milestones:[],key_dates:[]},team:{admin:'',staff_cards:[],members:{}},tasks:{pool:[],assignments:{},templates:[]},governance:{council_meetings:[],decisions:[],rules:{}}},snapshots:[],changelog:[]} };
@@ -1931,7 +1964,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 补缺失的默认字段（兼容旧版本数据）
     if (!data.budget_items) data.budget_items = [];
     if (!data.staff_cards) data.staff_cards = [];
-    if (!data.camp_progress) data.camp_progress = {step:1,steps:{'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'}};
+    if (!data.camp_progress) data.camp_progress = {step:0,steps:{'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'}};
     if (!data.camp_dates) data.camp_dates = {start:'',end:'',duration_days:15,milestones:[]};
     if (!data.finance) data.finance = [];
     if (!data.finance_cny) data.finance_cny = {};
@@ -2095,7 +2128,7 @@ function loadData() {
         if (loaded.version) { /* version check OK */ } else { console.warn('data.json missing version field'); }
         // Migrate: new wizard fields
         if (loaded.camp_progress) data.camp_progress = loaded.camp_progress;
-        else data.camp_progress = { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} };
+        else data.camp_progress = {step:0,steps:{'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'}};
         if (loaded.camp_dates) data.camp_dates = loaded.camp_dates;
         else data.camp_dates = { start: '', end: '', duration_days: 15, milestones: [] };
         if (loaded.bundles) data.staff_cards = loaded.bundles; // migrate old bundles to staff_cards
@@ -2488,7 +2521,7 @@ function changeUserRole(name, newRole, opts) {
   if (newRole === 'builder') {
     var history = users[name].season_history || [];
     var wasAdventurer = history.some(function(h) { return h.role === 'adventurer'; });
-    if (!wasAdventurer && oldRole !== 'adventurer') {
+    if (!opts.skipAdventurerCheck && !wasAdventurer && oldRole !== 'adventurer') {
       return { ok: false, error: '共建者需先有冒险者经历' };
     }
   }
@@ -3067,6 +3100,14 @@ function openVillageModal(type) {
   if (el) { el.classList.remove('hidden'); if (type === 'map') { el.style.alignItems = 'flex-start'; el.style.paddingTop = '250px'; } else { el.style.alignItems = ''; el.style.paddingTop = ''; } }
 }
 function closeVillageModal(type) {
+  // 二级面板（游览营地）开着时，先关二级，不关一级
+  if (type === 'activity') {
+    var subPanel = document.getElementById('activityCommunitySlide');
+    if (subPanel && subPanel.classList.contains('show')) {
+      closeActivityCommunity();
+      return;
+    }
+  }
   var nameMap = { questhall:'Questhall', activity:'Activity', map:'Map' };
   var el = document.getElementById('villageModal' + (nameMap[type] || 'Map'));
   if (el) { el.classList.add('hidden'); if (type === 'map') { el.style.alignItems = ''; el.style.paddingTop = ''; } }
@@ -3296,11 +3337,11 @@ function renderVillageActivityList() {
     '<div style="font-size:.8rem;color:var(--muted);margin:4px 0">2026年7月 · 进行中 · 12人活跃</div>'+
     '<div style="font-size:.82rem">工笔画创作、在地生活、展览布置…</div>'+
     (isMember ?
-      '<div style="margin-top:10px"><button class="btn pri" onclick="closeVillageModal(\'activity\');showMainInterface(getIdentity(currentUser),\'workspace\')" style="font-size:.82rem;padding:8px 20px">→ 进入营队</button> '+
-      '<button class="btn" onclick="openActivityCommunity()" style="font-size:.82rem;padding:8px 20px" id="btnActivityCommunity">👀 浏览营地 ▾</button></div>' :
+      '<div style="margin-top:10px"><button class="btn pri" onclick="closeActivityCommunity();closeVillageModal(\'activity\');showMainInterface(getIdentity(currentUser),\'workspace\')" style="font-size:.82rem;padding:8px 20px">→ 进入营队</button> '+
+      '<button class="btn" onclick="openActivityCommunity()" style="font-size:.82rem;padding:8px 20px" id="btnActivityCommunity">👀 游览营地 ▾</button></div>' :
       '<div style="margin-top:8px"><input id="villageInviteCode" placeholder="输入邀请码" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:.82rem;width:180px"> '+
-      '<button class="btn pri" onclick="var c=document.getElementById(\'villageInviteCode\').value;if(c){var r=doUpgradeWithCode(c);if(r&&r.ok){closeVillageModal(\'activity\');showMainInterface(getIdentity(currentUser),\'workspace\');}}" style="font-size:.78rem">→ 成为冒险者</button> '+
-      '<button class="btn" onclick="openActivityCommunity()" style="font-size:.78rem" id="btnActivityCommunity">👀 浏览营地 ▾</button></div>')+
+      '<button class="btn pri" onclick="var c=document.getElementById(\'villageInviteCode\').value;if(c){var r=doUpgradeWithCode(c);if(r&&r.ok){closeActivityCommunity();closeVillageModal(\'activity\');showMainInterface(getIdentity(currentUser),\'workspace\');}}" style="font-size:.78rem">→ 成为冒险者</button> '+
+      '<button class="btn" onclick="openActivityCommunity()" style="font-size:.78rem" id="btnActivityCommunity">👀 游览营地 ▾</button></div>')+
     '</div>';
   html += '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:10px;opacity:.6">'+
     '<div style="font-size:1rem;font-weight:700">🎋 南塘端午文化节</div>'+
@@ -4107,7 +4148,7 @@ function renderCommunityWindowEmbedded() {
   return h;
 }
 
-// ── 浏览营地 二级滑出面板 ──
+// ── 游览营地 二级滑出面板 ──
 function openActivityCommunity() {
   var panel = document.getElementById('activityCommunitySlide');
   var bd = document.getElementById('activityBackdrop');
@@ -7352,7 +7393,7 @@ function switchTab(name, opts) {
   if (name === 'timeline') { renderTimeline(); renderCalendar(); var isNpc = currentUser && (hasRole(currentUser, ['npc','visitor'])); switchScheduleView(isNpc?'timeline':'calendar'); }
   if (name === 'budget') renderBudget();
   if (name === 'settlement') renderSettlementAll();
-  if (name === 'settings') { renderWizardNav(); switchStep(data.camp_progress.step || 1); }
+  if (name === 'settings') { enterWorkshop(); }
   if (name === 'taskhall') { renderDailyView('staff'); renderTasks(); renderCompleteness(); }
   if (name === 'ntadmin') { renderNTAdmin(); }
   if (name === 'profile') renderMyProfile();
@@ -9240,6 +9281,27 @@ let settingsSubTab = 'staffTasks';
 let settingStaffTasks = [];   // 共建者任务池临时存储
 let settingCreatorTasks = []; // 冒险者任务池临时存储
 
+
+// ═══ 沉浸式工坊模式 ═══
+var _workshopActive = false;
+function enterWorkshop() {
+  if (_workshopActive) return;
+  _workshopActive = true;
+  document.body.classList.add('workshop-mode');
+  var hudGenesis = document.getElementById('hudGenesisBtn');
+  if (hudGenesis) hudGenesis.classList.add('hidden');
+  renderWizardNav();
+  switchStep(data.camp_progress.step || 0);
+}
+function exitWorkshop() {
+  if (!_workshopActive) return;
+  _workshopActive = false;
+  document.body.classList.remove('workshop-mode');
+  var hudGenesis = document.getElementById('hudGenesisBtn');
+  if (hudGenesis) hudGenesis.classList.remove('hidden');
+  saveData();
+  switchTab('workspace');
+}
 // ── Wizard State (5-step flow) ──
 let wizardStep = 1;
 let wizardTasks = [];         // ②统一任务池临时存储
@@ -9259,47 +9321,106 @@ let editCardIndex = -1; // -1 = new card, >=0 = editing existing card at this in
 // ── Wizard Navigation ──
 function renderWizardNav() {
   var steps = [
-    { num:1, label:'统筹定框架', key:'1' },
-    { num:2, label:'任务池梳理', key:'2' },
-    { num:3, label:'打包命名', key:'3' },
-    { num:4, label:'角色填卡', key:'4' },
-    { num:5, label:'同步展示', key:'5' },
+    { num:0, label:'创营', key:'0' },
+    { num:1, label:'统筹', key:'1' },
+    { num:2, label:'任务池', key:'2' },
+    { num:3, label:'选将', key:'3' },
+    { num:4, label:'启动', key:'4' }
   ];
-  var cp = data.camp_progress || { steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} };
-  var html = '';
+  if (!data.camp_progress) data.camp_progress = { step: 0, steps: {'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'} };
+  var cp = data.camp_progress;
+  var campCreated = data.camp_info && data.camp_info.current && data.camp_info.current.identity && data.camp_info.current.identity.name;
+  var html = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center">';
   steps.forEach(function(s, i) {
-    var status = cp.steps[s.key] || 'locked';
-    var badge = status === 'done' ? '✅' : status === 'active' ? '⚠' : status === 'pending' ? '⬜' : '🔒';
-    var cls = status === 'active' ? 'btn pri' : (status === 'locked' ? 'btn' : 'btn');
-    var op = status === 'locked' ? 'opacity:.5' : '';
-    html += '<button class="' + cls + '" onclick="switchStep(' + s.num + ')" style="' + op + '">' + badge + ' ' + s.num + '. ' + s.label + '</button>';
-    if (i < 4) html += '<span style="color:var(--border);font-size:1rem;margin:0 2px">→</span>';
+    var flame = getStepFlame(s.num);
+    var isActive = cp.step === s.num;
+    var canClick = (s.num === 0) || campCreated;
+    var isDone = (cp.steps[s.key] === 'done');
+    var badge = isActive ? '⚠' : (isDone ? '✅' : '');
+    var cls = isActive ? 'btn pri' : 'btn';
+    var op = canClick ? '' : 'opacity:.35;pointer-events:none';
+    var title = canClick ? '' : 'title="请先完成 Step ⓪ 创营"';
+    html += '<div style="text-align:center">' +
+      '<button class="' + cls + '" onclick="switchStep(' + s.num + ')" style="font-size:.78rem;padding:6px 12px;' + op + '" ' + title + '>' +
+      badge + ' ' + s.num + '. ' + s.label + '</button>' +
+      '<span class="nav-flame' + (flame.cls ? ' ' + flame.cls : '') + '" title="' + flame.label + '">' + flame.emoji + '</span></div>';
+    if (i < 4) html += '<span style="color:var(--border);font-size:1rem">→</span>';
   });
+  html += '</div>';
+  var ci = data.camp_info;
+  var campName = (ci && ci.current && ci.current.identity && ci.current.identity.name) || '未创建';
+  var ver = (ci && ci.current && ci.current.version) || 0;
+  var who = (ci && ci.current && ci.current.updated_by) || '';
+  html += '<div class="workshop-status-bar"><span>当前营队：' + campName + ' · v' + ver + (who ? ' · ' + who : '') + '</span>' +
+    '<button class="btn" onclick="showChangelogPanel()" style="font-size:.65rem;padding:2px 8px;margin-left:8px">📋 版本历史</button>' +
+    '<button class="btn" onclick="exitWorkshop()" style="font-size:.65rem;padding:2px 8px;margin-left:4px">← 退出工坊</button></div>';
   document.getElementById('wizardNav').innerHTML = html;
 }
 
 function switchStep(n) {
   wizardStep = n;
-  if (!data.camp_progress) data.camp_progress = { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} };
+  if (!data.camp_progress) data.camp_progress = { step: 0, steps: {'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'} };
   data.camp_progress.step = n;
-  for (var i = 1; i <= 5; i++) {
+  for (var i = 0; i <= 4; i++) {
     var el = document.getElementById('wiz-step' + i);
     if (el) el.classList.toggle('hidden', i !== n);
   }
+  // Also hide old step 5 if it exists
+  var old5 = document.getElementById('wiz-step5');
+  if (old5) old5.classList.add('hidden');
   renderWizardNav();
+  if (n === 0) renderStep0();
   if (n === 1) renderStep1();
   if (n === 2) { refreshWizTemplateSelect(); renderStep2(); }
   if (n === 3) renderStep3();
-  if (n === 4) { prefillAllTasks(); renderStep4(); }
-  if (n === 5) renderStep5();
+  if (n === 4) renderStep4();
+  saveData();
 }
 
 function unlockStep(n) {
-  if (!data.camp_progress) data.camp_progress = { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} };
+  if (!data.camp_progress) data.camp_progress = { step: 0, steps: {'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'} };
   var key = String(n);
   if (data.camp_progress.steps[key] === 'locked') data.camp_progress.steps[key] = 'pending';
 }
 
+
+// ═══ Step ⓪：创营 ═══
+function renderStep0() {
+  var id = (data.camp_info && data.camp_info.current && data.camp_info.current.identity) || {};
+  var el;
+  el = document.getElementById('wizCampName'); if (el) el.value = id.name || '';
+  el = document.getElementById('wizCampPeriod'); if (el) el.value = id.period || '';
+  el = document.getElementById('wizCampTheme'); if (el) el.value = id.description || '';
+  el = document.getElementById('wizCampDesc'); if (el) el.value = '';
+  el = document.getElementById('wizCampTestMode'); if (el) el.checked = !!(id.test_mode);
+  var typeRadios = document.getElementsByName('wizCampType');
+  for (var i = 0; i < typeRadios.length; i++) { typeRadios[i].checked = (typeRadios[i].value === (id.type || 'regular')); }
+  document.getElementById('wizCampTypeVal').value = id.type || 'regular';
+}
+function saveStep0() {
+  var name = document.getElementById('wizCampName').value.trim();
+  var period = document.getElementById('wizCampPeriod').value;
+  var type = document.getElementById('wizCampTypeVal').value;
+  var theme = document.getElementById('wizCampTheme').value.trim();
+  var testMode = document.getElementById('wizCampTestMode').checked;
+  if (!name) { alert('请输入营队名称'); return; }
+  if (!period) { alert('请选择期数'); return; }
+  var ci = data.camp_info;
+  ci.current.identity.name = name;
+  ci.current.identity.period = period;
+  ci.current.identity.type = type;
+  ci.current.identity.description = theme;
+  ci.current.identity.status = 'preparing';
+  ci.current.identity.created_at = Clock.iso();
+  ci.current.identity.created_by = (currentUser && currentUser.name) || '系统';
+  ci.current.identity.test_mode = !!(testMode);
+  ci.current.updated_at = Clock.iso();
+  ci.current.updated_by = (currentUser && currentUser.name) || '系统';
+  createSnapshot('创营原档', '创建营队：' + name);
+  data.camp_progress.steps['0'] = 'done';
+  saveData();
+  openIgniteCeremony(function() { switchStep(1); });
+}
 // ── Step 1: Framework ──
 function renderStep1() {
   var cd = data.camp_dates || {};
@@ -10111,14 +10232,27 @@ function saveStep1() {
   if (!data.stats) data.stats = {};
   data.stats.participant_count = pCount;
   // Progress
-  if (!data.camp_progress) data.camp_progress = { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} };
-  data.camp_progress.steps['1'] = 'done';
-  data.camp_progress.steps['2'] = 'active';
-  data.camp_progress.step = 2;
+  if (!data.camp_progress) data.camp_progress = {step:0,steps:{'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'}};
+  data.camp_progress.steps['0'] = 'done';
+  data.camp_progress.steps['1'] = 'active';
+  data.camp_progress.step = 1;
+  // 同步到 camp_info
+  var _b = data.budget || {};
+  var _cd = data.camp_dates || {};
+  data.camp_info.current.budget.nt_total_pool = _b.nt_total_pool || 0;
+  data.camp_info.current.budget.rmb_budget = _b.tuition || 0;
+  data.camp_info.current.budget.community_pool_total = _b.community_pool_total || 500;
+  data.camp_info.current.budget.community_pool_daily = _b.community_pool_daily || 10;
+  data.camp_info.current.calendar.start_date = _cd.start || '';
+  data.camp_info.current.calendar.duration_days = _cd.duration_days || 15;
+  data.camp_info.current.calendar.milestones = _cd.milestones || [];
+  data.camp_info.current.updated_at = Clock.iso();
+  data.camp_info.current.updated_by = (currentUser && currentUser.name) || '系统';
+  createSnapshot('统筹完成', '日历和预算设定');
   data._initialized = true; // 标记系统已初始化
   saveData();
   updateAll();
-  switchStep(2);
+  switchStep(1);
   setStatus('步骤①已保存 → 进入②任务池梳理');
 }
 
@@ -10288,10 +10422,14 @@ function saveStep2() {
   mergeWizardToData(wizardTasks);
   wizardDirty = false;
   if (!data.camp_progress) data.camp_progress = { step: 2, steps: {'1':'done','2':'active','3':'locked','4':'locked','5':'locked'} };
-  data.camp_progress.steps['2'] = 'done';
-  data.camp_progress.steps['3'] = 'active';
+  data.camp_progress.steps['1'] = 'done';
+  data.camp_progress.steps['2'] = 'active';
 
-  data.camp_progress.step = 3;
+  data.camp_info.current.tasks.pool = JSON.parse(JSON.stringify(wizardTasks));
+  data.camp_info.current.updated_at = Clock.iso();
+  data.camp_info.current.updated_by = (currentUser && currentUser.name) || '系统';
+  createSnapshot('任务池完成', '共 ' + wizardTasks.length + ' 项任务');
+  data.camp_progress.step = 2;
   saveData();
   updateAll();
   switchStep(3);
@@ -10468,16 +10606,7 @@ function claimTasks() {
       users[personName] = { name: personName, role: 'adventurer', password: null, avatar_seed: newCardAvatarSeed, season: '', created: Clock.today(), uid: generateUID(personName), season_history: [{ role: 'visitor', period: '第四期', changed_at: Clock.today() }] };
       saveUsers(users);
     }
-    var upgradeResult = changeUserRole(personName, 'builder');
-    if (!upgradeResult.ok) {
-      users = getUsers();
-      if (users[personName] && users[personName].role !== 'builder') {
-        users[personName].role = 'builder';
-        if (!users[personName].season_history) users[personName].season_history = [];
-        users[personName].season_history.push({ role: 'adventurer', period: '第四期', changed_at: Clock.today() });
-        saveUsers(users);
-      }
-    }
+
   }
 
   var names = checked.map(function(t) { delete t._claimChecked; return t.name; });
@@ -10596,128 +10725,56 @@ function removeStaffCard(idx) {
 
 function saveStep3() {
   if (!data.camp_progress) data.camp_progress = { step: 3, steps: {'1':'done','2':'done','3':'active','4':'locked','5':'locked'} };
-  data.camp_progress.steps['3'] = 'done';
-  data.camp_progress.steps['4'] = 'active';
-  data.camp_progress.step = 4;
+  data.camp_progress.steps['2'] = 'done';
+  data.camp_progress.steps['3'] = 'active';
+  data.camp_progress.step = 3;
+  data.camp_info.current.team.staff_cards = JSON.parse(JSON.stringify(getStaffCards()));
+  data.camp_info.current.updated_at = Clock.iso();
+  data.camp_info.current.updated_by = (currentUser && currentUser.name) || '系统';
+  createSnapshot('选将完成', getStaffCards().length + ' 位共建者');
   saveData();
-  switchStep(4);
+  switchStep(3);
   setStatus('步骤③已保存 → 进入④角色填卡');
 }
 
 // ── Step 4: Role Card Fill ──
 let wizStep4Selected = null;
 
+// ═══ Step ④：审核→发包→开营→启动 (Phase B 重写) ═══
+var wizStep4Phase = 'review';
 function renderStep4() {
-  var cards = getStaffCards();
-  // Auto-select first card
-  if (!wizStep4Selected && cards.length > 0) wizStep4Selected = cards[0].name;
-
-  // Big avatar row
-  var avatarSize = Math.max(50, 80 - Math.max(0, cards.length - 4) * 6);
-  document.getElementById('wizStep4Avatars').innerHTML = cards.map(function(sc) {
-    var si = sc.avatar_seed != null ? sc.avatar_seed : 0;
-    var sel = sc.name === wizStep4Selected;
-    return '<div onclick="wizStep4Selected=\'' + escAttr(sc.name) + '\';renderStep4()" style="cursor:pointer;text-align:center;transition:.15s;' + (sel?'transform:scale(1.1)':'') + '">' +
-      '<div style="width:' + avatarSize + 'px;height:' + avatarSize + 'px;border-radius:50%;overflow:hidden;margin:0 auto;border:' + (sel?'3px solid var(--accent)':'2px solid var(--border)') + '">' + avatarCircle(si, avatarSize*2, 0) + '</div>' +
-      '<div style="font-size:.72rem;font-weight:600;margin-top:3px;color:' + (sel?'var(--accent)':'var(--text)') + '">' + esc(sc.name) + '</div></div>';
-  }).join('') || '<div style="color:var(--muted)">还没有共建者，请先在步骤③认领</div>';
-
-  // Selected person detail
-  var selCard = cards.find(function(sc) { return sc.name === wizStep4Selected; });
-  var detailEl = document.getElementById('wizStep4Detail');
-  if (!selCard) { detailEl.classList.add('hidden'); return; }
-  detailEl.classList.remove('hidden');
-
-  var si2 = selCard.avatar_seed != null ? selCard.avatar_seed : 0;
-  document.getElementById('wizStep4Name').textContent = selCard.name;
-  document.getElementById('wizStep4BigAvatar').innerHTML = avatarCircle(si2, 100, 0);
-  document.getElementById('wizStep4Role').textContent = selCard.role || '';
-  document.getElementById('wizStep4Note').textContent = selCard.note ? '"' + selCard.note + '"' : '';
-
-  // NT/RMB estimate
-  var staffNT = (data.budget && data.budget.staff_nt_total) ? data.budget.staff_nt_total : 0;
-  var staffCount = cards.length || 1;
-  var ntPer = Math.round(staffNT / staffCount);
-  var salaryBase = (data.budget && data.budget.salary_base_rmb) ? data.budget.salary_base_rmb : 2000;
-  document.getElementById('wizStep4NT').textContent = 'NT ' + ntPer.toLocaleString();
-  document.getElementById('wizStep4RMB').textContent = '¥ ' + salaryBase.toLocaleString();
-
-  // Task list with expandable details
-  var tasks = (selCard.task_names||[]).map(function(tn) {
-    var t = wizardTasks.find(function(wt) { return wt.name === tn; });
-    if (!t) { t = { name: tn, points: 1, deadline: '', confirmer: '', materials: [], subtasks: [], outputs: [], steps: '' }; wizardTasks.push(t); smartPreFill(t); }
-    return t;
-  });
-  document.getElementById('wizStep4Tasks').innerHTML = tasks.map(function(t, ti) {
-    var tn = escAttr(t.name);
-    var expanded = t._step4Expanded;
-    var mats = t.materials || [];
-    var subs = t.subtasks || [];
-    var outs = t.outputs || [];
-    return '<div style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;background:#fefdf9">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleStep4Task(\'' + tn + '\')">' +
-      '<b style="font-size:.85rem">📋 ' + esc(t.name) + '</b><span style="font-size:.7rem;color:var(--muted)">' + (expanded?'收起':'展开') + ' ▾</span></div>' +
-      (expanded ? '<div style="margin-top:6px;padding-top:6px;border-top:1px dotted var(--border)">' +
-        // Basic fields
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">' +
-        '<label style="font-size:.75rem">📅 截止：<input class="inline-input" value="' + escAttr(t.deadline||'') + '" onchange="findTask(\'' + tn + '\').deadline=this.value" placeholder="如 7/15" style="width:80px"></label>' +
-        '<label style="font-size:.75rem">✅ 确认人：<input class="inline-input" value="' + escAttr(t.confirmer||'') + '" onchange="findTask(\'' + tn + '\').confirmer=this.value" placeholder="姓名" style="width:70px"></label>' +
-        '<label style="font-size:.75rem">⭐ 激励点：<input class="inline-input" type="number" value="' + (t.points||1) + '" onchange="findTask(\'' + tn + '\').points=parseInt(this.value)||1" style="width:50px"></label>' +
-        '</div>' +
-        // Steps/process (always show)
-        '<div style="font-size:.75rem;font-weight:600;margin:8px 0 2px">📝 执行步骤</div>' +
-        '<textarea class="inline-input" onchange="findTask(\'' + tn + '\').steps=this.value" placeholder="描述怎么做：步骤1 → 步骤2 → ..." style="width:100%;min-height:50px;font-size:.75rem">' + esc(t.steps||'') + '</textarea>' +
-        // Subtasks
-        '<div style="font-size:.75rem;font-weight:600;margin:8px 0 2px">📋 子任务清单</div>' +
-        subs.map(function(s, si) {
-          return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px">' +
-            '<input class="inline-input" value="' + escAttr(s.name||'') + '" onchange="findTask(\'' + tn + '\').subtasks[' + si + '].name=this.value" placeholder="子任务" style="flex:1">' +
-            '<label style="font-size:.7rem;white-space:nowrap"><input type="checkbox" ' + (s.done?'checked':'') + ' onchange="findTask(\'' + tn + '\').subtasks[' + si + '].done=this.checked"> 完成</label>' +
-            '<span onclick="findTask(\'' + tn + '\').subtasks.splice(' + si + ',1);renderStep4()" style="cursor:pointer;opacity:.3">×</span></div>';
-        }).join('') +
-        '<button class="btn" style="font-size:.7rem;padding:2px 8px;margin-top:2px" onclick="findTask(\'' + tn + '\').subtasks.push({name:\'\',done:false});renderStep4()">＋ 添加子任务</button>' +
-        // Outputs (only if has outputs or category usually has outputs)
-        (outs.length > 0 || (t.category&&'课程|结项|管理|财务'.indexOf(t.category)>=0) ? '<div style="font-size:.75rem;font-weight:600;margin:8px 0 2px">📦 产出物</div>' +
-        outs.map(function(o, oi) {
-          return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px">' +
-            '<input class="inline-input" value="' + escAttr(o.name||'') + '" onchange="findTask(\'' + tn + '\').outputs[' + oi + '].name=this.value" placeholder="产出物描述" style="flex:1">' +
-            '<label style="font-size:.7rem;white-space:nowrap"><input type="checkbox" ' + (o.done?'checked':'') + ' onchange="findTask(\'' + tn + '\').outputs[' + oi + '].done=this.checked"> ✅</label>' +
-            '<span onclick="findTask(\'' + tn + '\').outputs.splice(' + oi + ',1);renderStep4()" style="cursor:pointer;opacity:.3">×</span></div>';
-        }).join('') +
-        '<button class="btn" style="font-size:.7rem;padding:2px 8px;margin-top:2px" onclick="findTask(\'' + tn + '\').outputs.push({name:\'\',done:false});renderStep4()">＋ 添加产出物</button>' : '') +
-        // Materials (only if category typically has materials: 课程/生活/活动)
-        (mats.length > 0 || (t.category&&'课程|生活|活动'.indexOf(t.category)>=0) ? '<div style="font-size:.75rem;font-weight:600;margin:8px 0 2px">💰 材料清单（需采购）</div>' +
-        mats.map(function(m, mi) {
-          return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px">' +
-            '<input class="inline-input" value="' + escAttr(m.item||'') + '" onchange="findTask(\'' + tn + '\').materials[' + mi + '].item=this.value" placeholder="物品名" style="flex:1">' +
-            '<input class="inline-input" value="' + (m.rmb||'') + '" onchange="findTask(\'' + tn + '\').materials[' + mi + '].rmb=parseInt(this.value)||0" placeholder="¥" style="width:55px;text-align:right">' +
-            '<input class="inline-input" value="' + (m.nt||'') + '" onchange="findTask(\'' + tn + '\').materials[' + mi + '].nt=parseInt(this.value)||0" placeholder="NT" style="width:55px;text-align:right">' +
-            '<span onclick="findTask(\'' + tn + '\').materials.splice(' + mi + ',1);renderStep4()" style="cursor:pointer;opacity:.3">×</span></div>';
-        }).join('') +
-        '<button class="btn" style="font-size:.7rem;padding:2px 8px;margin-top:2px" onclick="findTask(\'' + tn + '\').materials.push({item:\'\',rmb:0,nt:0});renderStep4()">＋ 添加材料</button>' : '') +
-      '</div>' : '') +
-    '</div>';
-  }).join('') || '<div style="color:var(--muted);text-align:center;padding:12px">暂无认领任务</div>';
-
-  // Unified budget material table
-  var allMats = [];
-  tasks.forEach(function(t) { (t.materials||[]).forEach(function(m) { if (m.item) allMats.push({ item:m.item, rmb:parseInt(m.rmb)||0, nt:parseInt(m.nt)||0, task:t.name }); }); });
-  var matEl = document.getElementById('wizStep4MatTable');
-  if (allMats.length > 0) {
-    matEl.classList.remove('hidden');
-    var matRMB = 0, matNT = 0;
-    allMats.forEach(function(m) { matRMB += m.rmb; matNT += m.nt; });
-    matEl.innerHTML = '<h3 style="font-size:.82rem;margin:0 0 6px">💰 预算材料汇总（' + esc(selCard.name) + '全部任务）</h3>' +
-      '<div style="overflow-x:auto"><table style="width:100%;font-size:.78rem"><thead><tr><th>物品</th><th>预算¥</th><th>预算NT</th><th>来源任务</th></tr></thead><tbody>' +
-      allMats.map(function(m){ return '<tr><td>'+esc(m.item)+'</td><td style="text-align:right">¥'+(m.rmb||0).toLocaleString()+'</td><td style="text-align:right">NT '+(m.nt||0).toLocaleString()+'</td><td style="font-size:.7rem;color:var(--muted)">'+esc(m.task)+'</td></tr>'; }).join('') +
-      '<tr style="font-weight:700;border-top:2px solid var(--text)"><td>合计</td><td style="text-align:right">¥'+matRMB.toLocaleString()+'</td><td style="text-align:right">NT '+matNT.toLocaleString()+'</td><td></td></tr>' +
-      '</tbody></table></div>';
-  } else { matEl.classList.add('hidden'); }
-
-  // NT design panel
-  var ntPanel = document.getElementById('wizNTDesignPanel');
-  if (ntPanel && selCard && selCard.role === 'NT') { ntPanel.classList.remove('hidden'); renderNTDesignTable(); }
-  else if (ntPanel) { ntPanel.classList.add('hidden'); }
+  var el;
+  el = document.getElementById('wiz4a-review'); if (el) el.classList.toggle('hidden', wizStep4Phase !== 'review');
+  el = document.getElementById('wiz4b-deploy'); if (el) el.classList.toggle('hidden', wizStep4Phase !== 'deploy');
+  el = document.getElementById('wiz4c-ceremony'); if (el) el.classList.toggle('hidden', wizStep4Phase !== 'ceremony');
+  el = document.getElementById('wiz4d-launch'); if (el) el.classList.toggle('hidden', wizStep4Phase !== 'launch');
+  if (wizStep4Phase === 'review') {
+    var cards = getStaffCards();
+    var tasks = data.tasks || [];
+    var ci = data.camp_info.current;
+    var html = '<b>NT 总池：</b>' + (ci.budget.nt_total_pool || 0) + ' NT<br>' +
+      '<b>预算：</b>' + (ci.budget.rmb_budget || 0) + ' 元<br>' +
+      '<b>营期：</b>' + (ci.calendar.start_date || '未设') + ' · ' + (ci.calendar.duration_days || 0) + ' 天<br>' +
+      '<b>任务：</b>' + (ci.tasks.pool.length || tasks.length) + ' 项<br>' +
+      '<b>共建者：</b>' + cards.length + ' 人';
+    document.getElementById('wiz4aSummary').innerHTML = html;
+    var reviewer = document.getElementById('wiz4aReviewer');
+    var users = getUsers();
+    var creator = ci.identity.created_by;
+    reviewer.innerHTML = '<option value="">-- 选择审核人 --</option>';
+    Object.keys(users).forEach(function(name) {
+      if (name !== creator && users[name]) { reviewer.innerHTML += '<option value="' + name + '">' + name + '</option>'; }
+    });
+  }
+  if (wizStep4Phase === 'deploy') {
+    var cards2 = getStaffCards();
+    var html2 = '<b>即将执行：</b><br>✅ 审核已通过<br>• ' + cards2.length + ' 位共建者 → 角色升级<br>• 任务包推送到个人工作台<br>';
+    cards2.forEach(function(c) { html2 += '• ' + c.name + '：' + (c.title || '未指定') + '<br>'; });
+    document.getElementById('wiz4bConfirm').innerHTML = html2;
+  }
+  if (wizStep4Phase === 'launch') {
+    document.getElementById('wiz4dConfirm').innerHTML = '🎊 开营仪式完成<br>🔥🔥 火种已旺盛<br>⚠️ 启动后原档锁定，后续修改需提交审核<br>所有任务从草稿转为进行中';
+  }
 }
 
 function findTask(name) {
@@ -10803,25 +10860,7 @@ function prefillAllTasks() {
   wizardTasks.forEach(function(t) { if ((t.active||'yes')!=='no') smartPreFill(t); });
 }
 
-function saveStep4() {
-  // Save NT task design data to budget
-  if (data.budget && data.budget.nt_task_design) {
-    var nt = data.budget.nt_task_design;
-    var total = 0;
-    ['mainline','sideline','cocreate','hidden'].forEach(function(cat) {
-      (nt[cat]||[]).forEach(function(t) { total += (parseInt(t.nt_per_person)||0); });
-    });
-    var pCount = (data.budget && data.budget.participant_budget) ? data.budget.participant_budget : 10;
-    data.budget.creator_task_nt_used = total * pCount;
-  }
-  if (!data.camp_progress) data.camp_progress = { step: 4, steps: {'1':'done','2':'done','3':'done','4':'active','5':'locked'} };
-  data.camp_progress.steps['4'] = 'done';
-  data.camp_progress.steps['5'] = 'active';
-  data.camp_progress.step = 5;
-  saveData();
-  switchStep(5);
-  setStatus('步骤④已保存 → 进入⑤同步展示');
-}
+function saveStep4() { /* replaced by wizDeploy/wizLaunch in Phase B */ }
 
 // ── NT Task Design Table ──
 var NT_DESIGN_CATEGORIES = [
@@ -10959,6 +10998,55 @@ function exportNTDesignTemplate() {
   localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(templates));
   refreshNTDesignTemplateSelect();
   setStatus('NT设计模板已保存: ' + name);
+}
+
+
+// Step ④ 阶段处理函数
+function wizSubmitReview() {
+  var reviewer = document.getElementById('wiz4aReviewer').value;
+  if (!reviewer) { alert('请选择审核人'); return; }
+  data.camp_info.current.governance.decisions.push({ title: '发包审核', date: Clock.iso(), reviewer: reviewer, status: 'approved' });
+  createSnapshot('审核通过', '审核人：' + reviewer);
+  wizStep4Phase = 'deploy';
+  renderStep4();
+  setStatus('审核已提交 → ' + reviewer);
+}
+function wizDeploy() {
+  if (!confirm('确认发包？共建者将收到任务通知。')) return;
+  var cards = getStaffCards();
+  cards.forEach(function(c) { changeUserRole(c.name, 'builder', { skipAdventurerCheck: true }); });
+  createSnapshot('发包确认', cards.length + '位共建者已就绪');
+  saveData();
+  wizStep4Phase = 'ceremony';
+  renderStep4();
+  setStatus('发包完成 · 等待开营仪式');
+}
+function wizStartCeremony() {
+  var cards = getStaffCards();
+  var members = cards.map(function(c) {
+    var ntTotal = 0, taskCount = 0;
+    if (c.task_names) { taskCount = c.task_names.length; }
+    (data.tasks || []).forEach(function(t) {
+      if (c.task_names && c.task_names.indexOf(t.name) !== -1) ntTotal += (t.points || 1);
+    });
+    return { name: c.name, taskCount: taskCount, nt: ntTotal };
+  });
+  openLaunchCeremony(members, function() { wizStep4Phase = 'launch'; renderStep4(); });
+}
+function wizLaunch() {
+  if (!confirm('🏁 正式启动营队？\n\n启动后原档 v1 永久锁定，后续修改需审核。')) return;
+  data.camp_info.current.identity.status = 'active';
+  (data.tasks || []).forEach(function(t) {
+    if (!t.status || t.status === '待认领' || t.status === 'draft') t.status = 'active';
+  });
+  data.camp_progress.steps['3'] = 'done';
+  data.camp_progress.steps['4'] = 'done';
+  data.camp_progress.step = 4;
+  createSnapshot('营队启动', '🏁 正式启动');
+  saveData();
+  updateAll();
+  alert('🎉 营队正式启动！\n\n所有任务已进入执行阶段。');
+  exitWorkshop();
 }
 
 // ── Step 5: Sync ──
@@ -11153,19 +11241,25 @@ function executeSync() {
 
 function resetWizard() {
   if (!confirm('重置向导将清除所有步骤进度。任务数据不会被删除。确定继续？')) return;
-  data.camp_progress = { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} };
+  data.camp_progress = { step: 0, steps: {'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'} };
   wizardTasks = [];
   wizardDirty = false;
+  wizStep4Phase = 'review';
   saveData();
-  switchStep(1);
+  switchStep(0);
   setStatus('向导已重置');
 }
 
 function saveWizDraft() {
-  // Persist current wizard state to data + localStorage without triggering updateAll
-  if (wizardStep === 2) {
-    mergeWizardToData(wizardTasks);
+  if (wizardStep === 0) {
+    var id = data.camp_info.current.identity;
+    var el;
+    el = document.getElementById('wizCampName'); if (el) id.name = el.value.trim();
+    el = document.getElementById('wizCampPeriod'); if (el) id.period = el.value;
+    el = document.getElementById('wizCampTheme'); if (el) id.description = el.value.trim();
+    el = document.getElementById('wizCampTypeVal'); if (el) id.type = el.value;
   }
+  if (wizardStep === 2) { mergeWizardToData(wizardTasks); }
   saveData();
   setStatus('已暂存步骤' + wizardStep);
 }
@@ -11743,7 +11837,218 @@ function exportBudgetExcel() {
   }).catch(function(err) { console.error(err); alert('导出失败：'+err.message); });
 }
 
+
+
+// ═══ Phase C: 仪式系统 ═══
+window._ceremonyActive = false;
+window._ceremonyCallback = null;
+window._ceremonyState = { readyList: [] };
+function _canAnimate() {
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return !prefersReduced && CSS.supports('animation', 'name: test');
+}
+function _renderCeremonyStars(bgEl, count) {
+  bgEl.innerHTML = '';
+  for (var i = 0; i < (count || 20); i++) {
+    var star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = (Math.random() * 100) + '%';
+    star.style.top = (Math.random() * 100) + '%';
+    star.style.setProperty('--drift-dur', (8 + Math.random() * 6) + 's');
+    star.style.setProperty('--drift-delay', (Math.random() * 8) + 's');
+    star.style.setProperty('--drift-x', ((Math.random() - .5) * 60) + 'px');
+    star.style.setProperty('--drift-y', ((Math.random() - .5) * 80) + 'px');
+    star.style.width = (2 + Math.random() * 3) + 'px';
+    star.style.height = star.style.width;
+    bgEl.appendChild(star);
+  }
+}
+function _spawnRipples(overlay, count) {
+  var flame = overlay.querySelector('.ceremony-flame');
+  var rect = flame.getBoundingClientRect();
+  var cx = rect.left + rect.width / 2;
+  var cy = rect.top + rect.height / 2;
+  for (var i = 0; i < (count || 4); i++) {
+    var ripple = document.createElement('div');
+    ripple.className = 'ceremony-ripple';
+    ripple.style.left = (cx - 10) + 'px';
+    ripple.style.top = (cy - 10) + 'px';
+    ripple.style.animationDelay = (i * .3) + 's';
+    overlay.appendChild(ripple);
+  }
+  setTimeout(function() { overlay.querySelectorAll('.ceremony-ripple').forEach(function(r) { r.remove(); }); }, 2000);
+}
+window._ceremonySkip = function() {
+  if (!window._ceremonyActive) return;
+  var overlay = document.querySelector('.ceremony-overlay:not(.hidden)');
+  if (overlay) {
+    clearCeremonyListeners();
+    overlay.classList.add('fade-out');
+    setTimeout(function() {
+      overlay.classList.add('hidden');
+      overlay.classList.remove('fade-out');
+      window._ceremonyActive = false;
+      if (window._ceremonyCallback) { var cb = window._ceremonyCallback; window._ceremonyCallback = null; cb(); }
+    }, 400);
+  }
+};
+var _ceremonyKeyHandler = null;
+function setupCeremonyKeyHandler() {
+  if (_ceremonyKeyHandler) document.removeEventListener('keydown', _ceremonyKeyHandler);
+  _ceremonyKeyHandler = function(e) { if (e.key === 'Escape' && window._ceremonyActive) { window._ceremonySkip(); } };
+  document.addEventListener('keydown', _ceremonyKeyHandler);
+}
+function clearCeremonyListeners() {
+  if (_ceremonyKeyHandler) { document.removeEventListener('keydown', _ceremonyKeyHandler); _ceremonyKeyHandler = null; }
+}
+function openIgniteCeremony(callback) {
+  if (!_canAnimate()) { callback(); return; }
+  window._ceremonyActive = true; window._ceremonyCallback = callback;
+  setupCeremonyKeyHandler();
+  var identity = (data.camp_info && data.camp_info.current && data.camp_info.current.identity) || {};
+  var campName = identity.name || '未命名营队';
+  var campTheme = identity.description || '';
+  var creator = identity.created_by || (currentUser && currentUser.name) || '';
+  var overlay = document.getElementById('ceremonyIgnite');
+  var bg = document.getElementById('ceremonyIgniteBg');
+  var flame = document.getElementById('ceremonyIgniteFlame');
+  var title = document.getElementById('ceremonyIgniteTitle');
+  var sub = document.getElementById('ceremonyIgniteSub');
+  var btn = document.getElementById('ceremonyIgniteBtn');
+  var done = document.getElementById('ceremonyIgniteDone');
+  var skip = document.getElementById('ceremonyIgniteSkip');
+  overlay.classList.remove('hidden', 'fade-out');
+  flame.textContent = '🕯️'; flame.className = 'ceremony-flame breathing';
+  btn.classList.add('hidden'); btn.classList.remove('done');
+  done.classList.add('hidden'); skip.classList.remove('visible');
+  title.textContent = campName;
+  sub.textContent = (campTheme ? '「' + campTheme + '」' : '') + (creator ? '  ·  ' + creator + ' 创建' : '');
+  _renderCeremonyStars(bg, 20);
+  setTimeout(function() { btn.classList.remove('hidden'); skip.classList.add('visible'); }, 1500);
+  window._ceremonyIgniteAction = function() {
+    if (btn.classList.contains('done')) return;
+    btn.classList.add('done'); skip.classList.remove('visible');
+    bg.querySelectorAll('.star').forEach(function(s) { s.style.transition = 'all 1.5s ease-in'; s.style.left = '50%'; s.style.top = '50%'; s.style.opacity = '0'; });
+    setTimeout(function() { flame.textContent = '🔥'; flame.className = 'ceremony-flame ignited'; _spawnRipples(overlay, 4); }, 1200);
+    setTimeout(function() {
+      done.innerHTML = '<div class="done-title">🌍 营队正式创立</div><div class="done-date">' + Clock.today() + ' · ' + creator + ' 创建</div><div style="margin-top:16px;color:rgba(240,208,128,.6);font-size:.85rem">五步搭建，即将开始 ——</div><button class="ceremony-btn" style="margin-top:16px" onclick="window._ceremonySkip()">进入统筹 →</button>';
+      done.classList.remove('hidden'); btn.classList.add('hidden');
+    }, 2200);
+  };
+}
+function openLaunchCeremony(members, callback) {
+  if (!_canAnimate()) { callback(); return; }
+  window._ceremonyActive = true; window._ceremonyCallback = callback;
+  window._ceremonyState.readyList = []; setupCeremonyKeyHandler();
+  var identity = (data.camp_info && data.camp_info.current && data.camp_info.current.identity) || {};
+  var campName = identity.name || '未命名营队';
+  var overlay = document.getElementById('ceremonyLaunch');
+  var bg = document.getElementById('ceremonyLaunchBg');
+  var stars = document.getElementById('ceremonyLaunchStars');
+  var btn = document.getElementById('ceremonyLaunchBtn');
+  var status = document.getElementById('ceremonyLaunchStatus');
+  var done = document.getElementById('ceremonyLaunchDone');
+  var skip = document.getElementById('ceremonyLaunchSkip');
+  overlay.classList.remove('hidden', 'fade-out');
+  document.getElementById('ceremonyLaunchFlame').className = 'ceremony-flame breathing';
+  document.getElementById('ceremonyLaunchTitle').textContent = campName;
+  btn.classList.remove('done'); done.classList.add('hidden'); skip.classList.remove('visible');
+  _renderCeremonyStars(bg, 25);
+  var mList = members || [];
+  stars.innerHTML = mList.map(function(m, i) {
+    return '<div class="ceremony-star-card" id="launchStar' + i + '"><span class="star-icon">☆</span><span class="star-name">' + (typeof escHtml === 'function' ? escHtml(m.name) : m.name) + '</span><span class="star-status">等待中…</span></div>';
+  }).join('');
+  status.textContent = '等待所有人就绪 · 0/' + mList.length;
+  setTimeout(function() { skip.classList.add('visible'); }, 1500);
+  window._ceremonyLaunchAction = function() {
+    if (btn.classList.contains('done')) return;
+    var who = currentUser && currentUser.name; if (!who) return;
+    if (window._ceremonyState.readyList.indexOf(who) === -1) { window._ceremonyState.readyList.push(who); }
+    btn.classList.add('done');
+    mList.forEach(function(m, i) { if (m.name === who) { var card = document.getElementById('launchStar' + i); if (card) { card.classList.add('ready'); card.querySelector('.star-icon').textContent = '✨'; card.querySelector('.star-status').textContent = '已就绪！'; } } });
+    var ready = window._ceremonyState.readyList.length, total = mList.length;
+    status.textContent = '你已就绪 · ' + ready + '/' + total + (ready < total ? ' · 等待其他人…' : '');
+    if (ready >= total) {
+      skip.classList.remove('visible'); status.textContent = '全员就绪！星光汇聚…';
+      document.getElementById('ceremonyLaunchFlame').textContent = '🔥🔥';
+      document.getElementById('ceremonyLaunchFlame').className = 'ceremony-flame roaring';
+      _spawnRipples(overlay, 5);
+      stars.querySelectorAll('.ceremony-star-card').forEach(function(c) { c.querySelector('.star-icon').textContent = '★'; });
+      setTimeout(function() {
+        done.innerHTML = '<div class="done-title">🏁 正式启动！</div><div class="done-date">' + Clock.today() + '</div>' + mList.map(function(m) { return '<div style="color:#f0d080;font-size:.8rem;margin:2px">✨ ' + (typeof escHtml === 'function' ? escHtml(m.name) : m.name) + ' · ' + (m.taskCount||0) + '项 · ' + (m.nt||0) + ' NT</div>'; }).join('') + '<button class="ceremony-btn" style="margin-top:16px" onclick="window._ceremonySkip()">进入我的工作台 →</button>';
+        done.classList.remove('hidden'); btn.classList.add('hidden'); stars.innerHTML = '';
+      }, 2000);
+    }
+  };
+}
+function getStepFlame(n) {
+  var ci = data.camp_info;
+  if (!ci) return { emoji: '🕯️', cls: 'dim', label: '待点燃' };
+  var isCurrent = data.camp_progress && data.camp_progress.step === n;
+  var level = checkStepFillLevel(n);
+  if (n === 0) {
+    var campCreated = ci.current && ci.current.identity && ci.current.identity.name;
+    if (!campCreated && !isCurrent) return { emoji: '🕯️', cls: 'dim', label: '待点燃' };
+    if (isCurrent && !campCreated) return { emoji: '🕯️', cls: 'editing', label: '编辑中' };
+    if (campCreated && !isCurrent) return { emoji: '🔥', cls: '', label: '已点燃' };
+    return { emoji: '🔥', cls: 'editing', label: '编辑中' };
+  }
+  if (isCurrent) { return level === 2 ? { emoji: '🔥🔥', cls: 'editing', label: '编辑中' } : { emoji: '🔥', cls: 'editing', label: '编辑中' }; }
+  if (level === 0) return { emoji: '🕯️', cls: 'dim', label: '待填写' };
+  if (level === 1) return { emoji: '🔥', cls: '', label: '初燃' };
+  return { emoji: '🔥+', cls: '', label: '已完整' };
+}
+function checkStepFillLevel(n) {
+  var ci = data.camp_info; if (!ci || !ci.current) return 0;
+  var c = ci.current;
+  if (n === 0) { var id = c.identity || {}; if (id.name && id.period) return 2; if (id.name || id.period) return 1; return 0; }
+  if (n === 1) { var b = c.budget || {}; var cal = c.calendar || {}; if (b.nt_total_pool > 0 && cal.start_date) return 2; if (b.nt_total_pool > 0 || cal.start_date) return 1; return 0; }
+  if (n === 2) { return (c.tasks && c.tasks.pool && c.tasks.pool.length > 0) ? 2 : 0; }
+  if (n === 3) { return (c.team && c.team.staff_cards && c.team.staff_cards.length > 0) ? 2 : 0; }
+  if (n === 4) { return (c.identity && c.identity.status === 'active') ? 2 : 0; }
+  return 0;
+}
+// 版本历史面板
+function showChangelogPanel() {
+  var log = getChangelog();
+  var snapshots = (data.camp_info && data.camp_info.snapshots) || [];
+  var overlay = document.getElementById('changelogOverlay');
+  var content = document.getElementById('changelogContent');
+  if (!overlay || !content) return;
+  var html = '<h2>📋 版本历史</h2>';
+  if (!log.length) { html += '<p style="color:var(--muted)">暂无版本记录</p>'; }
+  else { log.forEach(function(entry) { var sn = snapshots.find(function(s) { return s.version === entry.version; }); var frozen = sn && sn.frozen;
+    html += '<div style="border-left:3px solid ' + (frozen ? 'var(--accent)' : 'var(--border)') + ';padding:6px 10px;margin-bottom:8px"><div style="font-weight:600">v' + entry.version + ' · ' + entry.summary + (frozen ? ' 🔒' : '') + '</div><div style="font-size:.75rem;color:var(--muted)">' + entry.at + ' · ' + entry.by + ' · ' + entry.action + '</div></div>'; }); }
+  html += '<div class="actions"><button class="btn" onclick="closeChangelogPanel()">关闭</button></div>';
+  content.innerHTML = html;
+  overlay.classList.remove('hidden');
+}
+function closeChangelogPanel() { var overlay = document.getElementById('changelogOverlay'); if (overlay) overlay.classList.add('hidden'); }
 </script>
+
+<!-- ═══ Phase C: 仪式覆盖层 ═══ -->
+<div id="ceremonyIgnite" class="ceremony-overlay hidden">
+  <div id="ceremonyIgniteBg" class="ceremony-bg"></div>
+  <div id="ceremonyIgniteFlame" class="ceremony-flame breathing">🕯️</div>
+  <div id="ceremonyIgniteTitle" class="ceremony-title"></div>
+  <div id="ceremonyIgniteSub" class="ceremony-subtitle"></div>
+  <button class="ceremony-btn hidden" id="ceremonyIgniteBtn" onclick="window._ceremonyIgniteAction()">✨ 点燃火种 · 创建营队</button>
+  <div id="ceremonyIgniteDone" class="ceremony-done hidden"></div>
+  <button class="ceremony-skip" id="ceremonyIgniteSkip" onclick="window._ceremonySkip()">跳过仪式 →</button>
+</div>
+<div id="ceremonyLaunch" class="ceremony-overlay hidden">
+  <div id="ceremonyLaunchBg" class="ceremony-bg"></div>
+  <div id="ceremonyLaunchFlame" class="ceremony-flame breathing">🔥</div>
+  <div class="ceremony-title" id="ceremonyLaunchTitle"></div>
+  <div id="ceremonyLaunchStars" class="ceremony-stars"></div>
+  <button class="ceremony-btn" id="ceremonyLaunchBtn" onclick="window._ceremonyLaunchAction()">🚀 开启共创</button>
+  <div id="ceremonyLaunchStatus" class="ceremony-status"></div>
+  <div id="ceremonyLaunchDone" class="ceremony-done hidden"></div>
+  <button class="ceremony-skip" id="ceremonyLaunchSkip" onclick="window._ceremonySkip()">跳过仪式 →</button>
+</div>
+<div id="changelogOverlay" class="modal-overlay hidden" style="display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)closeChangelogPanel()">
+  <div class="modal" style="max-width:500px;max-height:70vh;overflow-y:auto" id="changelogContent"></div>
+</div>
 </body>
 </html>
 
