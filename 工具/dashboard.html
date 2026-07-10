@@ -443,8 +443,15 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 @keyframes flameGlow { 0%, 100% { filter: drop-shadow(0 0 3px rgba(255,150,30,.5)); } 50% { filter: drop-shadow(0 0 8px rgba(255,150,30,1)); } }
 @keyframes flameIgnite { 0% { transform: scale(.6); opacity: .3; } 100% { transform: scale(1); opacity: 1; } }
 /* ═══ 沉浸工坊 ═══ */
+.workshop-mode::before { content: ''; position: fixed; inset: 0; z-index: 100; background: linear-gradient(180deg, rgba(18,12,6,.94), rgba(15,10,5,.96), rgba(10,6,3,.97)); }
+.workshop-mode header { position: relative; z-index: 50; opacity: .15; pointer-events: none; }
+.workshop-mode #worldHUD { opacity: .15; pointer-events: none; }
 .workshop-mode .tabs { max-height: 0 !important; opacity: 0; overflow: hidden; transition: max-height .3s ease, opacity .3s ease; }
-.workshop-status-bar { text-align: center; font-size: .7rem; color: var(--muted); margin-top: 6px; padding: 4px 0; border-top: 1px solid var(--border); }
+.workshop-mode main { position: relative; z-index: 101; }
+.workshop-mode #tab-settings { display: block !important; }
+.workshop-mode #tab-settings .card { background: rgba(252,248,240,.94); border-color: rgba(180,150,110,.25); }
+.workshop-mode #wizardNav { position: relative; z-index: 102; }
+.workshop-status-bar { text-align: center; font-size: .7rem; color: rgba(200,180,150,.8); margin-top: 6px; padding: 4px 0; border-top: 1px solid rgba(180,150,110,.2); }
 </style>
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.1" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" defer></script>
