@@ -4530,9 +4530,8 @@ function renderWorkspace() {
       html += '</div>';
     }
 
-    // ── 我发布的任务 ── 始终显示
-    html += '<div class="card" style="background:#f0f6fe;border-color:#6a9fd8;margin-bottom:12px"><h3>📤 我发布的（' + myPublishedTotal + '项）</h3>';
-    html += '<div style="font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--text)">▸ 进行中（' + myPublishedActive.length + '项）</div>';
+    // ── 我发布的任务 ── 只显示进行中，已完成归入底部统一存档
+    html += '<div class="card" style="background:#f0f6fe;border-color:#6a9fd8;margin-bottom:12px"><h3>📤 我发布的（' + myPublishedActive.length + '项进行中）</h3>';
     if (myPublishedActive.length > 0) {
       myPublishedActive.forEach(function(p) {
         html += renderQuestCard(p.task, { context: 'workspace', userName: currentUser.name, isMember: !!selfId, taskIndex: p.idx });
@@ -4540,26 +4539,6 @@ function renderWorkspace() {
     } else {
       html += '<div style="font-size:.72rem;color:var(--muted);padding:4px 0">暂无进行中的任务</div>';
     }
-    html += '<div style="font-size:.78rem;font-weight:600;margin:8px 0 4px;color:var(--green)">▸ 近期完成（' + myPublishedRecent.length + '项）</div>';
-    if (myPublishedRecent.length > 0) {
-      myPublishedRecent.forEach(function(p) {
-        html += renderQuestCard(p.task, { context: 'workspace', userName: currentUser.name, isMember: !!selfId, taskIndex: p.idx });
-      });
-    } else {
-      html += '<div style="font-size:.72rem;color:var(--muted);padding:4px 0">暂无近期完成的任务</div>';
-    }
-    html += '<div style="font-size:.78rem;font-weight:600;margin:8px 0 4px;color:var(--muted);cursor:pointer" data-archive-toggle="wsPubArchive" data-count="' + myPublishedArchive.length + '" onclick="toggleArchive(\'wsPubArchive\')">📦 存档（' + myPublishedArchive.length + '项）▾</div>';
-    html += '<div id="wsPubArchive" style="display:none">';
-    html += '<div id="wsPubArchiveBar" style="display:flex;gap:3px;margin-bottom:6px">';
-    [{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'all',l:'全部'}].forEach(function(v) {
-      html += '<button class="btn' + (wsPubArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="switchArchiveView(\'wsPubArchive\',\'' + v.k + '\')" style="font-size:.65rem;padding:2px 8px">' + v.l + '</button>';
-    });
-    html += '</div>';
-    html += '<div id="wsPubArchiveList"></div>';
-    if (myPublishedArchive.length === 0) {
-      html += '<div style="font-size:.72rem;color:var(--muted);padding:8px;text-align:center">任务完成超过 7 天后会自动归入存档</div>';
-    }
-    html += '</div>';
     html += '</div>';
 
     // Task cards — grouped: active → submitted → completed (archive)
@@ -4571,18 +4550,6 @@ function renderWorkspace() {
     } else {
       var activeTasks = filtered.filter(function(e){ return e.claim.status==='in_progress'||e.claim.status==='triggered'||e.claim.status==='rejected'; });
       var submittedTasks = filtered.filter(function(e){ return e.claim.status==='submitted'; });
-      var doneTasks = filtered.filter(function(e){ return e.claim.status==='completed'; });
-      // 拆分已完成：近期(≤7天) vs 存档(>7天)
-      var doneRecent = [];
-      var doneArchive = [];
-      doneTasks.forEach(function(e) {
-        var doneDate = getTaskDoneDate(e.task, e.claim);
-        if (daysSince(doneDate) <= ARCHIVE_DAYS) {
-          doneRecent.push({ task: e.task, idx: e.idx, doneDate: doneDate });
-        } else {
-          doneArchive.push({ task: e.task, idx: e.idx, doneDate: doneDate });
-        }
-      });
       var wsOpts = { context:'workspace', userName:currentUser.name, isMember:true };
       html += '<div class="card" style="padding:10px 14px">';
       html += '<div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--text)">📋 进行中（'+activeTasks.length+'项）</div>';
@@ -4597,40 +4564,50 @@ function renderWorkspace() {
       } else {
         html += '<div style="font-size:.72rem;color:var(--muted);padding:4px 0">暂无审核中的任务</div>';
       }
-      html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--green)">▸ 近期完成（'+doneRecent.length+'项）</div>';
-      if (doneRecent.length > 0) {
-        doneRecent.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
-      } else {
-        html += '<div style="font-size:.72rem;color:var(--muted);padding:4px 0">暂无近期完成的任务</div>';
-      }
-      html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" data-archive-toggle="wsDoneArchive" data-count="' + doneArchive.length + '" onclick="toggleArchive(\'wsDoneArchive\')">📦 存档（' + doneArchive.length + '项）▾</div>';
-      html += '<div id="wsDoneArchive" style="display:none">';
-      html += '<div id="wsDoneArchiveBar" style="display:flex;gap:3px;margin-bottom:6px">';
-      [{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'all',l:'全部'}].forEach(function(v) {
-        html += '<button class="btn' + (wsDoneArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="switchArchiveView(\'wsDoneArchive\',\'' + v.k + '\')" style="font-size:.65rem;padding:2px 8px">' + v.l + '</button>';
-      });
-      html += '</div>';
-      html += '<div id="wsDoneArchiveList"></div>';
-      if (doneArchive.length === 0) {
-        html += '<div style="font-size:.72rem;color:var(--muted);padding:8px;text-align:center">任务完成超过 7 天后会自动归入存档</div>';
-      }
-      html += '</div>';
       html += '</div>';
     }
 
   } // end if/else (flow/settings/tasks)
+
+  // ── 统一存档：合并「我发布的已完成」+「我领取的已完成」──
+  var unifiedArchive = [];
+  // 我发布的近期+存档
+  myPublishedRecent.forEach(function(p) { unifiedArchive.push({ task: p.task, idx: p.idx, doneDate: p.doneDate, source: 'published' }); });
+  myPublishedArchive.forEach(function(p) { unifiedArchive.push({ task: p.task, idx: p.idx, doneDate: p.doneDate, source: 'published' }); });
+  // 我领取的已完成（从 allMyTasks 中筛出 status==='completed'）
+  allMyTasks.forEach(function(e) {
+    if (e.claim.status === 'completed') {
+      var dd = getTaskDoneDate(e.task, e.claim);
+      unifiedArchive.push({ task: e.task, idx: e.idx, doneDate: dd, source: 'claimed' });
+    }
+  });
+  // 去重（同一个任务可能同时出现在发布和领取中）
+  var seen = {};
+  unifiedArchive = unifiedArchive.filter(function(a) { var k = a.task.name + '|' + a.idx; if (seen[k]) return false; seen[k] = true; return true; });
+  unifiedArchive.sort(function(a, b) { return (b.doneDate||'').localeCompare(a.doneDate||''); });
+  var archiveTotal = unifiedArchive.length;
+
+  html += '<div class="card" style="margin-bottom:12px"><h3 style="cursor:pointer" data-archive-toggle="wsUnifiedArchive" data-count="' + archiveTotal + '" onclick="toggleArchive(\'wsUnifiedArchive\')">📦 统一存档（' + archiveTotal + '项）▾</h3>';
+  html += '<div id="wsUnifiedArchive" style="display:none">';
+  html += '<div id="wsUnifiedArchiveBar" style="display:flex;gap:3px;margin-bottom:6px">';
+  [{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'all',l:'全部'}].forEach(function(v) {
+    html += '<button class="btn' + (wsPubArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="switchArchiveView(\'wsUnifiedArchive\',\'' + v.k + '\')" style="font-size:.65rem;padding:2px 8px">' + v.l + '</button>';
+  });
+  html += '</div>';
+  html += '<div id="wsUnifiedArchiveList"></div>';
+  if (archiveTotal === 0) {
+    html += '<div style="font-size:.72rem;color:var(--muted);padding:8px;text-align:center">任务完成超过 7 天后会自动归入存档</div>';
+  }
+  html += '</div></div>';
 
   html += '</div>'; // close right
   html += '</div>'; // close flex container
 
   container.innerHTML = html;
 
-  // ── 填充存档列表（DOM 就绪后渲染）──
-  if (myPublishedArchive && myPublishedArchive.length > 0) {
-    renderArchiveList('wsPubArchiveList', myPublishedArchive, wsPubArchiveView);
-  }
-  if (typeof doneArchive !== 'undefined' && doneArchive.length > 0) {
-    renderArchiveList('wsDoneArchiveList', doneArchive, wsDoneArchiveView);
+  // ── 填充统一存档列表（DOM 就绪后渲染）──
+  if (unifiedArchive.length > 0) {
+    renderArchiveList('wsUnifiedArchiveList', unifiedArchive, wsPubArchiveView);
   }
 }
 var flowFilter = 'all';
