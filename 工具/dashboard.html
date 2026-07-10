@@ -1651,9 +1651,12 @@ function parseMD(s) {
   // "M月D日" 格式（如 "7月10日"）
   var m2 = s.match(/(\d+)月(\d+)日?/);
   if (m2) return new Date(Clock.date().getFullYear(), parseInt(m2[1]) - 1, parseInt(m2[2]));
-  // "M-D" / "M.D" 格式（如 "7-10" / "7.10"）
-  var m3 = s.match(/(\d+)[.-](\d+)/);
-  if (m3) return new Date(Clock.date().getFullYear(), parseInt(m3[1]) - 1, parseInt(m3[2]));
+  // "YYYY-MM-DD" / "YYYY/MM/DD" 格式（如 "2026-07-10"）—— 必须在 M-D 之前
+  var m3 = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (m3) return new Date(parseInt(m3[1]), parseInt(m3[2]) - 1, parseInt(m3[3]));
+  // "M-D" / "M.D" 格式（如 "7-10" / "7.10"）—— 两位数字的短格式
+  var m4 = s.match(/^(\d{1,2})[.-](\d{1,2})/);
+  if (m4) return new Date(Clock.date().getFullYear(), parseInt(m4[1]) - 1, parseInt(m4[2]));
   // ISO 格式回退
   var d = new Date(s);
   if (!isNaN(d.getTime())) return d;
@@ -4604,7 +4607,7 @@ function renderWorkspace() {
   html += '</div>';
   // 共享时间筛选
   html += '<div id="wsArchiveBar" style="display:flex;gap:4px;margin-bottom:8px">';
-  [{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'all',l:'全部'}].forEach(function(v) {
+  [{k:'all',l:'全部'},{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'}].forEach(function(v) {
     html += '<button class="btn' + (wsPubArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="wsPubArchiveView=\''+v.k+'\';var d=document.getElementById(\'wsArchiveList\');if(d){var data=d._allData||{};renderArchiveList(\'wsArchiveList\',data[wsArchiveTab]||[],wsPubArchiveView)}" style="font-size:.75rem;padding:4px 12px">' + v.l + '</button>';
   });
   html += '</div>';
