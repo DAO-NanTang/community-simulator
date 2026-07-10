@@ -5930,7 +5930,7 @@ function renderQuestCard(t, opts) {
   var isCoCreate = t.type==='共创';
   var activeC = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
   var slots = t.max_slots>0 ? activeC.length+'/'+t.max_slots : '不限';
-  var typeLabel = ({'主线':'M·主线','支线':'S·支线','共创':'C·共创','隐藏':'H·隐藏','身份':'ID·身份'}[t.type]||t.type);
+  var typeLabel = ({'主线':'M·主线','支线':'S·支线','共创':'C·共创','隐藏':'H·隐藏','身份':'ID·身份'}[t.type]||t.type||'?');
   var typeBadge = typeLabel[0];
   var doneCount = activeC.filter(function(c){return c.status==='completed';}).length;
   var subCount = activeC.filter(function(c){return c.status==='submitted';}).length;
