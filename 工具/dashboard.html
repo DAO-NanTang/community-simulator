@@ -521,13 +521,10 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 #wizS1Nav, #wizS2Nav, #wizS3Nav { display: flex; gap: 6px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
 #wizS1Nav button, #wizS2Nav button, #wizS3Nav button { transition: all .2s ease; font-size: .8rem; padding: 6px 16px; }
 #wizS1Nav button.active, #wizS2Nav button.active, #wizS3Nav button.active { background: var(--accent); color: #fff; }
-/* 横向滑动卡片组 */
+/* 子导航卡片组：按组显示，宽卡片逐个排列 */
 .wiz-s1-group { display: none; }
-.wiz-s1-group.active { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding: 4px 0 8px; }
-.wiz-s1-group.active > .card { flex: 0 0 auto; width: 320px; max-width: 90vw; scroll-snap-align: start; margin-bottom: 0 !important; }
-.wiz-s1-group.active > .card:last-child { margin-right: 8px; }
-/* 工坊模式下卡片组适配 */
-.workshop-mode .wiz-s1-group.active > .card { width: 340px; }
+.wiz-s1-group.active { display: block; }
+.wiz-s1-group.active > .card { width: 100%; margin-bottom: 14px; }
 </style>
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.1" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" defer></script>
@@ -9523,7 +9520,7 @@ function wizSubSetup(stepId, stepKey, tabsDef, cardGrouper) {
   var prefix = stepKey==='s1'?'S1':(stepKey==='s2'?'S2':'S3');
   if (document.getElementById('wiz'+prefix+'Nav')) { wizSubSwitch(stepKey, wizStepTabs[stepKey]); return; }
   var groups = {}; tabsDef.forEach(function(t) { groups[t.key] = []; });
-  var cards = step.querySelectorAll(':scope > .card');
+  var cards = Array.from(step.children).filter(function(el) { return el.classList.contains('card'); });
   cards.forEach(function(card) {
     var g = cardGrouper(card);
     if (groups[g]) groups[g].push(card);
