@@ -4594,7 +4594,9 @@ function renderWorkspace() {
   var archiveTotal = pubArchive.length + claimArchive.length;
 
   if (archiveTotal > 0 || true) { // 始终显示存档区
-    html += '<div class="card" style="padding:16px 18px;margin-bottom:12px"><h3 style="margin:0 0 10px;font-size:1rem">📦 统一存档（' + archiveTotal + '项）</h3>';
+    html += '<div class="card" style="padding:16px 18px;margin-bottom:12px">';
+    html += '<h3 style="margin:0 0 10px;font-size:1rem;cursor:pointer" data-archive-toggle="wsArchiveRoot" data-count="' + archiveTotal + '" onclick="toggleArchive(\'wsArchiveRoot\')">📦 统一存档（' + archiveTotal + '项）▾</h3>';
+    html += '<div id="wsArchiveRoot" style="display:none">';
 
     // 我发布的存档
     html += '<div style="font-size:.85rem;font-weight:600;margin:8px 0 4px;color:var(--muted);cursor:pointer" data-archive-toggle="wsPubArchive" data-count="' + pubArchive.length + '" onclick="toggleArchive(\'wsPubArchive\')">📤 我发布的存档（' + pubArchive.length + '项）▾</div>';
@@ -4618,6 +4620,7 @@ function renderWorkspace() {
     if (claimArchive.length === 0) html += '<div style="font-size:.82rem;color:var(--muted);padding:8px;text-align:center">暂无已完成的领取任务</div>';
     html += '</div>';
 
+    html += '</div>'; // close wsArchiveRoot
     html += '</div>';
   }
 
