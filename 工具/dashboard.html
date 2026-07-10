@@ -4545,35 +4545,35 @@ function renderWorkspace() {
     }
 
     // ── 我发布的任务 ── 只显示进行中
-    html += '<div class="card" style="padding:16px 18px;margin-bottom:12px"><h3 style="margin:0 0 10px;font-size:1rem">📤 我发布的任务</h3>';
+    html += '<div class="card" style="padding:16px 18px;margin-bottom:12px"><h3 style="margin:0 0 10px;font-size:.95rem">📤 我发布的任务</h3>';
     if (myPublishedActive.length > 0) {
-      html += '<div style="font-size:.85rem;font-weight:600;margin-bottom:6px;color:var(--text)">▸ 进行中（' + myPublishedActive.length + '项）</div>';
+      html += '<div style="font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--text)">▸ 进行中（' + myPublishedActive.length + '项）</div>';
       myPublishedActive.forEach(function(p) {
         html += renderQuestCard(p.task, { context: 'workspace', userName: currentUser.name, isMember: !!selfId, taskIndex: p.idx });
       });
     } else {
-      html += '<div style="font-size:.82rem;color:var(--muted);padding:8px 0">暂无进行中的任务</div>';
+      html += '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">暂无进行中的任务</div>';
     }
     html += '</div>';
 
     // ── 我领取的任务 ── 只显示进行中+审核中
     var activeTasks = filtered.filter(function(e){ return e.claim.status==='in_progress'||e.claim.status==='triggered'||e.claim.status==='rejected'; });
     var submittedTasks = filtered.filter(function(e){ return e.claim.status==='submitted'; });
-    html += '<div class="card" style="padding:16px 18px;margin-bottom:12px"><h3 style="margin:0 0 10px;font-size:1rem">📥 我领取的任务</h3>';
+    html += '<div class="card" style="padding:16px 18px;margin-bottom:12px"><h3 style="margin:0 0 10px;font-size:.95rem">📥 我领取的任务</h3>';
     if (filtered.length === 0) {
-      html += '<div style="text-align:center;color:var(--muted);padding:20px;font-size:.9rem">📋 还没有任务。去任务大厅领取吧！</div>';
+      html += '<div style="text-align:center;color:var(--muted);padding:20px;font-size:.85rem">📋 还没有任务。去任务大厅领取吧！</div>';
     } else {
-      html += '<div style="font-size:.85rem;font-weight:600;margin-bottom:6px;color:var(--text)">▸ 进行中（' + activeTasks.length + '项）</div>';
+      html += '<div style="font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--text)">▸ 进行中（' + activeTasks.length + '项）</div>';
       if (activeTasks.length > 0) {
         activeTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
       } else {
-        html += '<div style="font-size:.82rem;color:var(--muted);padding:8px 0">暂无进行中的任务</div>';
+        html += '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">暂无进行中的任务</div>';
       }
-      html += '<div style="font-size:.85rem;font-weight:600;margin:12px 0 6px;color:var(--accent)">▸ 审核中（' + submittedTasks.length + '项）</div>';
+      html += '<div style="font-size:.82rem;font-weight:600;margin:12px 0 6px;color:var(--accent)">▸ 审核中（' + submittedTasks.length + '项）</div>';
       if (submittedTasks.length > 0) {
         submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
       } else {
-        html += '<div style="font-size:.82rem;color:var(--muted);padding:8px 0">暂无审核中的任务</div>';
+        html += '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">暂无审核中的任务</div>';
       }
     }
     html += '</div>';
