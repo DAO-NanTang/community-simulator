@@ -4599,13 +4599,13 @@ function renderWorkspace() {
   // 标签切换
   html += '<div style="display:flex;gap:4px;margin-bottom:8px">';
   [{k:'published',l:'📤 我发布的',n:pubArchive.length},{k:'claimed',l:'📥 我领取的',n:claimArchive.length}].forEach(function(tab) {
-    html += '<button class="btn' + (wsArchiveTab===tab.k?' pri':'') + '" onclick="wsArchiveTab=\''+tab.k+'\';var d=document.getElementById(\'wsArchiveList\');if(d){var data=d._allData||{};renderArchiveList(\'wsArchiveList\',data[tab.k]||[],wsPubArchiveView)}" style="font-size:.78rem;padding:4px 10px">'+tab.l+'（'+tab.n+'）</button>';
+    html += '<button class="btn' + (wsArchiveTab===tab.k?' pri':'') + '" onclick="wsArchiveTab=\''+tab.k+'\';var bar=this.parentElement;bar.querySelectorAll(\'button\').forEach(function(b){b.className=b.getAttribute(\'data-tab\')===wsArchiveTab?\'btn pri\':\'btn\'});var d=document.getElementById(\'wsArchiveList\');if(d){var data=d._allData||{};renderArchiveList(\'wsArchiveList\',data[tab.k]||[],wsPubArchiveView)}" data-tab="' + tab.k + '" style="font-size:.78rem;padding:4px 10px">'+tab.l+'（'+tab.n+'）</button>';
   });
   html += '</div>';
   // 共享时间筛选
   html += '<div id="wsArchiveBar" style="display:flex;gap:4px;margin-bottom:8px">';
   [{k:'all',l:'全部'},{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'}].forEach(function(v) {
-    html += '<button class="btn' + (wsPubArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="wsPubArchiveView=\''+v.k+'\';var d=document.getElementById(\'wsArchiveList\');if(d){var data=d._allData||{};renderArchiveList(\'wsArchiveList\',data[wsArchiveTab]||[],wsPubArchiveView)}" style="font-size:.75rem;padding:4px 12px">' + v.l + '</button>';
+    html += '<button class="btn' + (wsPubArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="wsPubArchiveView=\''+v.k+'\';var bar=document.getElementById(\'wsArchiveBar\');if(bar)bar.querySelectorAll(\'button\').forEach(function(b){b.className=b.getAttribute(\'data-mode\')===wsPubArchiveView?\'btn pri\':\'btn\'});var d=document.getElementById(\'wsArchiveList\');if(d){var data=d._allData||{};renderArchiveList(\'wsArchiveList\',data[wsArchiveTab]||[],wsPubArchiveView)}" style="font-size:.75rem;padding:4px 12px">' + v.l + '</button>';
   });
   html += '</div>';
   // 列表容器
