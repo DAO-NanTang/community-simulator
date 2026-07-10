@@ -507,6 +507,12 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+/* Step ① 子导航 */
+#wizS1Nav { display: flex; gap: 6px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+#wizS1Nav button { transition: all .2s ease; font-size: .8rem; padding: 6px 16px; }
+#wizS1Nav button.active { background: var(--accent); color: #fff; }
+.wiz-s1-group { display: none; }
+.wiz-s1-group.active { display: block; }
 </style>
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.1" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" defer></script>
@@ -9506,6 +9512,47 @@ function saveStep0() {
   saveData();
   openIgniteCeremony(function() { switchStep(1); });
 }
+// ── Step 1 子导航 ──
+var wizS1Tab = 'cal';
+function wizS1Switch(tab) {
+  wizS1Tab = tab;
+  document.querySelectorAll('.wiz-s1-group').forEach(function(g) { g.classList.remove('active'); });
+  var group = document.getElementById('wizS1Group' + (tab==='cal'?'Cal':tab==='fin'?'Fin':'Team'));
+  if (group) group.classList.add('active');
+  document.querySelectorAll('#wizS1Nav button').forEach(function(b) { b.classList.remove('pri','active'); });
+  var btn = document.getElementById('wizS1Tab' + (tab==='cal'?'Cal':tab==='fin'?'Fin':'Team'));
+  if (btn) { btn.classList.add('pri','active'); }
+}
+function wizS1Setup() {
+  var step = document.getElementById('wiz-step1'); if (!step) return;
+  // Only setup once
+  if (document.getElementById('wizS1Nav')) { wizS1Switch(wizS1Tab); return; }
+  // Collect all top-level cards in the step
+  var cards = step.querySelectorAll(':scope > .card');
+  var groups = { cal: [], fin: [], team: [] };
+  var currentGroup = 'cal';
+  cards.forEach(function(card) {
+    var h3 = card.querySelector('h3'); var title = h3 ? h3.textContent : '';
+    if (title.indexOf('收入')!==-1 || title.indexOf('支出')!==-1 || title.indexOf('鼓励')!==-1) currentGroup = 'fin';
+    else if (title.indexOf('团队')!==-1) currentGroup = 'team';
+    groups[currentGroup].push(card);
+  });
+  // Create group wrappers and move cards
+  ['cal','fin','team'].forEach(function(g) {
+    var wrapper = document.createElement('div'); wrapper.className = 'wiz-s1-group'; wrapper.id = 'wizS1Group' + (g==='cal'?'Cal':g==='fin'?'Fin':'Team');
+    groups[g].forEach(function(c) { wrapper.appendChild(c); });
+    step.appendChild(wrapper);
+  });
+  // Also wrap non-card elements (损益汇总, 导出按钮) that are after the last card
+  var remaining = step.querySelectorAll(':scope > div:not(.card):not(.wiz-s1-group)');
+  var finGroup = document.getElementById('wizS1GroupFin');
+  remaining.forEach(function(el) { if (finGroup && el.id!=='schedEditModal') finGroup.appendChild(el); });
+  // Insert sub-nav at top
+  var nav = document.createElement('div'); nav.id = 'wizS1Nav';
+  nav.innerHTML = '<button class="btn pri active" id="wizS1TabCal" onclick="wizS1Switch(\'cal\')">📅 日历</button> <button class="btn" id="wizS1TabFin" onclick="wizS1Switch(\'fin\')">💰 财政</button> <button class="btn" id="wizS1TabTeam" onclick="wizS1Switch(\'team\')">👥 团队</button>';
+  step.insertBefore(nav, step.firstChild);
+  wizS1Switch(wizS1Tab);
+}
 // ── Step 1: Framework ──
 function renderStep1() {
   var cd = data.camp_dates || {};
@@ -10288,6 +10335,7 @@ function deleteWizMember(name) {
   delete data.members[name];
   saveData();
   renderStep1();
+  wizS1Setup();
 }
 
 function saveStep1() {
