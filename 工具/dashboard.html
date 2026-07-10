@@ -1530,7 +1530,7 @@ var Clock = (function () {
              return d.getUTCFullYear() + '-' + _p2(d.getUTCMonth() + 1) + '-' + _p2(d.getUTCDate()); },
     hour:  function () { return _shift(_now()).getUTCHours(); },
     min:   function () { return _shift(_now()).getUTCMinutes(); },
-    stamp: function () { return _wall().toString(36); }                // ID 前缀；后缀 Math.random() 由调用处保留；恒真实，不受冻结影响
+    stamp: function () { return _wall().toString(36); },               // ID 前缀；后缀 Math.random() 由调用处保留；恒真实，不受冻结影响
     // NT-TEST:START
     // ── 第三期内测接口（真实模式下永不调用）──
     ,_setFrozen: function (ms) { _frozenMs = ms; _persistV(); },       // 跳到并冻结在某毫秒
