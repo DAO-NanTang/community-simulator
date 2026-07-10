@@ -517,9 +517,6 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <button class="btn" onclick="loadData();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-folder-open"></i> 加载数据</button>
         <button class="btn" onclick="exportData();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-download"></i> 导出数据</button>
         <button class="btn" id="btnInviteCode" onclick="showInviteSidebar()" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-keyhole"></i> 邀请码</button>
-        <!-- NT-TEST:START -->
-        <button class="btn" id="btnDevtools" onclick="showDevtoolsSidebar()" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-flask"></i> 内测世界</button>
-        <!-- NT-TEST:END -->
         <hr style="border-color:var(--border);margin:2px 0">
         <button class="btn" onclick="showVillageSquare();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-house"></i> 回南塘村口</button>
         <hr style="border-color:var(--border);margin:2px 0">
@@ -1122,6 +1119,13 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">成为在地伙伴<br>或浏览地图</p>
           <button class="btn" style="font-size:.78rem;margin-top:8px">🗺️ 探索实景地图</button>
         </div>
+        <!-- 卡片4: 社区窗口 -->
+        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openCommunityWindow()">
+          <div style="font-size:2.5rem;margin-bottom:8px">🏕️</div>
+          <h3 style="margin:4px 0">社区窗口</h3>
+          <p style="font-size:.75rem;color:var(--muted);margin:6px 0">看看营地里<br>大家在做什么</p>
+          <button class="btn" style="font-size:.78rem;margin-top:8px">🏕️ 打开社区窗口</button>
+        </div>
       </div>
       <div style="text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid rgba(255,255,255,.15)">
         <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px">
@@ -1182,11 +1186,12 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   </div>
 </div>
 
-<!-- 社区窗口：二级滑出面板（复用 hub-sub-panel 样式）-->
-<div class="hub-slide-backdrop" id="activityBackdrop" onclick="closeActivityCommunity()" style="display:none;z-index:1001"></div>
-<div class="hub-sub-panel" id="activityCommunitySlide" style="right:0;left:auto;width:420px;max-width:90vw;z-index:1002">
-  <div class="hs-header"><span style="font-weight:700;font-size:.85rem">👀 浏览营地</span><button onclick="closeActivityCommunity()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:2px 4px">✕</button></div>
-  <div class="hs-body" id="activityCommunityBody"></div>
+<!-- Village Modal: Community Window -->
+<div id="villageModalCommunity" class="village-modal hidden" onclick="if(event.target===this)closeVillageModal('community')">
+  <div class="vm-inner" style="max-width:820px">
+    <button onclick="closeVillageModal('community')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)">✕</button>
+    <div id="communityWindowContent"></div>
+  </div>
 </div>
 
 <!-- Hub Quest Hall Modal -->
@@ -1418,14 +1423,6 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div class="is-body" id="inviteSidebarBody"></div>
 </div>
 
-<!-- NT-TEST:START -->
-<!-- 内测世界 Sidebar（管理员 · 复用 invite-sidebar 类，不新增 CSS）-->
-<div class="invite-backdrop" id="devtoolsBackdrop" onclick="closeDevtoolsSidebar()"></div>
-<div class="invite-sidebar" id="devtoolsSidebar">
-  <div class="is-header"><span style="font-weight:700;font-size:.85rem">🧪 内测世界</span><button onclick="closeDevtoolsSidebar()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:2px 4px">✕</button></div>
-  <div class="is-body" id="devtoolsBody"></div>
-</div>
-<!-- NT-TEST:END -->
 
 <!-- Reviewer Picker Dropdown -->
 <div class="picker-dropdown hidden" id="pickerDropdown">
@@ -1496,19 +1493,8 @@ var Clock = (function () {
   var TZ_MIN = 8 * 60;                 // 锁定 UTC+8（Asia/Shanghai）
   function _wall() { return Date.now(); }   // 真实设备时钟：ID 用，永远真实
 
-  // NT-TEST:START
-  // ── 第三期内测注入：冻结时刻（null=真实时间；有值=全系统时间钉在该毫秒）──
-  var _frozenMs = null;
-  try { var _sv = localStorage.getItem('nt_virtual_ms');            // 加载时恢复，跨刷新/切用户保持同一虚拟日
-        if (_sv != null && _sv !== '') { var _n = parseInt(_sv, 10); if (!isNaN(_n)) _frozenMs = _n; } } catch (e) {}
-  function _persistV() { try { if (_frozenMs == null) localStorage.removeItem('nt_virtual_ms');
-                               else localStorage.setItem('nt_virtual_ms', String(_frozenMs)); } catch (e) {} }
-  // NT-TEST:END
 
   function _now()  {
-    // NT-TEST:START
-    if (_frozenMs != null) return _frozenMs;
-    // NT-TEST:END
     return _wall();
   }  // 应用时钟：冻结则返回虚拟时刻
   function _shift(ms) { return new Date(ms + TZ_MIN * 60000); }  // 移到锁定时区再取字段
@@ -1523,13 +1509,6 @@ var Clock = (function () {
     hour:  function () { return _shift(_now()).getUTCHours(); },
     min:   function () { return _shift(_now()).getUTCMinutes(); },
     stamp: function () { return _wall().toString(36); },               // ID 前缀；后缀 Math.random() 由调用处保留；恒真实，不受冻结影响
-    // NT-TEST:START
-    // ── 第三期内测接口（真实模式下永不调用）──
-    _setFrozen: function (ms) { _frozenMs = ms; _persistV(); },        // 跳到并冻结在某毫秒
-    _step: function (deltaMs) { if (_frozenMs == null) _frozenMs = _wall(); _frozenMs += deltaMs; _persistV(); }, // 步进（±小时/天/周）
-    _reset: function () { _frozenMs = null; _persistV(); },            // 恢复真实时间
-    _state: function () { return { virtual: _frozenMs != null, ms: _now() }; },
-    // NT-TEST:END
   };
 })();
 
@@ -2707,10 +2686,6 @@ function showMainInterface(identity, targetTab) {
       if (nt) nt.classList.add('hidden');
       var ib = document.getElementById('btnInviteCode');
       if (ib) ib.classList.add('hidden');
-      // NT-TEST:START
-      var dv = document.getElementById('btnDevtools');
-      if (dv) dv.classList.add('hidden');
-      // NT-TEST:END
     }
   } else {
     document.body.classList.add('adventurer-mode');
@@ -2871,14 +2846,19 @@ function enterVillagerMain() {
 function openVillageModal(type) {
   if (type === 'questhall') renderVillageQuestHall();
   if (type === 'activity') renderVillageActivityList();
-  var nameMap = { questhall:'Questhall', activity:'Activity', map:'Map' };
+  if (type === 'community') { document.getElementById('communityWindowContent').innerHTML = renderCommunityWindow(); }
+  var nameMap = { questhall:'Questhall', activity:'Activity', community:'Community', map:'Map' };
   var el = document.getElementById('villageModal' + (nameMap[type] || 'Map'));
   if (el) el.classList.remove('hidden');
 }
 function closeVillageModal(type) {
-  var nameMap = { questhall:'Questhall', activity:'Activity', map:'Map' };
+  var nameMap = { questhall:'Questhall', activity:'Activity', community:'Community', map:'Map' };
   var el = document.getElementById('villageModal' + (nameMap[type] || 'Map'));
   if (el) el.classList.add('hidden');
+}
+
+function openCommunityWindow() {
+  openVillageModal('community');
 }
 
 var villageScopeFilter = 'all', villageQuickFilter = '', villageCatFilter = '', villageLocFilter = '', villageSearchText = '', villagePeriod = 'current';
@@ -3076,11 +3056,9 @@ function renderVillageActivityList() {
     '<div style="font-size:.8rem;color:var(--muted);margin:4px 0">2026年7月 · 进行中 · 12人活跃</div>'+
     '<div style="font-size:.82rem">工笔画创作、在地生活、展览布置…</div>'+
     (isMember ?
-      '<div style="margin-top:10px"><button class="btn pri" onclick="closeVillageModal(\'activity\');hidePlazaPlaceholder();switchTab(\'workspace\')" style="font-size:.82rem;padding:8px 20px">→ 进入营队</button> '+
-      '<button class="btn" onclick="openActivityCommunity()" style="font-size:.82rem;padding:8px 20px" id="btnActivityCommunity">👀 浏览营地 ▾</button></div>' :
+      '<div style="margin-top:10px"><button class="btn pri" onclick="closeVillageModal(\'activity\');hidePlazaPlaceholder();switchTab(\'workspace\')" style="font-size:.82rem;padding:8px 20px">→ 进入营队</button></div>' :
       '<div style="margin-top:8px"><input id="villageInviteCode" placeholder="输入邀请码" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:.82rem;width:180px"> '+
-      '<button class="btn pri" onclick="var c=document.getElementById(\'villageInviteCode\').value;if(c){var r=doUpgradeWithCode(c);if(r&&r.ok){closeVillageModal(\'activity\');hidePlazaPlaceholder();switchTab(\'workspace\');}}" style="font-size:.78rem">→ 成为冒险者</button> '+
-      '<button class="btn" onclick="openActivityCommunity()" style="font-size:.78rem" id="btnActivityCommunity">👀 浏览营地 ▾</button></div>')+
+      '<button class="btn pri" onclick="var c=document.getElementById(\'villageInviteCode\').value;if(c){var r=doUpgradeWithCode(c);if(r&&r.ok){closeVillageModal(\'activity\');hidePlazaPlaceholder();switchTab(\'workspace\');}}" style="font-size:.78rem">→ 成为冒险者</button></div>')+
     '</div>';
   html += '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:10px;opacity:.6">'+
     '<div style="font-size:1rem;font-weight:700">🎋 南塘端午文化节</div>'+
@@ -3640,147 +3618,107 @@ function renderDraftBox() {
   h += '</div>';
   return h;
 }
-// ── 社区窗口：嵌入社区副本 Modal 内（唯一版本）──
-function renderCommunityWindowEmbedded() {
+// ── 社区窗口：营队看板 + 打赏 ──
+function renderCommunityWindow() {
   var h = '';
   var tasks = data.tasks || [];
   var staff = data.staff_cards || [];
   var members = data.members || {};
   var tips = data.tips || [];
-  var today = Clock.today();
+  var today = new Date().toISOString().slice(0,10);
 
-  // ── 营地脉动 ──
+  // ── 统计卡片 ──
   var activeCount = tasks.filter(function(t){ return t.status==='active'; }).length;
-  var activePeople = 0; var seenPeople = {};
-  tasks.forEach(function(t){
-    (t.claimants||[]).forEach(function(c){
-      if (c.status==='dropped') return;
-      if (!seenPeople[c.name]) { seenPeople[c.name]=true; activePeople++; }
-    });
-  });
-  var pulseLabel = activeCount > 10 ? '🔥 热火朝天' : activeCount > 5 ? '🌿 稳步推进' : '🌱 刚刚开始';
-  h += '<div style="text-align:center;margin-bottom:12px;font-size:.82rem;font-weight:600;color:var(--accent)">'+pulseLabel+' · '+activePeople+'人正在创作</div>';
-
-  // ── 统计卡片（缩小横排）──
   var submittedCount = tasks.filter(function(t){ return (t.claimants||[]).some(function(c){ return c.status==='submitted'; }); }).length;
   var doneCount = tasks.filter(function(t){ return (t.claimants||[]).some(function(c){ return c.status==='completed'; }); }).length;
   var tipCount = tips.filter(function(t){ return t.type==='gift'; }).length;
-  var needPeople = tasks.filter(function(t){ return t.status==='active' && t.max_slots>0 && (t.claimants||[]).filter(function(c){return c.status!=='dropped';}).length<t.max_slots; }).length;
+  var poolRemain = (data.budget&&data.budget.community_pool_total) ? data.budget.community_pool_total : 500;
 
-  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">';
-  [{n:activeCount,l:'进行'},{n:submittedCount,l:'提交'},{n:doneCount,l:'完成'},{n:tipCount,l:'🎁打赏'},{n:needPeople,l:'缺人'}].forEach(function(s){
-    h += '<div class="stat" style="flex:1;min-width:60px;text-align:center;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 4px"><div class="num" style="font-size:1.2rem;font-weight:700">'+s.n+'</div><div class="label" style="font-size:.68rem;color:var(--muted)">'+s.l+'</div></div>';
+  h += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">';
+  [{n:activeCount,l:'进行中'},{n:submittedCount,l:'已提交'},{n:doneCount,l:'已确认'},{n:tipCount,l:'🎁打赏'},{n:poolRemain,l:'💎池余'}].forEach(function(s){
+    h += '<div class="stat" style="flex:1;min-width:80px;text-align:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 8px"><div class="num" style="font-size:1.5rem;font-weight:700">'+s.n+'</div><div class="label" style="font-size:.75rem;color:var(--muted)">'+s.l+'</div></div>';
   });
   h += '</div>';
 
-  // ── 正在现场（成员卡片一行化）──
-  h += '<div style="margin-bottom:10px"><div style="font-size:.75rem;font-weight:600;margin-bottom:6px">👤 正在现场</div>';
+  // ── 成员动态卡片 ──
+  h += '<div class="card"><h3>正在发生</h3>';
   var activeMembers = [];
+  // 共建者
   staff.forEach(function(c){
     var theirTasks = tasks.filter(function(t){ return t.poster===c.name || (t.claimants||[]).some(function(cl){ return cl.name===c.name&&cl.status!=='dropped'; }); });
-    if (theirTasks.length>0) activeMembers.push({ name:c.name, role:'builder', title:(members[c.name]&&members[c.name].title)||'', tasks:theirTasks.slice(0,2) });
+    if (theirTasks.length>0) activeMembers.push({ name:c.name, role:'builder', title:(members[c.name]&&members[c.name].title)||'共建者', tasks:theirTasks.slice(0,3) });
   });
+  // 冒险者（从 claimants 取）
   var advMap = {};
   tasks.forEach(function(t){
     (t.claimants||[]).forEach(function(c){
       if (c.status==='dropped') return;
       if (!advMap[c.name]) advMap[c.name] = { name:c.name, role:'adventurer', tasks:[] };
-      if (advMap[c.name].tasks.length<2) advMap[c.name].tasks.push(t);
+      if (advMap[c.name].tasks.length<3) advMap[c.name].tasks.push(t);
     });
   });
   Object.values(advMap).forEach(function(a){ activeMembers.push(a); });
 
-  activeMembers.slice(0,12).forEach(function(m){
+  activeMembers.slice(0,15).forEach(function(m){
     var icon = m.role==='builder'?'🧱':'⚔️';
     var mi = members[m.name] || {};
     var avatarSi = mi.avatar_seed !== undefined ? mi.avatar_seed : 0;
-    var taskNames = m.tasks.map(function(t){ var s=t.status==='active'?'🔄':t.status==='completed'?'✅':'📤'; return s+esc(t.name); }).join(' ');
-    h += '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px dotted var(--border);font-size:.72rem">'+avatarCircle(avatarSi,22,0)+' <span style="font-weight:600">'+icon+' '+esc(m.name)+'</span>'+(m.title?' <span style="color:var(--muted);font-size:.65rem">· '+esc(m.title)+'</span>':'')+' <span style="color:var(--muted);font-size:.68rem;margin-left:auto;text-align:right;max-width:50%">'+taskNames+'</span></div>';
+    h += '<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+avatarCircle(avatarSi,32,0)+' <span style="font-weight:600">'+icon+' '+esc(m.name)+'</span><span style="font-size:.72rem;color:var(--muted)">· '+(m.title||'')+'</span></div>';
+    m.tasks.forEach(function(t){
+      var statusIcon = t.status==='active'?'🔄':t.status==='completed'?'✅':'📤';
+      h += '<div style="font-size:.78rem;color:var(--muted);margin:2px 0">📋 '+esc(t.name)+' · '+statusIcon+'</div>';
+    });
+    // 最近收到的打赏
+    var recentTips = tips.filter(function(tp){ return tp.to===m.name; }).slice(-2);
+    recentTips.forEach(function(tp){
+      var ago = timeAgo(tp.at);
+      h += '<div style="font-size:.68rem;color:var(--accent);margin:1px 0">'+(tp.anonymous?'匿名':esc(tp.from))+' 送了 '+(tp.item||tp.emoji||'')+' '+(tp.label||'')+' · '+ago+'</div>';
+    });
+    h += '<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">';
+    h += '<button class="btn" onclick="sendTip(\''+escAttr(currentUser?currentUser.name:'')+'\',\''+escAttr(m.name)+'\',{type:\'cheer\',emoji:\'👏\',label:\'太棒了\'});renderWorkspace()" style="font-size:.65rem;padding:2px 6px">👏</button>';
+    h += '<button class="btn" onclick="sendTip(\''+escAttr(currentUser?currentUser.name:'')+'\',\''+escAttr(m.name)+'\',{type:\'cheer\',emoji:\'💪\',label:\'加油\'});renderWorkspace()" style="font-size:.65rem;padding:2px 6px">💪</button>';
+    h += '<button class="btn" onclick="sendTip(\''+escAttr(currentUser?currentUser.name:'')+'\',\''+escAttr(m.name)+'\',{type:\'gift\',item:\'🌹\',label:\'小花\',nt:1});renderWorkspace()" style="font-size:.65rem;padding:2px 6px">🌹1NT</button>';
+    h += '</div></div>';
   });
-  if (activeMembers.length===0) h += '<div style="text-align:center;color:var(--muted);padding:10px;font-size:.72rem">暂无活跃成员</div>';
+  if (activeMembers.length===0) h += '<div style="text-align:center;color:var(--muted);padding:20px">暂无活跃成员</div>';
   h += '</div>';
 
-  // ── 正在招募（新增）──
-  var recruiting = tasks.filter(function(t){
-    if (t.status!=='active') return false;
-    var activeC = (t.claimants||[]).filter(function(c){ return c.status!=='dropped'; });
-    if (t.max_slots>0 && activeC.length>=t.max_slots) return false;
-    return true;
-  }).slice(0,5);
-  if (recruiting.length>0) {
-    h += '<div style="margin-bottom:10px"><div style="font-size:.75rem;font-weight:600;margin-bottom:6px">📋 正在招募</div>';
-    recruiting.forEach(function(t){
-      var activeC = (t.claimants||[]).filter(function(c){ return c.status!=='dropped'; }).length;
-      var slots = t.max_slots>0 ? activeC+'/'+t.max_slots+'人' : '不限';
-      h += '<div style="font-size:.72rem;padding:3px 0;border-bottom:1px dotted var(--border)">🟢 '+esc(t.name)+' · NT'+(t.points||0)+' · '+slots+(t.location==='local'?' · 📍在地':'')+(t.note?'<br><span style="color:var(--muted);font-size:.68rem">"'+esc(t.note.slice(0,60))+'"</span>':'')+'</div>';
-    });
-    h += '</div>';
-  }
-
-  // ── 送个鼓励（紧凑版）──
+  // ── 送个鼓励面板 ──
   if (currentUser) {
     var myNT = calcNtTotal(currentUser.name);
-    h += '<div style="margin-bottom:10px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:#fefdf8"><div style="font-size:.72rem;font-weight:600;margin-bottom:4px">💬 送个鼓励</div>';
-    h += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:4px">';
+    var myPool = data.budget&&data.budget.community_pool_daily||10;
+    var users = getUsers(); var cu = users[currentUser.name]||{};
+    var todaySpent = tips.filter(function(t){ return t.from===currentUser.name&&t.type==='gift'&&t.at&&t.at.slice(0,10)===today; }).reduce(function(s,t){ return s+(t.nt||0); },0);
+    h += '<div class="card"><h3>💬 送个鼓励</h3>';
+    h += '<div style="margin-bottom:8px;display:flex;gap:4px;flex-wrap:wrap">';
     [{e:'👏',l:'太棒了'},{e:'💪',l:'加油'},{e:'🎨',l:'好看'},{e:'🔥',l:'厉害'},{e:'🌿',l:'治愈'},{e:'✨',l:'灵气'},{e:'💐',l:'感动'},{e:'👍',l:'佩服'}].forEach(function(ch){
-      h += '<button class="btn" onclick="var t=prompt(\'送给谁？\');if(t){sendTip(\''+escAttr(currentUser.name)+'\',t,{type:\'cheer\',emoji:\''+ch.e+'\',label:\''+ch.l+'\'});}" style="font-size:.62rem;padding:2px 5px">'+ch.e+'</button>';
+      h += '<button class="btn" onclick="var t=prompt(\'送给谁？\');if(t){sendTip(\''+escAttr(currentUser.name)+'\',t,{type:\'cheer\',emoji:\''+ch.e+'\',label:\''+ch.l+'\'});renderWorkspace()}" style="font-size:.68rem;padding:3px 8px">'+ch.e+' '+ch.l+'</button>';
     });
     h += '</div>';
-    h += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:4px">';
+    h += '<div style="margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap">';
     [{i:'🌹',l:'小花',n:1},{i:'🎁',l:'礼盒',n:5},{i:'🎂',l:'蛋糕',n:10},{i:'🚀',l:'火箭',n:50}].forEach(function(gf){
-      h += '<button class="btn" onclick="var t=prompt(\'送给谁？\');if(t){var r=sendTip(\''+escAttr(currentUser.name)+'\',t,{type:\'gift\',item:\''+gf.i+'\',label:\''+gf.l+'\',nt:'+gf.n+'});if(!r.ok)alert(r.reason);}" style="font-size:.62rem;padding:2px 5px">'+gf.i+gf.n+'</button>';
+      h += '<button class="btn" onclick="var t=prompt(\'送给谁？\');if(t){var r=sendTip(\''+escAttr(currentUser.name)+'\',t,{type:\'gift\',item:\''+gf.i+'\',label:\''+gf.l+'\',nt:'+gf.n+'});if(!r.ok)alert(r.reason);renderWorkspace()}" style="font-size:.68rem;padding:3px 8px">'+gf.i+' '+gf.l+' '+gf.n+'NT</button>';
     });
     h += '</div>';
-    h += '<div style="font-size:.65rem;color:var(--muted)">你的余额：💎 '+myNT.toLocaleString()+' NT</div></div>';
+    h += '<div style="font-size:.7rem;color:var(--muted)">余额：💎 '+myNT.toLocaleString()+' NT';
+    if (cu.role==='npc'||cu.role==='visitor') h += ' · 今日额度：'+(myPool-todaySpent)+'/'+myPool+' NT';
+    h += '</div></div>';
   }
 
-  // ── 刚刚发生（新增：最近事件混排）──
-  var events = [];
-  tasks.forEach(function(t){
-    (t.claimants||[]).forEach(function(c){
-      if (c.status==='submitted' && c.submitted_at) events.push({ type:'task', text:esc(c.name)+' 提交了「'+esc(t.name)+'」', at: c.submitted_at });
-      if (c.status==='completed' && c.claimed_at) events.push({ type:'task', text:esc(c.name)+' 完成了「'+esc(t.name)+'」', at: c.claimed_at });
-    });
-  });
-  tips.slice().reverse().forEach(function(tp){
-    if (!tp.at) return;
-    var fromLabel = tp.anonymous?'匿名':esc(tp.from);
-    events.push({ type:'tip', text:fromLabel+' → '+esc(tp.to)+' '+(tp.item||tp.emoji||'')+(tp.label||''), at: tp.at });
-  });
-  events.sort(function(a,b){ return (b.at||'').localeCompare(a.at||''); });
-  var recentEvents = events.slice(0,8);
-  if (recentEvents.length>0) {
-    h += '<div style="margin-bottom:10px"><div style="font-size:.75rem;font-weight:600;margin-bottom:4px">🔥 刚刚发生</div>';
-    recentEvents.forEach(function(e){
-      var ago = timeAgo(e.at);
-      var icon = e.type==='task'?'⚡':'💬';
-      h += '<div style="font-size:.68rem;color:var(--muted);padding:1px 0">'+icon+' '+e.text+' · '+ago+'</div>';
+  // ── 最近互动 ──
+  var allTips = tips.slice().reverse().slice(0,10);
+  if (allTips.length>0) {
+    h += '<div class="card"><h3>🔥 最近互动</h3>';
+    allTips.forEach(function(tp){
+      var ago = timeAgo(tp.at);
+      var fromLabel = tp.anonymous?'匿名':esc(tp.from);
+      h += '<div style="font-size:.75rem;color:var(--muted);padding:2px 0;border-bottom:1px dotted var(--border)">'+fromLabel+' → '+esc(tp.to)+' '+(tp.item||tp.emoji||'')+' '+(tp.label||'')+' · '+ago+'</div>';
     });
     h += '</div>';
-  }
-
-  // ── 底部引导 ──
-  if (!userCan(currentUser, 'isMember')) {
-    h += '<div style="text-align:center;padding:8px;border-top:1px solid var(--border);margin-top:8px;font-size:.72rem;color:var(--accent)">💡 感兴趣？输入邀请码加入，成为冒险者！</div>';
   }
 
   return h;
-}
-
-// ── 浏览营地 二级滑出面板 ──
-function openActivityCommunity() {
-  var panel = document.getElementById('activityCommunitySlide');
-  var bd = document.getElementById('activityBackdrop');
-  if (!panel || !bd) return;
-  document.getElementById('activityCommunityBody').innerHTML = renderCommunityWindowEmbedded();
-  panel.classList.add('show');
-  bd.style.display = '';
-}
-function closeActivityCommunity() {
-  var panel = document.getElementById('activityCommunitySlide');
-  var bd = document.getElementById('activityBackdrop');
-  if (panel) panel.classList.remove('show');
-  if (bd) bd.style.display = 'none';
 }
 
 function renderWorkspace() {
@@ -6036,131 +5974,6 @@ function executePostTask() {
   setStatus('已发布：' + task.name + (task.points > 0 ? '（已扣除 ' + task.points + ' NT）' : ''));
 }
 
-// NT-TEST:START
-// ═══════════ 内测世界（Devtools · 管理员时间/沙盒内测）═══════════
-// 数据隔离：进入内测时备份真实 camp_data，测试写入照常落 camp_data（成沙盒），退出即还原。
-// 时间：走 Clock 冻结注入（见 Clock._setFrozen/_step/_reset）。横幅为唯一常驻状态+退出出口（不分角色）。
-var NT_TEST_FLAG = 'nt_test_mode';
-var NT_BACKUP_KEY = 'camp_data__real_backup';
-
-function isTestMode() { return safeStorage.getItem(NT_TEST_FLAG) === '1'; }
-
-// UTC+8 毫秒 → 'YYYY-MM-DD HH:mm'
-function ntFmt(ms) { var d = new Date(ms + 8 * 60 * 60000); function p(n){return (n<10?'0':'')+n;}
-  return d.getUTCFullYear()+'-'+p(d.getUTCMonth()+1)+'-'+p(d.getUTCDate())+' '+p(d.getUTCHours())+':'+p(d.getUTCMinutes()); }
-// UTC+8 毫秒 → datetime-local 需要的 'YYYY-MM-DDTHH:mm'
-function ntInputVal(ms) { var d = new Date(ms + 8 * 60 * 60000); function p(n){return (n<10?'0':'')+n;}
-  return d.getUTCFullYear()+'-'+p(d.getUTCMonth()+1)+'-'+p(d.getUTCDate())+'T'+p(d.getUTCHours())+':'+p(d.getUTCMinutes()); }
-
-// 进入内测（幂等）：已在内测则绝不重复备份，防真实备份被沙盒数据覆盖
-function enterTestWorld() {
-  if (isTestMode()) return;
-  var real = safeStorage.getItem('camp_data');
-  safeStorage.setItem(NT_BACKUP_KEY, real == null ? '' : real);
-  safeStorage.setItem(NT_TEST_FLAG, '1');
-  renderDevtoolsBody();
-  updateTestBanner();
-  setStatus && setStatus('已进入内测世界（沙盒）');
-}
-// 退出内测：还原真实 camp_data、清标志与虚拟时间，重载以读回真实数据
-function exitTestWorld() {
-  if (!isTestMode()) return;
-  if (!confirm('退出内测世界？\n将丢弃本次沙盒中的所有测试数据，并还原为真实数据。')) return;
-  var backup = safeStorage.getItem(NT_BACKUP_KEY);
-  if (backup != null) { if (backup === '') safeStorage.removeItem('camp_data'); else safeStorage.setItem('camp_data', backup); }
-  safeStorage.removeItem(NT_BACKUP_KEY);
-  safeStorage.removeItem(NT_TEST_FLAG);
-  Clock._reset();
-  location.reload();
-}
-
-// 时间控制
-function ntJumpFreeze() {
-  var v = document.getElementById('ntDateInput').value;   // 'YYYY-MM-DDTHH:mm'
-  if (!v) { alert('请选择日期时间'); return; }
-  var ms = new Date(v + ':00+08:00').getTime();            // 按 UTC+8 解释
-  if (isNaN(ms)) { alert('时间格式错误'); return; }
-  Clock._setFrozen(ms); afterTimeChange();
-}
-function ntStep(deltaMs) { Clock._step(deltaMs); afterTimeChange(); }
-function ntResetTime() { Clock._reset(); afterTimeChange(); }
-function afterTimeChange() {
-  updateTestBanner(); renderDevtoolsBody();
-  if (currentTab && currentTab !== 'plaza') { try { switchTab(currentTab); } catch(e){} }
-}
-
-// 常驻横幅（复用 previewBanner 范式）：内测时常显，带不分角色的退出出口
-function updateTestBanner() {
-  var banner = document.getElementById('ntTestBanner');
-  if (!isTestMode()) { if (banner) banner.style.display = 'none'; return; }
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'ntTestBanner';
-    banner.style.cssText = 'background:#b5462e;color:#fff;text-align:center;padding:7px 10px;font-weight:600;font-size:.82rem';
-    var hud = document.getElementById('worldHUD');
-    if (hud) hud.after(banner); else document.body.insertBefore(banner, document.body.firstChild);
-  }
-  banner.style.display = 'block';
-  var st = Clock._state();
-  var timeLabel = st.virtual ? ntFmt(st.ms) : '真实时间（未冻结）';
-  banner.innerHTML = '🧪 内测世界 · ' + timeLabel + ' · 沙盒数据' +
-    '<button onclick="exitTestWorld()" style="margin-left:10px;background:#fff;color:#b5462e;border:none;border-radius:5px;padding:2px 10px;font-size:.74rem;font-weight:700;cursor:pointer">退出并还原</button>';
-}
-
-// 侧栏开关（复用 invite-sidebar 定位/开关范式）
-function showDevtoolsSidebar() {
-  var btn = document.getElementById('btnDevtools');
-  var gear = document.getElementById('gearMenu');
-  var sb = document.getElementById('devtoolsSidebar');
-  if (btn && gear) {
-    var br = btn.getBoundingClientRect(); var gr = gear.getBoundingClientRect();
-    sb.style.top = br.top + 'px';
-    sb.style.right = (window.innerWidth - gr.left + 3) + 'px';
-  }
-  document.getElementById('devtoolsBackdrop').classList.add('show');
-  sb.classList.add('show');
-  renderDevtoolsBody();
-}
-function closeDevtoolsSidebar() {
-  document.getElementById('devtoolsBackdrop').classList.remove('show');
-  document.getElementById('devtoolsSidebar').classList.remove('show');
-  setTimeout(function() { var g = document.getElementById('gearMenu'); if (g && !g.classList.contains('hidden')) g.classList.add('hidden'); }, 180);
-}
-
-function renderDevtoolsBody() {
-  var body = document.getElementById('devtoolsBody');
-  if (!body) return;
-  var testing = isTestMode();
-  var st = Clock._state();
-  var h = '';
-  h += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:10px;line-height:1.6">';
-  h += '状态：' + (testing ? '<b style="color:#b5462e">内测中（沙盒）</b>' : '真实环境') + '<br>';
-  h += '当前时间：' + (st.virtual ? '<b>'+ntFmt(st.ms)+'</b>（冻结）' : ntFmt(st.ms)+'（真实）');
-  h += '</div>';
-  if (!testing) {
-    h += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:10px">进入后数据写入沙盒，退出即还原真实数据。仅管理员可用。</div>';
-    h += '<button class="btn pri" style="width:100%" onclick="enterTestWorld()">🧪 进入内测世界</button>';
-  } else {
-    var cur = st.virtual ? st.ms : Clock.ms();
-    h += '<label style="font-size:.72rem;color:var(--muted)">跳到某天（UTC+8）</label>';
-    h += '<input type="datetime-local" id="ntDateInput" value="'+ntInputVal(cur)+'" style="width:100%;margin:4px 0 6px;padding:6px;border:1px solid var(--border);border-radius:6px;font-family:var(--font)">';
-    h += '<button class="btn pri" style="width:100%;margin-bottom:8px" onclick="ntJumpFreeze()">⏱️ 跳转并冻结</button>';
-    h += '<div style="display:flex;gap:4px;margin-bottom:8px">';
-    h += '<button class="btn" style="flex:1;padding:5px 0;font-size:.72rem" onclick="ntStep(-86400000)">−1天</button>';
-    h += '<button class="btn" style="flex:1;padding:5px 0;font-size:.72rem" onclick="ntStep(3600000)">+1时</button>';
-    h += '<button class="btn" style="flex:1;padding:5px 0;font-size:.72rem" onclick="ntStep(86400000)">+1天</button>';
-    h += '<button class="btn" style="flex:1;padding:5px 0;font-size:.72rem" onclick="ntStep(604800000)">+1周</button>';
-    h += '</div>';
-    h += '<button class="btn" style="width:100%;margin-bottom:12px" onclick="ntResetTime()">↩️ 恢复真实时间</button>';
-    h += '<hr style="border-color:var(--border);margin:4px 0 10px">';
-    h += '<button class="btn" style="width:100%;color:#b5462e;border-color:#b5462e" onclick="exitTestWorld()">🚪 退出内测并还原真实数据</button>';
-  }
-  body.innerHTML = h;
-}
-
-// 启动时恢复横幅（崩溃/未退出场景：横幅=唯一安全出口）
-document.addEventListener('DOMContentLoaded', function() { try { updateTestBanner(); } catch(e){} });
-// NT-TEST:END
 
 // ═══ Invite Code Sidebar ═══
 var inviteSidebarTab = 'adventurer';
