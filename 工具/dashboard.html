@@ -517,7 +517,9 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
         <button class="btn" onclick="loadData();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-folder-open"></i> 加载数据</button>
         <button class="btn" onclick="exportData();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-download"></i> 导出数据</button>
         <button class="btn" id="btnInviteCode" onclick="showInviteSidebar()" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-keyhole"></i> 邀请码</button>
+        <!-- NT-TEST:START -->
         <button class="btn" id="btnDevtools" onclick="showDevtoolsSidebar()" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-flask"></i> 内测世界</button>
+        <!-- NT-TEST:END -->
         <hr style="border-color:var(--border);margin:2px 0">
         <button class="btn" onclick="showVillageSquare();toggleDropdown('gearMenu')" style="text-align:left;font-size:.8rem"><i class="ph-duotone ph-house"></i> 回南塘村口</button>
         <hr style="border-color:var(--border);margin:2px 0">
@@ -1424,12 +1426,14 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
   <div class="is-body" id="inviteSidebarBody"></div>
 </div>
 
+<!-- NT-TEST:START -->
 <!-- 内测世界 Sidebar（管理员 · 复用 invite-sidebar 类，不新增 CSS）-->
 <div class="invite-backdrop" id="devtoolsBackdrop" onclick="closeDevtoolsSidebar()"></div>
 <div class="invite-sidebar" id="devtoolsSidebar">
   <div class="is-header"><span style="font-weight:700;font-size:.85rem">🧪 内测世界</span><button onclick="closeDevtoolsSidebar()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:2px 4px">✕</button></div>
   <div class="is-body" id="devtoolsBody"></div>
 </div>
+<!-- NT-TEST:END -->
 
 <!-- Reviewer Picker Dropdown -->
 <div class="picker-dropdown hidden" id="pickerDropdown">
@@ -1500,14 +1504,21 @@ var Clock = (function () {
   var TZ_MIN = 8 * 60;                 // 锁定 UTC+8（Asia/Shanghai）
   function _wall() { return Date.now(); }   // 真实设备时钟：ID 用，永远真实
 
+  // NT-TEST:START
   // ── 第三期内测注入：冻结时刻（null=真实时间；有值=全系统时间钉在该毫秒）──
   var _frozenMs = null;
   try { var _sv = localStorage.getItem('nt_virtual_ms');            // 加载时恢复，跨刷新/切用户保持同一虚拟日
         if (_sv != null && _sv !== '') { var _n = parseInt(_sv, 10); if (!isNaN(_n)) _frozenMs = _n; } } catch (e) {}
   function _persistV() { try { if (_frozenMs == null) localStorage.removeItem('nt_virtual_ms');
                                else localStorage.setItem('nt_virtual_ms', String(_frozenMs)); } catch (e) {} }
+  // NT-TEST:END
 
-  function _now()  { return _frozenMs == null ? _wall() : _frozenMs; }  // 应用时钟：冻结则返回虚拟时刻
+  function _now()  {
+    // NT-TEST:START
+    if (_frozenMs != null) return _frozenMs;
+    // NT-TEST:END
+    return _wall();
+  }  // 应用时钟：冻结则返回虚拟时刻
   function _shift(ms) { return new Date(ms + TZ_MIN * 60000); }  // 移到锁定时区再取字段
   function _p2(n) { return (n < 10 ? '0' : '') + n; }
 
@@ -1519,13 +1530,14 @@ var Clock = (function () {
              return d.getUTCFullYear() + '-' + _p2(d.getUTCMonth() + 1) + '-' + _p2(d.getUTCDate()); },
     hour:  function () { return _shift(_now()).getUTCHours(); },
     min:   function () { return _shift(_now()).getUTCMinutes(); },
-    stamp: function () { return _wall().toString(36); },               // ID 前缀；后缀 Math.random() 由调用处保留；恒真实，不受冻结影响
-
+    stamp: function () { return _wall().toString(36); }                // ID 前缀；后缀 Math.random() 由调用处保留；恒真实，不受冻结影响
+    // NT-TEST:START
     // ── 第三期内测接口（真实模式下永不调用）──
-    _setFrozen: function (ms) { _frozenMs = ms; _persistV(); },        // 跳到并冻结在某毫秒
-    _step: function (deltaMs) { if (_frozenMs == null) _frozenMs = _wall(); _frozenMs += deltaMs; _persistV(); }, // 步进（±小时/天/周）
-    _reset: function () { _frozenMs = null; _persistV(); },            // 恢复真实时间
-    _state: function () { return { virtual: _frozenMs != null, ms: _now() }; }
+    ,_setFrozen: function (ms) { _frozenMs = ms; _persistV(); },       // 跳到并冻结在某毫秒
+    ,_step: function (deltaMs) { if (_frozenMs == null) _frozenMs = _wall(); _frozenMs += deltaMs; _persistV(); }, // 步进（±小时/天/周）
+    ,_reset: function () { _frozenMs = null; _persistV(); },           // 恢复真实时间
+    ,_state: function () { return { virtual: _frozenMs != null, ms: _now() }; }
+    // NT-TEST:END
   };
 })();
 
@@ -2703,8 +2715,10 @@ function showMainInterface(identity, targetTab) {
       if (nt) nt.classList.add('hidden');
       var ib = document.getElementById('btnInviteCode');
       if (ib) ib.classList.add('hidden');
+      // NT-TEST:START
       var dv = document.getElementById('btnDevtools');
       if (dv) dv.classList.add('hidden');
+      // NT-TEST:END
     }
   } else {
     document.body.classList.add('adventurer-mode');
@@ -5993,6 +6007,7 @@ function executePostTask() {
   setStatus('已发布：' + task.name + (task.points > 0 ? '（已扣除 ' + task.points + ' NT）' : ''));
 }
 
+// NT-TEST:START
 // ═══════════ 内测世界（Devtools · 管理员时间/沙盒内测）═══════════
 // 数据隔离：进入内测时备份真实 camp_data，测试写入照常落 camp_data（成沙盒），退出即还原。
 // 时间：走 Clock 冻结注入（见 Clock._setFrozen/_step/_reset）。横幅为唯一常驻状态+退出出口（不分角色）。
@@ -6116,6 +6131,7 @@ function renderDevtoolsBody() {
 
 // 启动时恢复横幅（崩溃/未退出场景：横幅=唯一安全出口）
 document.addEventListener('DOMContentLoaded', function() { try { updateTestBanner(); } catch(e){} });
+// NT-TEST:END
 
 // ═══ Invite Code Sidebar ═══
 var inviteSidebarTab = 'adventurer';
