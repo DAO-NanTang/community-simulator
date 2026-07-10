@@ -4,6 +4,12 @@ _backup_*
 *_backup_*.html
 *_archive_*.html
 
+# Git internals / local archives (do not commit)
+.git-rewrite/
+工具/存档/
+工具/archive/
+工具/dashboard_2026*.html
+
 # Dependencies
 node_modules/
 __pycache__/
