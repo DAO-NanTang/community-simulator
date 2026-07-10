@@ -1893,7 +1893,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var allUsers = getUsers();
   var needSave = false;
   Object.keys(allUsers).forEach(function(n) {
-    if (!allUsers[n].uid) { allUsers[n].uid = generateUID(); needSave = true; }
+    if (!allUsers[n].uid) { allUsers[n].uid = generateUID(n); needSave = true; }
   });
   if (needSave) saveUsers(allUsers);
 
@@ -2270,13 +2270,13 @@ function migrateExistingMembers() {
   var users = getUsers();
   var staffNames = getStaffNames();
   (data.staff_cards || []).forEach(function(c) {
-    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, season: '', created: Clock.today(), uid: generateUID(), season_history: [{ role: 'builder', period: '', changed_at: Clock.today() }] };
+    if (!users[c.name]) users[c.name] = { name: c.name, role: 'builder', password: null, avatar_seed: c.avatar_seed || 0, season: '', created: Clock.today(), uid: generateUID(c.name), season_history: [{ role: 'builder', period: '', changed_at: Clock.today() }] };
   });
   Object.values(data.members || {}).forEach(function(m) {
     if (users[m.name]) return;
     var isStaff = staffNames.some(function(s) { return m.name === s; });
     var role = isStaff ? 'builder' : 'adventurer';
-    users[m.name] = { name: m.name, role: role, password: null, avatar_seed: m.avatar_seed || 0, season: '', created: Clock.today(), uid: generateUID(), season_history: [{ role: role, period: '', changed_at: Clock.today() }] };
+    users[m.name] = { name: m.name, role: role, password: null, avatar_seed: m.avatar_seed || 0, season: '', created: Clock.today(), uid: generateUID(m.name), season_history: [{ role: role, period: '', changed_at: Clock.today() }] };
   });
   saveUsers(users);
 }
@@ -2345,6 +2345,7 @@ function setMemberInitialNT(name, amount) {
     confirmed_by: '系统', note: '管理员设定初始NT（测试）', tx_hash: ''
   });
   saveData();
+  if (currentUser && currentUser.name === name) updateWorldHUD();
 }
 
 // ═══ 统一角色变更：所有身份升级走这里 ═══
@@ -2406,8 +2407,9 @@ function changeUserRole(name, newRole, opts) {
   saveData();
 
   // Step 4: 如果改的是当前登录用户，刷新界面
-  if (currentUser && currentUser.name === name) {
+  if (currentUser && currentUser.name === name && !opts.skipUI) {
     currentUser.role = newRole;
+    safeStorage.setItem(NT_SESSION_KEY, JSON.stringify(currentUser)); // 同步 session，防止刷新后回退
     refreshUserHUD();
     var newId = getIdentity(currentUser);
     showMainInterface(newId, 'workspace');
@@ -2456,7 +2458,7 @@ function closePeriod() {
     var history = u.season_history || [];
     var inPeriod = history.some(function(h) { return h.period === curPeriod; });
     if (!inPeriod) return;
-    var result = changeUserRole(name, 'npc', { fromRole: 'adventurer', period: curPeriod+'（完结）' });
+    var result = changeUserRole(name, 'npc', { fromRole: 'adventurer', period: curPeriod+'（完结）', skipUI: true });
     if (result && result.ok) count++;
   });
   data.periodClosed = curPeriod;
@@ -2497,7 +2499,15 @@ function doRegister() {
   if (!result.ok) { errEl.textContent = result.error; return; }
   loginUser(name, password, false);
 }
-function generateUID() { return 'u_' + Clock.stamp() + Math.random().toString(36).slice(2,6); }
+function generateUID(name) {
+  // 格式：NT + 时间戳后6位 + '-' + 名字缩写（前2-3个字母/汉字）
+  var num = String(Clock.stamp()).slice(-6);
+  if (name) {
+    var abbr = name.replace(/[^a-zA-Z一-鿿]/g, '').slice(0, 3);
+    return 'NT' + num + '-' + abbr;
+  }
+  return 'NT' + num;
+}
 
 function registerUser(name, password, role, avatarSeed, inviteCode) {
   var users = getUsers();
@@ -2508,7 +2518,7 @@ function registerUser(name, password, role, avatarSeed, inviteCode) {
     if (!codes.includes(inviteCode)) return { ok: false, error: '邀请码无效' };
     saveWorldCodes(codes.filter(function(c) { return c !== inviteCode; }));
   }
-  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, season: '', created: Clock.today(), world_id: (role === 'adventurer') ? inviteCode : null, uid: generateUID(), season_history: [{ role: role, period: '', changed_at: Clock.today() }] };
+  users[name] = { name: name, role: role, password: encodePassword(password, name), avatar_seed: avatarSeed, season: '', created: Clock.today(), world_id: (role === 'adventurer') ? inviteCode : null, uid: generateUID(name), season_history: [{ role: role, period: '', changed_at: Clock.today() }] };
   saveUsers(users);
   if (!data.members) data.members = {};
   if (!data.members[name]) { data.members[name] = { name: name, role: role, avatar_seed: avatarSeed, gender: '' }; saveData(); }
@@ -2684,6 +2694,7 @@ function resetAllData() {
 // ═══ 统一主界面入口：所有路径都走这里，保证展示一致 ═══
 // identity: getIdentity() 返回的工牌对象  targetTab: 要打开的 tab（默认从工牌取）
 function showMainInterface(identity, targetTab) {
+  if (!identity) return;
   hidePlazaPlaceholder();
   document.getElementById('worldHUD').classList.remove('hidden');
   hideAllTabs();
@@ -3076,10 +3087,10 @@ function renderVillageActivityList() {
     '<div style="font-size:.8rem;color:var(--muted);margin:4px 0">2026年7月 · 进行中 · 12人活跃</div>'+
     '<div style="font-size:.82rem">工笔画创作、在地生活、展览布置…</div>'+
     (isMember ?
-      '<div style="margin-top:10px"><button class="btn pri" onclick="closeVillageModal(\'activity\');hidePlazaPlaceholder();switchTab(\'workspace\')" style="font-size:.82rem;padding:8px 20px">→ 进入营队</button> '+
+      '<div style="margin-top:10px"><button class="btn pri" onclick="closeVillageModal(\'activity\');showMainInterface(getIdentity(currentUser),\'workspace\')" style="font-size:.82rem;padding:8px 20px">→ 进入营队</button> '+
       '<button class="btn" onclick="openActivityCommunity()" style="font-size:.82rem;padding:8px 20px" id="btnActivityCommunity">👀 浏览营地 ▾</button></div>' :
       '<div style="margin-top:8px"><input id="villageInviteCode" placeholder="输入邀请码" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:.82rem;width:180px"> '+
-      '<button class="btn pri" onclick="var c=document.getElementById(\'villageInviteCode\').value;if(c){var r=doUpgradeWithCode(c);if(r&&r.ok){closeVillageModal(\'activity\');hidePlazaPlaceholder();switchTab(\'workspace\');}}" style="font-size:.78rem">→ 成为冒险者</button> '+
+      '<button class="btn pri" onclick="var c=document.getElementById(\'villageInviteCode\').value;if(c){var r=doUpgradeWithCode(c);if(r&&r.ok){closeVillageModal(\'activity\');showMainInterface(getIdentity(currentUser),\'workspace\');}}" style="font-size:.78rem">→ 成为冒险者</button> '+
       '<button class="btn" onclick="openActivityCommunity()" style="font-size:.78rem" id="btnActivityCommunity">👀 浏览营地 ▾</button></div>')+
     '</div>';
   html += '<div style="border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:10px;opacity:.6">'+
@@ -3096,6 +3107,7 @@ function doUpgradeWithCode(code) {
   if (!code) return {ok:false};
   var result = changeUserRole(currentUser.name, 'adventurer', { period: '第四期', inviteCode: code });
   if (!result.ok) { alert(result.error); return {ok:false}; }
+  currentUser.role = 'adventurer'; // 同步更新内存中的角色
   alert('✅ 已升级为冒险者！即将进入营队界面');
   return {ok:true};
 }
@@ -3360,8 +3372,39 @@ function computeInboxMessages() {
     });
   }
 
+  // ── 打赏通知（所有角色）──
+  var _tipsMyName = currentUser.name;
+  (data.tips || []).forEach(function(tp, i) {
+    if (tp.to !== _tipsMyName) return;
+    var fromLabel = tp.anonymous ? '匿名' : tp.from;
+    var giftDesc = (tp.item || tp.emoji || '') + (tp.label || '');
+    msgs.push({
+      type: 'tip_received', category: 'tip', lifespan: 'archive',
+      from: tp.from, to: tp.to, item: tp.item, emoji: tp.emoji, label: tp.label,
+      nt: tp.nt, anonymous: !!tp.anonymous,
+      text: fromLabel + ' 送了 ' + giftDesc + (tp.nt > 0 ? ' · ' + tp.nt + 'NT' : ''),
+      createdAt: tp.at,
+      jump: { tab: 'profile', highlight: null }
+    });
+  });
+
   // 社区空间提醒（素社/桌游/客栈，对所有角色生效）
   msgs = msgs.concat(computeMealReminders(), computeGameReminders(), computeInnReminders(), computeCouncilReminders(), computeAuctionReminders());
+
+  // Assign category and lifespan to all messages
+  msgs.forEach(function(m) {
+    if (!m.category) {
+      if (['submitted','review_approved','review_rejected'].indexOf(m.type) !== -1) m.category = 'review';
+      else if (['overdue','deadline_close','progress_low'].indexOf(m.type) !== -1) m.category = 'task';
+      else if (['nt_received','pool_low'].indexOf(m.type) !== -1) m.category = 'finance';
+      else m.category = 'activity';
+    }
+    if (!m.lifespan) {
+      if (['nt_received','tip_received','review_approved','review_rejected','auction_won','auction_refunded'].indexOf(m.type) !== -1) m.lifespan = 'archive';
+      else if (['submitted','overdue'].indexOf(m.type) !== -1) m.lifespan = 'todo';
+      else m.lifespan = 'ephemeral';
+    }
+  });
 
   // Assign unique IDs for per-message read tracking
   msgs.forEach(function(m, i) {
@@ -3389,21 +3432,30 @@ function renderInbox() {
     });
   }
 
-  var msgs = computeInboxMessages();
-  var newMsgs = msgs.filter(function(m) { return isInboxMsgNew(m.id); });
-  var oldMsgs = msgs.filter(function(m) { return !isInboxMsgNew(m.id); });
+  var allMsgs = computeInboxMessages();
+  // Inbox shows: todo(all) + ephemeral(unread) + archive(unread)
+  var msgs = allMsgs.filter(function(m) {
+    if (m.lifespan === 'todo') return true;
+    return isInboxMsgNew(m.id); // ephemeral & archive: only show unread
+  });
+  if (!window._inboxCategory) window._inboxCategory = 'all';
+  var catMsgs = window._inboxCategory === 'all' ? msgs : msgs.filter(function(m) { return m.category === window._inboxCategory; });
+  var newMsgs = catMsgs.filter(function(m) { return isInboxMsgNew(m.id); });
+  var oldMsgs = catMsgs.filter(function(m) { return !isInboxMsgNew(m.id); });
 
   var TYPE_ICON = {
     submitted: '🆕', overdue: '⚠️', progress_low: '📉', pool_low: '🔴',
     review_approved: '✅', review_rejected: '❌', deadline_close: '⏰', nt_received: '💰',
     meal_reminder: '⏰', meal_time: '🍽️', meal_pay: '💳', game_soon: '🎲', inn_checkin: '🏨', inn_checkout: '🧳',
-    meeting_notice: '🗳️', meeting_soon: '⏰', auction_soon: '🔨', auction_won: '🎉', auction_refunded: '💰'
+    meeting_notice: '🗳️', meeting_soon: '⏰', auction_soon: '🔨', auction_won: '🎉', auction_refunded: '💰',
+    tip_received: '💝'
   };
   var TYPE_LABEL = {
     submitted: '待审核', overdue: '逾期', progress_low: '进度掉队', pool_low: 'NT池预警',
     review_approved: '审核通过', review_rejected: '审核退回', deadline_close: '截止临近', nt_received: 'NT到账',
     meal_reminder: '订餐提醒', meal_time: '用餐提醒', meal_pay: '用餐支付', game_soon: '桌游开局', inn_checkin: '入住', inn_checkout: '退房',
-    meeting_notice: '开会通知', meeting_soon: '会议临近', auction_soon: '拍卖即将开始', auction_won: '拍得物品', auction_refunded: '保证金退回'
+    meeting_notice: '开会通知', meeting_soon: '会议临近', auction_soon: '拍卖即将开始', auction_won: '拍得物品', auction_refunded: '保证金退回',
+    tip_received: '打赏'
   };
 
   function renderMsg(m) {
@@ -3440,6 +3492,7 @@ function renderInbox() {
       case 'auction_soon': body = '🔨「'+esc(m.title)+'」拍卖会即将在 '+esc(m.location||'')+' 开始'; break;
       case 'auction_won': body = '🎉 你以 '+m.price+' NT 拍得「'+esc(m.title)+'」'; break;
       case 'auction_refunded': body = '💰 拍卖结束，保证金 '+m.deposit+' NT 已退回'; break;
+      case 'tip_received': body = (m.anonymous ? '匿名' : esc(m.from)) + ' 送了 ' + (m.item||m.emoji||'') + (m.label||'') + (m.nt > 0 ? ' · ' + m.nt + 'NT' : ''); break;
       default: body = m.text || '';
     }
     return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px" onclick="jumpFromInbox(\'' + escAttr(m.jump.tab) + '\', ' + (m.jump.highlight ? JSON.stringify(m.jump.highlight).replace(/"/g, '&quot;') : 'null') + ', \'' + escAttr(m.id) + '\')" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">' +
@@ -3450,23 +3503,39 @@ function renderInbox() {
   }
 
   var html = '';
+  // ── 分类标签 ──
+  var CATS = [{k:'all',l:'全部'},{k:'review',l:'审批'},{k:'task',l:'任务'},{k:'tip',l:'打赏'},{k:'finance',l:'财务'},{k:'activity',l:'活动'}];
+  html += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">';
+  CATS.forEach(function(c) {
+    var cnt = c.k === 'all' ? msgs.length : msgs.filter(function(m) { return m.category === c.k; }).length;
+    var active = window._inboxCategory === c.k;
+    html += '<button onclick="window._inboxCategory=\''+c.k+'\';renderInbox()" style="font-size:.64rem;padding:3px 7px;border-radius:12px;border:1px solid '+(active?'var(--accent)':'var(--border)')+';background:'+(active?'var(--accent)':'var(--bg)')+';color:'+(active?'#fff':'var(--muted)')+';cursor:pointer;font-family:var(--font)">'+c.l+(cnt>0?' '+cnt:'')+'</button>';
+  });
+  html += '</div>';
+
   if (newMsgs.length > 0) {
     html += '<div style="font-size:.75rem;color:var(--red);font-weight:700;margin-bottom:6px">🔴 新消息（' + newMsgs.length + '）</div>';
     newMsgs.slice(0, 10).forEach(function(m) { html += renderMsg(m); });
     if (newMsgs.length > 10) html += '<div style="font-size:.75rem;color:var(--muted);text-align:center;padding:4px">还有 ' + (newMsgs.length - 10) + ' 条…</div>';
   } else {
-    html += '<div style="font-size:.75rem;color:var(--green);margin-bottom:6px">✅ 没有新消息</div>';
+    if (catMsgs.length === 0) {
+      if (window._inboxCategory !== 'all') html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:6px">📭 此分类暂无消息</div>';
+      else html += '<div style="font-size:.75rem;color:var(--green);margin-bottom:6px">✅ 没有新消息</div>';
+    } else {
+      html += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:6px">📋 ' + catMsgs.length + ' 条历史消息</div>';
+    }
   }
 
   if (oldMsgs.length > 0) {
-    html += '<div style="font-size:.75rem;color:var(--muted);font-weight:600;margin:10px 0 6px;cursor:pointer" id="inboxOldToggle" onclick="var el=document.getElementById(\"inboxOldBody\");var tgl=document.getElementById(\"inboxOldToggle\");if(el.style.display===\"none\"){el.style.display=\"\";tgl.textContent=\"📋 更早（'+oldMsgs.length+'）▴\"}else{el.style.display=\"none\";tgl.textContent=\"📋 更早（'+oldMsgs.length+'）▾\"}">📋 更早（' + oldMsgs.length + '）▾</div>';
-    html += '<div id="inboxOldBody" style="display:none">';
+    var startExpanded = newMsgs.length === 0;
+    html += '<div style="font-size:.75rem;color:var(--muted);font-weight:600;margin:10px 0 6px;cursor:pointer" id="inboxOldToggle" onclick="var el=document.getElementById(\"inboxOldBody\");var tgl=document.getElementById(\"inboxOldToggle\");if(el.style.display===\"none\"){el.style.display=\"\";tgl.textContent=\"📋 更早（'+oldMsgs.length+'）▴\"}else{el.style.display=\"none\";tgl.textContent=\"📋 更早（'+oldMsgs.length+'）▾\"}">📋 更早（' + oldMsgs.length + '）' + (startExpanded ? '▴' : '▾') + '</div>';
+    html += '<div id="inboxOldBody"' + (startExpanded ? '' : ' style="display:none"') + '>';
     oldMsgs.slice(0, 20).forEach(function(m) { html += renderMsg(m); });
     if (oldMsgs.length > 20) html += '<div style="font-size:.75rem;color:var(--muted);text-align:center;padding:4px">还有 ' + (oldMsgs.length - 20) + ' 条…</div>';
     html += '</div>';
   }
 
-  html += '<div style="text-align:center;margin-top:10px"><button class="btn" onclick="markAllRead();renderInbox();closeInbox()" style="font-size:.75rem;padding:4px 12px">✅ 全部标为已读</button></div>';
+  html += '<div style="text-align:center;margin-top:10px"><button class="btn" onclick="markAllRead();renderInbox()" style="font-size:.75rem;padding:4px 12px">✅ 全部标为已读</button></div>';
   html += '<div style="font-size:.64rem;color:var(--muted);text-align:center;margin-top:6px">🔔 素社/桌游/客栈提醒仅在打开页面时生效（纯前端限制）</div>';
 
   document.getElementById('inboxContent').innerHTML = html;
@@ -3478,6 +3547,7 @@ function closeInbox() {
   var panel = document.getElementById('inboxPanel');
   if (panel) panel.classList.add('hidden');
 }
+
 
 function toggleInbox() {
   var panel = document.getElementById('inboxPanel');
@@ -3643,6 +3713,7 @@ function renderDraftBox() {
 // ── 社区窗口：嵌入社区副本 Modal 内（唯一版本）──
 function renderCommunityWindowEmbedded() {
   var h = '';
+  var selfId = currentUser ? getIdentity(currentUser) : null;
   var tasks = data.tasks || [];
   var staff = data.staff_cards || [];
   var members = data.members || {};
@@ -5292,19 +5363,20 @@ function _repositionHubSub() {
   }
 }
 window.addEventListener('resize', _repositionHubSub);
-var _hubScrollTimer = null;
+var _hubScrollRaf = null;
 window.addEventListener('scroll', function() {
-  if (_hubScrollTimer) return;
-  _hubScrollTimer = setTimeout(function() { _hubScrollTimer = null; _repositionHubSub(); }, 50);
-});
+  if (_hubScrollRaf) return;
+  _hubScrollRaf = requestAnimationFrame(function() { _hubScrollRaf = null; _repositionHubSub(); });
+}, {passive: true});
 
 function closeHubSub() {
+  // 三级 → 二级：案卷开着先返回目录
+  if (window._dossierName) { closeMemberDossier(); return; }
   window._hubSubPage = '';
   var sp = document.getElementById('hubSubPanel');
   var bd = document.getElementById('hubSlideBackdrop');
   if (sp) sp.classList.remove('show');
   if (bd) bd.classList.remove('show');
-  // Do NOT hide dropdown - user must close sub-panel first
 }
 
 // ═══ 集市内容（终端风内嵌版）═══ — 保留旧函数兼容
@@ -5470,6 +5542,7 @@ function renderQuestCard(t, opts) {
 var questScopeFilter = 'all'; // 'all' | 'camp' | 'personal'
 function renderQuestBoard() {
   var container = document.getElementById('questBoardContent'); if (!container) return; var tasks = data.tasks || []; var name = currentUser ? currentUser.name : '';
+  var id = currentUser ? getIdentity(currentUser) : null;
   var today = Clock.today();
 
   // ── Row 1: Scope + Quick (bigger) ──
@@ -5483,7 +5556,7 @@ function renderQuestBoard() {
   if (currentUser && (hasRole(currentUser, ['admin','npc']))) {
     var customTags = (data.custom_tags || []);
     customTags.forEach(function(ct){
-      fhtml += '<button class="btn'+(questLocFilter===ct?' pri':'')+'" onclick="questLocFilter=questLocFilter===ct?\'\':ct;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+esc(ct)+'<span onclick="event.stopPropagation();var t=data.custom_tags||[];t.splice(t.indexOf(\''+escAttr(ct)+'\'),1);localStorage.setItem(\'camp_data\',JSON.stringify(data));renderQuestBoard()" style="cursor:pointer;opacity:.4;font-size:.6rem;margin-left:3px" title="删除标签">×</span></button>';
+      fhtml += '<button class="btn'+(questTagFilter===ct?' pri':'')+'" onclick="questTagFilter=questTagFilter===ct?\'\':ct;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+esc(ct)+'<span onclick="event.stopPropagation();var t=data.custom_tags||[];var idx=t.indexOf(\''+escAttr(ct)+'\');if(idx>=0)t.splice(idx,1);saveData();renderQuestBoard()" style="cursor:pointer;opacity:.4;font-size:.6rem;margin-left:3px" title="删除标签">×</span></button>';
     });
     fhtml += '<input id="questNewTag" placeholder="+标签" style="width:48px;font-size:.68rem;padding:2px 4px;border:1px dashed var(--border);border-radius:4px;background:transparent" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v&&(!data.custom_tags||data.custom_tags.indexOf(v)<0)){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(v);localStorage.setItem(\'camp_data\',JSON.stringify(data));this.value=\'\';renderQuestBoard()}}">';
   }
@@ -5511,8 +5584,8 @@ function renderQuestBoard() {
     if (questQuickFilter === 'need_people' && (t.max_slots <= 0 || activeClaimants.length >= t.max_slots)) return false;
     if (questQuickFilter === 'submitted_all') { var allSub = activeClaimants.length > 0 && activeClaimants.every(function(c){return c.status==='submitted'||c.status==='completed';}); if (!allSub) return false; }
     // category filter
-    // custom tag filter（管理员/在地伙伴通过标签按钮设置，按任务类型匹配）
-    if (questLocFilter && t.type !== questLocFilter) return false;
+    // custom tag filter（管理员/在地伙伴通过标签按钮设置，按任务分类匹配）
+    if (questTagFilter && t.category !== questTagFilter) return false;
     // type filter
     if (questFilter === 'claimable') return isClaimable; if (questFilter === 'claimed') return isClaimed; if (questFilter !== 'all') return t.type === questFilter;
   });
@@ -5584,7 +5657,8 @@ function renderQuestBoard() {
 }
 var questQuickFilter = '';
 var questCatFilter = '';
-var questLocFilter = '';
+var questLocFilter = '';  // 地理位置过滤（预留）
+var questTagFilter = '';   // 自定义标签过滤，匹配 t.category
 
 // ── Adventurer: Leaderboard ──
 function renderLeaderboard() {
@@ -5600,7 +5674,7 @@ function hasNTRole() { if (!currentUser) return false; var staff = data.staff_ca
 
 function renderNTAdmin() {
   var tasks = data.tasks || []; var ntTasks = tasks.filter(function(t) { return t.claimants !== undefined && t.status !== 'pending_approval' && t.status !== 'draft'; });
-  if (!hasNTRole() && currentUser && currentUser.role !== 'admin') { document.getElementById('tab-ntadmin').innerHTML = '<div class="card"><div style="color:var(--muted);text-align:center;padding:40px">🔒 你没有 NT 管理权限<br><span style="font-size:.8rem">需要在 Step3 被分配 NT 角色</span></div></div>'; return; }
+  if (!hasNTRole() && currentUser && currentUser.role !== 'admin') { var _el = document.getElementById('ntadminTaskList'); if (_el) _el.innerHTML = '<div class="card"><div style="color:var(--muted);text-align:center;padding:40px">🔒 你没有 NT 管理权限<br><span style="font-size:.8rem">需要在 Step3 被分配 NT 角色</span></div></div>'; ['ntadminReviewList','ntadminPoolStats','ntadminClosePeriod','ntadminMemberNT'].forEach(function(_id) { var _e = document.getElementById(_id); if (_e) _e.innerHTML = ''; }); return; }
   // Approval queue
   var pendingCamp = tasks.filter(function(t) { return t.status === 'pending_approval'; });
   var html = '';
@@ -5730,6 +5804,7 @@ function deleteDraft(idx) {
   renderWorkspace(); setStatus('草稿已删除');
 }
 function publishDraft(idx) {
+  if (!currentUser) return;
   var t = data.tasks[idx];
   var points = t.points||0;
   var myNT = calcNtTotal(currentUser.name);
@@ -5833,7 +5908,7 @@ function reviewWithdrawal(idx, action) {
   setStatus(action === 'approve' ? '已通过撤回：' + t.name : '已拒绝撤回：' + t.name);
 }
 
-function reviewTask(idx, claimantName, action) { var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; if (t.reviewer && currentUser.name !== t.reviewer && currentUser.name !== t.poster) { alert('该任务指定由 ' + t.reviewer + ' 审核'); return; } if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = Clock.today(); recordTransaction({ type: TX_TYPES.TASK_REWARD, from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } saveData(); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
+function reviewTask(idx, claimantName, action) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; if (t.reviewer && currentUser.name !== t.reviewer && currentUser.name !== t.poster) { alert('该任务指定由 ' + t.reviewer + ' 审核'); return; } if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = Clock.today(); recordTransaction({ type: TX_TYPES.TASK_REWARD, from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } saveData(); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); }
 function showPostTask() {
   if (!currentUser) { alert('请先登录'); return; }
   document.getElementById('postTaskName').value = '';
@@ -6400,7 +6475,7 @@ function renderArchiveHub() {
     h += '<div style="margin-bottom:12px"><div style="font-weight:600;font-size:.78rem;margin-bottom:6px;color:var(--text)">📂 '+esc(identity)+'（'+list.length+'人）</div>';
     list.forEach(function(p) {
       var si = (members[p.name] && members[p.name].avatar_seed !== undefined) ? members[p.name].avatar_seed : ((users[p.name]||{}).avatar_seed || 0);
-      h += '<div onclick="showContactCard(\''+escAttr(p.name)+'\',this)" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;font-size:.75rem" onmouseover="this.style.background=\'#f8f4ec\'" onmouseout="this.style.background=\'\'">';
+      h += '<div onclick="openMemberDossier(\''+escAttr(p.name)+'\')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;font-size:.75rem" onmouseover="this.style.background=\'#f8f4ec\'" onmouseout="this.style.background=\'\'">';
       h += avatarCircle(si, 24, 0);
       h += '<span style="flex:1;font-weight:500">'+esc(p.name)+'</span>';
       h += '<span style="color:var(--muted);font-size:.68rem">💎'+p.nt.toLocaleString()+'</span>';
@@ -6414,6 +6489,142 @@ function renderArchiveHub() {
 
 // ═══ 物品渲染共用（集市+工作台同步）═══
 var _CAT_ICONS = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
+
+
+// ── 个人案卷（查询原始数据，不依赖 currentUser）──
+function getMemberRecords(name) {
+  var records = [];
+  // 打赏记录
+  (data.tips || []).forEach(function(tp) {
+    if (tp.to === name) {
+      records.push({ type:'tip_received', category:'tip', icon:'💝', label:'收到打赏',
+        from: tp.from, to: tp.to, item: tp.item, emoji: tp.emoji, giftLabel: tp.label,
+        nt: tp.nt, anonymous: !!tp.anonymous, date: tp.at,
+        text: (tp.anonymous?'匿名':esc(tp.from))+' 送了 '+(tp.item||tp.emoji||'')+(tp.label||'')+(tp.nt>0?' · '+tp.nt+'NT':'') });
+    }
+    if (tp.from === name) {
+      records.push({ type:'tip_sent', category:'tip', icon:'💝', label:'送出打赏',
+        from: tp.from, to: tp.to, item: tp.item, emoji: tp.emoji, giftLabel: tp.label,
+        nt: tp.nt, anonymous: !!tp.anonymous, date: tp.at,
+        text: '送给 '+esc(tp.to)+' '+(tp.item||tp.emoji||'')+(tp.label||'')+(tp.nt>0?' · '+tp.nt+'NT':'') });
+    }
+  });
+  // 财务记录
+  (data.finance || []).forEach(function(tx) {
+    if (tx.to === name && tx.type === 'task_reward') {
+      records.push({ type:'nt_received', category:'finance', icon:'💰', label:'任务奖励',
+        amount: tx.amount||0, task: tx.task_name||'', date: tx.date||tx.created_at||'',
+        text: '收到 NT '+(tx.amount||0).toLocaleString()+(tx.task_name?'（来自「'+esc(tx.task_name)+'」）':'') });
+    }
+    if (tx.from === name && tx.type === 'tip') {
+      records.push({ type:'tip_paid', category:'finance', icon:'💳', label:'打赏支出',
+        amount: tx.amount||0, item: tx.item_name||'', date: tx.date||tx.created_at||'',
+        text: '打赏 '+esc(tx.to||'')+' · -'+(tx.amount||0).toLocaleString()+' NT' });
+    }
+  });
+  // 任务审核记录
+  (data.tasks || []).forEach(function(t) {
+    (t.claimants||[]).forEach(function(c) {
+      if (c.name !== name) return;
+      if (c.status === 'completed') {
+        records.push({ type:'review_approved', category:'review', icon:'✅', label:'审核通过',
+          task: t.name, points: t.points||0, date: c.reviewed_at||'',
+          text: '「'+esc(t.name)+'」已通过审核 · +'+(t.points||0)+' NT' });
+      } else if (c.status === 'rejected') {
+        records.push({ type:'review_rejected', category:'review', icon:'❌', label:'审核退回',
+          task: t.name, reason: c.review_note||'', date: c.reviewed_at||'',
+          text: '「'+esc(t.name)+'」被退回'+(c.review_note?' · '+esc(c.review_note):'') });
+      }
+    });
+  });
+  // 拍卖记录
+  (data.auctions||[]).forEach(function(a) {
+    if (a.winner === name && a.status === 'done') {
+      records.push({ type:'auction_won', category:'activity', icon:'🎉', label:'拍得物品',
+        title: a.title, price: a.final_price, date: a.ended_at||Clock.today(),
+        text: '以 '+a.final_price+' NT 拍得「'+esc(a.title)+'」' });
+    }
+    var isBidder = (a.bidders||[]).some(function(b){return b.name===name;});
+    if (a.status==='done' && isBidder && a.winner!==name) {
+      records.push({ type:'auction_refunded', category:'activity', icon:'💰', label:'保证金退回',
+        title: a.title, deposit: a.deposit, date: a.ended_at||Clock.today(),
+        text: '拍卖结束，保证金 '+a.deposit+' NT 已退回（「'+esc(a.title)+'」）' });
+    }
+  });
+  // 按日期倒序
+  records.sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  return records;
+}
+
+function openMemberDossier(name) {
+  window._dossierName = name;
+  window._dossierCategory = 'all';
+  renderMemberDossier();
+}
+
+function closeMemberDossier() {
+  window._dossierName = null;
+  // Refresh archive hub to show directory
+  var body = document.getElementById('hubSlideBody');
+  if (body) body.innerHTML = renderArchiveHub();
+  var title = document.getElementById('hubSlideTitle');
+  if (title) title.textContent = '📚 档案室';
+}
+
+function renderMemberDossier() {
+  var name = window._dossierName;
+  if (!name) return;
+  var body = document.getElementById('hubSlideBody');
+  if (!body) return;
+  var title = document.getElementById('hubSlideTitle');
+  if (title) title.textContent = '📋 个人案卷 · '+name;
+
+  var users = getUsers();
+  var u = users[name] || {};
+  var mi = (data.members&&data.members[name])||{};
+  var nt = calcNtTotal(name);
+  var si = (mi.avatar_seed!==undefined)?mi.avatar_seed:(u.avatar_seed||0);
+  var identity = mi.identity||(ROLE_TITLES[u.role]?ROLE_TITLES[u.role].replace(/[^一-龥]/g,''):'')||u.role||'云村民';
+
+  var records = getMemberRecords(name);
+  if (!window._dossierCategory) window._dossierCategory = 'all';
+  var catRecords = window._dossierCategory==='all'?records:records.filter(function(r){return r.category===window._dossierCategory;});
+
+  var h = '';
+  // Back button
+  h += '<button onclick="closeMemberDossier()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:.75rem;padding:0;margin-bottom:10px">← 返回成员总览</button>';
+  // Member header
+  h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px;background:var(--bg);border-radius:8px">';
+  h += avatarCircle(si,40,0);
+  h += '<div style="flex:1"><div style="font-weight:700;font-size:.85rem">'+esc(name)+'</div>';
+  h += '<div style="font-size:.68rem;color:var(--muted)">'+esc(identity)+(mi.season||u.season?' · 第'+esc(mi.season||u.season||'')+'期':'')+(u.created?' · '+daysSince(u.created)+'天':'')+'</div></div>';
+  h += '<div style="text-align:right"><div style="font-weight:700;color:var(--accent)">💎 '+nt.toLocaleString()+'</div><div style="font-size:.62rem;color:var(--muted)">NT 余额</div></div></div>';
+  // Category tabs
+  var CATS = [{k:'all',l:'全部'},{k:'review',l:'审批'},{k:'tip',l:'打赏'},{k:'finance',l:'财务'},{k:'activity',l:'活动'}];
+  h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">';
+  CATS.forEach(function(c){
+    var cnt = c.k==='all'?records.length:records.filter(function(r){return r.category===c.k;}).length;
+    var active = window._dossierCategory===c.k;
+    h += '<button onclick="window._dossierCategory=\''+c.k+'\';renderMemberDossier()" style="font-size:.64rem;padding:3px 7px;border-radius:12px;border:1px solid '+(active?'var(--accent)':'var(--border)')+';background:'+(active?'var(--accent)':'var(--bg)')+';color:'+(active?'#fff':'var(--muted)')+';cursor:pointer;font-family:var(--font)">'+c.l+(cnt>0?' '+cnt:'')+'</button>';
+  });
+  h += '</div>';
+  // Records list
+  if (catRecords.length===0) {
+    h += '<div style="text-align:center;color:var(--muted);padding:30px;font-size:.78rem">📭 此分类暂无记录</div>';
+  } else {
+    catRecords.slice(0,60).forEach(function(r){
+      h += '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 4px;border-bottom:1px dotted var(--border);font-size:.75rem">';
+      h += '<span style="font-size:.9rem;flex-shrink:0">'+r.icon+'</span>';
+      h += '<div style="flex:1;min-width:0">';
+      h += '<div style="font-size:.64rem;color:var(--muted)">'+esc(r.label)+'</div>';
+      h += '<div>'+r.text+'</div>';
+      h += '<div style="font-size:.62rem;color:var(--muted)">'+esc(r.date||'')+'</div>';
+      h += '</div></div>';
+    });
+    if (catRecords.length>60) h += '<div style="text-align:center;color:var(--muted);padding:6px;font-size:.7rem">还有 '+(catRecords.length-60)+' 条…</div>';
+  }
+  body.innerHTML = h;
+}
 
 function _renderListedItems(items) {
   var h = '';
@@ -6625,27 +6836,6 @@ function closeCampTaskModal() { document.getElementById('campTaskModal').classLi
 function confirmCampTask() { var name = document.getElementById('campTaskName').value.trim(); if (!name) { alert('请输入任务名称'); return; } var points = parseInt(document.getElementById('campTaskPoints').value) || 0; var reviewer = document.getElementById('campTaskReviewer').value.trim(); var reqNote = document.getElementById('campReqNote').checked; var reqPhoto = document.getElementById('campReqPhoto').checked; var reqFile = document.getElementById('campReqFile').checked; var photoCount = parseInt(document.getElementById('campReqPhotoCount').value) || 1; var fileCount = parseInt(document.getElementById('campReqFileCount').value) || 1; var submitReqs = []; if (reqNote) submitReqs.push('note'); if (reqPhoto) submitReqs.push({ type: 'photo', min: photoCount }); if (reqFile) submitReqs.push({ type: 'file', min: fileCount }); var task = { name: name, scope: 'camp', type: document.getElementById('campTaskType').value, category: document.getElementById('campTaskCategory').value, points: points || 15, max_slots: parseInt(document.getElementById('campTaskSlots').value) || 0, start: document.getElementById('campTaskStart').value.trim(), deadline: isoToDeadline(document.getElementById('campTaskDeadline').value), note: document.getElementById('campTaskNote').value.trim(), source: '第四期NT任务系统', poster: currentUser ? currentUser.name : '', posted_at: Clock.today(), claimants: [], status: 'pending_approval', visibility: 'all', reviewer: reviewer, submit_requirements: submitReqs, min_season: 0 }; _pendingPostTask = task; document.getElementById('campTaskFormWrap').style.display = 'none'; document.getElementById('campTaskConfirmWrap').style.display = ''; document.getElementById('campTaskConfirmWrap').innerHTML = renderPostConfirmCard(task); }
 function executeCampTask() { var task = _pendingPostTask; if (!task) return; if (!data.tasks) data.tasks = []; data.tasks.push(task); saveData(); closeCampTaskModal(); _pendingPostTask = null; renderNTAdmin(); setStatus('已提交审核：' + task.name); }
 function approveCampTask(idx, approve) { var t = data.tasks[idx]; if (!t || t.status !== 'pending_approval') return; if (approve) { t.status = 'active'; setStatus('✅ 已通过：' + t.name); } else { t.status = 'rejected'; t.review_note = prompt('退回原因（可选）：') || ''; setStatus('❌ 已退回：' + t.name); } saveData(); renderNTAdmin(); if (!document.getElementById('tab-workspace').classList.contains('hidden')) renderWorkspace(); }
-
-function doUpgrade() {
-  var code = document.getElementById('upgradeCode').value.trim(); if (!code) return; if (!currentUser) return;
-  var result = changeUserRole(currentUser.name, 'adventurer', { period: '第四期', inviteCode: code });
-  if (result.ok) { enterWorld(currentUser); return; }
-  result = changeUserRole(currentUser.name, 'npc', { inviteCode: code });
-  if (result.ok) { alert('✅ 已升级为南塘在地伙伴！'); enterWorld(currentUser); return; }
-  alert(result.error || '邀请码无效');
-}
-
-// ── Legacy entry point (redirects to login page) ──
-function startGame(role) {
-  // Old entry replaced by Phase 1 login system
-  // Show login page instead
-  document.getElementById('defaultView').style.display = 'none';
-  document.getElementById('loginPage').style.display = 'flex';
-  showLoginEntry();
-  // For backward compat: directly enter world if session exists
-  var session = localStorage.getItem(NT_SESSION_KEY);
-  if (session) { try { currentUser = JSON.parse(session); enterWorld(currentUser); } catch(e) {} }
-}
 
 function switchTab(name, opts) {
   // ── Inbox highlight passthrough ──
@@ -7191,7 +7381,7 @@ function renderCompleteness() {
 // (original renderMembers restored)
 function isStaff2(name) {
   var staffNames = getStaffNames();
-  return staffNames.some(function(s) { return name.indexOf(s) !== -1; });
+  return staffNames.some(function(s) { return s === name; });
 }
 
 function renderMembers() {
@@ -9786,8 +9976,24 @@ function claimTasks() {
     card = { name: personName, role: role, note: note, task_names: [], _expanded: true, avatar_seed: newCardAvatarSeed, avatar_style: 0 };
     staffCards.push(card);
     if (!data.members) data.members = {};
-    if (!data.members[personName]) data.members[personName] = { name: personName, role: role, avatar_seed: newCardAvatarSeed, avatar_style: 0 };
+    if (!data.members[personName]) data.members[personName] = { name: personName, title: role, avatar_seed: newCardAvatarSeed, avatar_style: 0 };
     else { data.members[personName].title = role; data.members[personName].avatar_seed = newCardAvatarSeed; }
+    // 同步更新系统角色：确保共建者获得 builder 身份
+    var users = getUsers();
+    if (!users[personName]) {
+      users[personName] = { name: personName, role: 'adventurer', password: null, avatar_seed: newCardAvatarSeed, season: '', created: Clock.today(), uid: generateUID(personName), season_history: [{ role: 'visitor', period: '第四期', changed_at: Clock.today() }] };
+      saveUsers(users);
+    }
+    var upgradeResult = changeUserRole(personName, 'builder');
+    if (!upgradeResult.ok) {
+      users = getUsers();
+      if (users[personName] && users[personName].role !== 'builder') {
+        users[personName].role = 'builder';
+        if (!users[personName].season_history) users[personName].season_history = [];
+        users[personName].season_history.push({ role: 'adventurer', period: '第四期', changed_at: Clock.today() });
+        saveUsers(users);
+      }
+    }
   }
 
   var names = checked.map(function(t) { delete t._claimChecked; return t.name; });
