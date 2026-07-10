@@ -127,7 +127,7 @@ select.inline-input { cursor: pointer; }
 .village-card h3 { color: #3d3629; }
 .village-card p { color: #8b7d6b; }
 .village-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.15); }
-.village-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,25,20,.5); z-index: 120; display: flex; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
+.village-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,25,20,.5); z-index: 120; display: flex; justify-content: center; align-items: center; padding-top: 0; overflow-y: auto; }
 .village-modal .vm-inner { background: rgba(255,252,245,.97); border-radius: 16px; padding: 24px; max-width: 700px; width: 92%; margin-bottom: 60px; box-shadow: 0 12px 48px rgba(0,0,0,.25); position: relative; }
 .npc-bubble { display: flex; align-items: flex-start; gap: 12px; background: #f8f5ec; border: 2px solid #d8cdb0; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; }
 .npc-bubble .npc-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #e8c8a0, #d4a878); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; border: 2px solid #d8c0a0; }
@@ -168,8 +168,9 @@ select.inline-input { cursor: pointer; }
 .hub-sub-panel .hs-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)}
 .hub-sub-panel .hs-body{flex:1;padding:10px 14px;overflow-y:auto}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+#activityCommunitySlide{transform:translateX(12px);transition:transform .2s ease}#activityCommunitySlide.show{transform:translateX(0)}
 /* Reviewer Picker Dropdown */
-.picker-dropdown{position:fixed;width:260px;max-height:240px;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden}
+.picker-dropdown{position:fixed;width:260px;max-height:240px;z-index:2000;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden}
 .picker-dropdown.hidden{display:none}
 .picker-dropdown .pk-header{padding:8px 10px;border-bottom:1px solid var(--border)}
 .picker-dropdown .pk-header input{width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:.76rem;font-family:var(--font);background:var(--bg);box-sizing:border-box}
@@ -859,13 +860,6 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
 
       <!-- ── 💬 社区鼓励池 ── -->
-      <div class="card"><h3>💬 社区鼓励池（NPC/云村民打赏用）</h3>
-        <div style="display:flex;gap:8px 14px;flex-wrap:wrap;align-items:center;font-size:.82rem">
-          <span>本期总额 NT <input id="wizCheerPoolTotal" value="500" style="width:60px;text-align:right" oninput="if(!data.budget)data.budget={};data.budget.community_pool_total=parseInt(this.value)||500;updateWizBudgetCalc()"></span>
-          <span>每人每日上限 NT <input id="wizCheerPoolDaily" value="10" style="width:45px;text-align:right" oninput="if(!data.budget)data.budget={};data.budget.community_pool_daily=parseInt(this.value)||10;updateWizBudgetCalc()"></span>
-        </div>
-        <div style="font-size:.72rem;color:var(--muted);margin-top:4px">NPC 和云村民每天从池中分配到打赏额度，当天不用清零。鼓励（👏表情）免费不扣 NT。</div>
-      </div>
 
       <!-- ── 📊 汇总 & 导出 ── -->
       <div style="background:linear-gradient(90deg,#fef9ee,#fdf5e0);border:1px solid var(--accent);border-radius:8px;padding:8px 14px;text-align:center;font-size:.84rem;margin-bottom:8px">
@@ -1116,7 +1110,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
           <button class="btn pri" style="font-size:.78rem;margin-top:8px">🏛️ 去任务大厅逛逛</button>
         </div>
         <!-- 卡片3: 实景地图 -->
-        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="showMapInvite()">
+        <div class="village-card" style="flex:1;min-width:180px;max-width:220px" onclick="openVillageModal('map')">
           <div style="font-size:2.5rem;margin-bottom:8px">🗺️</div>
           <h3 style="margin:4px 0">实景地图</h3>
           <p style="font-size:.75rem;color:var(--muted);margin:6px 0">成为在地伙伴<br>或浏览地图</p>
@@ -1173,18 +1167,14 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 
 <!-- Village Modal: Map -->
 <div id="villageModalMap" class="village-modal hidden" onclick="if(event.target===this)closeVillageModal('map')">
-  <div class="vm-inner" style="text-align:center">
+  <div class="vm-inner" id="villageMapInner">
     <button onclick="closeVillageModal('map')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)">✕</button>
-    <div style="font-size:5rem;margin-bottom:16px">🗺️</div>
-    <h2>实景地图</h2>
-    <p style="color:var(--muted)">🗺️ 探索实景地图，敬请期待</p>
-    <p style="font-size:.82rem;color:var(--muted)">开放后可以在这里探索南塘村、成为在地伙伴</p>
   </div>
 </div>
 
 <!-- 社区窗口：二级滑出面板（复用 hub-sub-panel 样式）-->
 <div class="hub-slide-backdrop" id="activityBackdrop" onclick="closeActivityCommunity()" style="display:none;z-index:1001"></div>
-<div class="hub-sub-panel" id="activityCommunitySlide" style="right:0;left:auto;width:420px;max-width:90vw;z-index:1002">
+<div class="hub-sub-panel" id="activityCommunitySlide" style="z-index:1002">
   <div class="hs-header"><span style="font-weight:700;font-size:.85rem">👀 浏览营地</span><button onclick="closeActivityCommunity()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:2px 4px">✕</button></div>
   <div class="hs-body" id="activityCommunityBody"></div>
 </div>
@@ -1735,7 +1725,7 @@ const AVATAR_STYLE = 'avataaars';
 const DEFAULT_COUNCIL_ROOM = {}; // 议事厅默认值
 
 // ── State (ALL shared variables declared here first) ──
-let data = { tasks: [], decisions: [], members: {}, budget: {}, budget_items: [], finance_cny: {}, finance: [], schedule: {}, camp_progress: { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} }, camp_dates: { start: '', end: '', duration_days: 15, milestones: [] }, staff_cards: [], _initialized: false };
+let data = { tasks: [], decisions: [], members: {}, budget: {}, budget_items: [], finance_cny: {}, finance: [], schedule: {}, camp_progress: { step: 1, steps: {'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'} }, camp_dates: { start: '', end: '', duration_days: 15, milestones: [] }, staff_cards: [], camp_info: { current: { version: 0, updated_at: '', updated_by: '', identity: { name: '', period: '', description: '', type: 'regular', status: 'draft', created_at: '', created_by: '' }, budget: { nt_total_pool: 0, nt_allocated: 0, nt_remaining: 0, rmb_budget: 0, rmb_items: [], allocation_rules: {} }, calendar: { start_date: '', end_date: '', duration_days: 15, daily_schedule: [], milestones: [], key_dates: [] }, team: { admin: '', staff_cards: [], members: {} }, tasks: { pool: [], assignments: {}, templates: [] }, governance: { council_meetings: [], decisions: [], rules: {} } }, snapshots: [], changelog: [] }, _initialized: false };
 let settleSelected = null;
 let staffData = {}, playerData = {}, selectedStaff = null, selectedPlayer = null;
 let selectedMember = null;
@@ -1936,7 +1926,7 @@ document.addEventListener('DOMContentLoaded', function() {
                camp_progress:{step:1,steps:{'1':'active','2':'locked','3':'locked','4':'locked','5':'locked'}},
                camp_dates:{start:'',end:'',duration_days:15,milestones:[]}, staff_cards:[],
                inventory:[], canteen_menus:{}, canteen_orders:[], canteen_suggestions:[],
-               inn_rooms:[], inn_bookings:[], teahouse_posts:[], game_sessions:[] };
+               inn_rooms:[], inn_bookings:[], teahouse_posts:[], game_sessions:[], camp_info:{current:{version:0,updated_at:'',updated_by:'',identity:{name:'',period:'',description:'',type:'regular',status:'draft',created_at:'',created_by:''},budget:{nt_total_pool:0,nt_allocated:0,nt_remaining:0,rmb_budget:0,rmb_items:[],allocation_rules:{}},calendar:{start_date:'',end_date:'',duration_days:15,daily_schedule:[],milestones:[],key_dates:[]},team:{admin:'',staff_cards:[],members:{}},tasks:{pool:[],assignments:{},templates:[]},governance:{council_meetings:[],decisions:[],rules:{}}},snapshots:[],changelog:[]} };
     }
     // 补缺失的默认字段（兼容旧版本数据）
     if (!data.budget_items) data.budget_items = [];
@@ -1957,10 +1947,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!data.auctions) data.auctions = [];
     if (!data.tips) data.tips = [];
     if (!data.budget) data.budget = {};
-    if (!data.budget.community_pool_total) data.budget.community_pool_total = 500;
-    if (!data.budget.community_pool_daily) data.budget.community_pool_daily = 10;
     if (!data.council_meetings) data.council_meetings = [];
     if (!data.council_room) data.council_room = DEFAULT_COUNCIL_ROOM;
+    if (!data.community_pool) data.community_pool = { balance: 500, managers: [], pending_approvals: [], log: [] };
+    if (!data.community_archives) data.community_archives = [];
+    if (!data.activity_log) data.activity_log = [];
+    // Phase A: camp_info 兼容（旧数据没有此字段时自动创建）
+    if (!data.camp_info) {
+      data.camp_info = { current: { version: 0, updated_at: '', updated_by: '', identity: { name: '', period: '', description: '', type: 'regular', status: 'draft', created_at: '', created_by: '' }, budget: { nt_total_pool: 0, nt_allocated: 0, nt_remaining: 0, rmb_budget: 0, rmb_items: [], allocation_rules: {} }, calendar: { start_date: '', end_date: '', duration_days: 15, daily_schedule: [], milestones: [], key_dates: [] }, team: { admin: '', staff_cards: [], members: {} }, tasks: { pool: [], assignments: {}, templates: [] }, governance: { council_meetings: [], decisions: [], rules: {} } }, snapshots: [], changelog: [] };
+    }
     // 种子测试数据：首次加载时自动填充示例物品
     if (!data.inventory || data.inventory.length === 0) {
       data.inventory = [
@@ -2035,7 +2030,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var users = getUsers();
       if (users[currentUser.name]) {
         currentUser.role = users[currentUser.name].role;
-        enterWorld(currentUser);
+        enterWorld(currentUser, 'refresh');
         return;
       }
     } catch(e) {}
@@ -2595,6 +2590,60 @@ function closePeriod() {
   if (typeof renderNTAdmin === 'function') renderNTAdmin();
 }
 
+
+// ═══ Phase A: 版本快照系统 ═══
+
+// 创建版本快照（正式保存时调用）
+// 每次调用：version+1 → 深拷贝 current → 推入 snapshots → 记录 changelog → saveData
+function createSnapshot(label, changeSummary) {
+  if (!data.camp_info) { console.warn('camp_info 未初始化'); return null; }
+  var ci = data.camp_info;
+  var newVersion = (ci.current.version || 0) + 1;
+  var now = Clock.iso();
+  var who = (currentUser && currentUser.name) || '系统';
+  // 深拷贝当前数据作为快照
+  var snapshotData = JSON.parse(JSON.stringify(ci.current));
+  snapshotData.version = newVersion;
+  var snapshot = {
+    version: newVersion,
+    created_at: now,
+    created_by: who,
+    label: label || ('v' + newVersion),
+    frozen: (newVersion === 1),
+    change_summary: changeSummary || '',
+    data: snapshotData
+  };
+  ci.snapshots.push(snapshot);
+  // 更新 changelog
+  ci.changelog.push({
+    version: newVersion,
+    at: now,
+    by: who,
+    action: (newVersion === 1) ? 'create' : 'update',
+    summary: changeSummary || label || ''
+  });
+  // 更新 current 元信息
+  ci.current.version = newVersion;
+  ci.current.updated_at = now;
+  ci.current.updated_by = who;
+  saveData();
+  return snapshot;
+}
+
+// 获取指定版本的快照（返回深拷贝，防止调用方意外修改只读快照）
+function getSnapshot(version) {
+  if (!data.camp_info) return null;
+  var found = data.camp_info.snapshots.filter(function(s) { return s.version === version; });
+  if (!found.length) return null;
+  return JSON.parse(JSON.stringify(found[0]));
+}
+
+// 获取变更日志（按版本倒序排列，用于时间线展示）
+function getChangelog() {
+  if (!data.camp_info || !data.camp_info.changelog) return [];
+  return data.camp_info.changelog.slice().reverse();
+}
+
 // ── Login/Register Flow ──
 function showRegister(role) {
   regRole = role; regAvatarSeed = Math.floor(Math.random() * 60);
@@ -2792,7 +2841,7 @@ function loginUser(name, password, rememberMe) {
   currentUser = { name: user.name, role: user.role }; previewMode = false;
   safeStorage.setItem(NT_SESSION_KEY, JSON.stringify(currentUser));
   if (rememberMe) safeStorage.setItem('nt_remembered_user', JSON.stringify(currentUser));
-  enterWorld(currentUser); return { ok: true };
+  enterWorld(currentUser, 'login'); return { ok: true };
 }
 
 function logoutUser() {
@@ -2862,21 +2911,23 @@ function showMainInterface(identity, targetTab) {
 }
 
 // ── World Entry & Routing ──
-function enterWorld(user) {
+// mode: 'refresh'（F5刷新）→ 村口；'login'（密码登录）→ 恢复上次 tab
+function enterWorld(user, mode) {
   document.getElementById('loginPage').style.display = 'none';
   refreshUserHUD();
   var id = getIdentity(user);
   var bwt = document.getElementById('builderWorkspaceTab'); if (bwt) bwt.textContent = '👤 ' + user.name;
   var awt = document.getElementById('adventurerWorkspaceTab'); if (awt) awt.textContent = '👤 ' + user.name;
-  var lastPage = getLastPage(user.name);
-  if (lastPage && lastPage !== 'plaza') {
-    // 老用户：直接进主界面，回到上次的 tab
-    showMainInterface(id, lastPage);
-    if (id.isNPC || id.isVisitor) localStorage.setItem('nt_npc_in_main', '1');
-  } else {
-    // 新用户 / 上次在村口：进村口
-    showPlazaPlaceholder(user);
+  if (mode === 'login') {
+    var lastPage = getLastPage(user.name);
+    if (lastPage && lastPage !== 'plaza') {
+      showMainInterface(id, lastPage);
+      if (id.isNPC || id.isVisitor) localStorage.setItem('nt_npc_in_main', '1');
+      updateInboxBadge();
+      return;
+    }
   }
+  showPlazaPlaceholder(user);
   updateInboxBadge();
 }
 
@@ -3010,14 +3061,15 @@ function enterVillagerMain() {
 function openVillageModal(type) {
   if (type === 'questhall') renderVillageQuestHall();
   if (type === 'activity') renderVillageActivityList();
+  if (type === 'map') { var mi = document.getElementById('villageMapInner'); if (mi) { mi.innerHTML = renderMapEntrance(); mi.style.maxWidth = '460px'; } }
   var nameMap = { questhall:'Questhall', activity:'Activity', map:'Map' };
   var el = document.getElementById('villageModal' + (nameMap[type] || 'Map'));
-  if (el) el.classList.remove('hidden');
+  if (el) { el.classList.remove('hidden'); if (type === 'map') { el.style.alignItems = 'flex-start'; el.style.paddingTop = '250px'; } else { el.style.alignItems = ''; el.style.paddingTop = ''; } }
 }
 function closeVillageModal(type) {
   var nameMap = { questhall:'Questhall', activity:'Activity', map:'Map' };
   var el = document.getElementById('villageModal' + (nameMap[type] || 'Map'));
-  if (el) el.classList.add('hidden');
+  if (el) { el.classList.add('hidden'); if (type === 'map') { el.style.alignItems = ''; el.style.paddingTop = ''; } }
 }
 
 var villageScopeFilter = 'all', villageQuickFilter = '', villageCatFilter = '', villageLocFilter = '', villageSearchText = '', villagePeriod = 'current';
@@ -3867,6 +3919,55 @@ function renderDraftBox() {
   h += '</div>';
   return h;
 }
+// ── 实景地图访客入口 ──
+function renderMapEntrance() {
+  var h = '';
+  var pool = data.community_pool || { balance: 0, log: [] };
+  // 标题
+  h += '<div style="text-align:center;padding:4px 0 12px"><div style="font-size:2.2rem">🗺️</div><div style="font-weight:700;font-size:1rem">南塘云村</div></div>';
+  // 社区捐献区
+  h += '<div style="border:1px solid #d8c8a0;border-radius:12px;padding:14px 16px;margin-bottom:10px;background:linear-gradient(135deg,#fffdf5,#fdf6e8)">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-weight:600;font-size:.85rem">🏦 社区公共基金</span><span style="font-size:1.3rem;font-weight:700;color:var(--accent)">💎 ' + (pool.balance || 0).toLocaleString() + '</span></div>';
+  var recentDonations = (pool.log || []).filter(function(l){ return l.action === 'donation'; }).slice(-3);
+  if (recentDonations.length > 0) {
+    h += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:6px">';
+    recentDonations.reverse().forEach(function(d, i){ h += (i>0?' · ':'') + esc(d.operator || '匿名') + ' +' + (d.amount || 0); });
+    h += '</div>';
+  }
+  if (currentUser) {
+    h += '<div style="text-align:center"><button class="btn pri" onclick="donateToCommunityPool()" style="font-size:.8rem;padding:7px 32px">🎁 捐献 NT</button></div>';
+  } else {
+    h += '<div style="text-align:center;font-size:.7rem;color:var(--muted)">登录后即可捐献</div>';
+  }
+  h += '</div>';
+  // 邀请码区
+  h += '<div style="border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fafaf5">';
+  h += '<div style="font-weight:600;font-size:.85rem;margin-bottom:8px">🔑 成为在地NPC</div>';
+  h += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><input id="mapInviteInput" placeholder="输入邀请码" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;background:var(--card)"><button class="btn pri" onclick="submitMapInvite()" style="font-size:.8rem;padding:8px 16px;white-space:nowrap">→ 成为NPC</button></div>';
+  h += '<div style="font-size:.7rem;color:var(--muted);text-align:center">没有邀请码？<span style="cursor:pointer;color:var(--accent);text-decoration:underline" onclick="closeVillageModal(\'map\');setStatus(\'以云村民身份浏览南塘云村\')">跳过</span></div>';
+  h += '</div>';
+  // 底图区
+  h += '<div style="text-align:center;color:var(--muted);padding:16px;border:1px dashed var(--border);border-radius:12px;font-size:.78rem;background:var(--bg)">🗺️ 实景地图交互区<br><span style="font-size:.7rem">即将开放</span></div>';
+  return h;
+}
+// ── 捐献社区池 ──
+function donateToCommunityPool() {
+  if (!currentUser) { alert('请先登录'); return; }
+  var amount = parseInt(prompt('捐献金额（NT）：', '10'));
+  if (!amount || amount <= 0) return;
+  var myNT = calcNtTotal(currentUser.name);
+  if (myNT < amount) { alert('NT 余额不足！需要 ' + amount + ' NT，当前余额：' + myNT.toLocaleString()); return; }
+  if (!confirm('确定捐献 ' + amount + ' NT 给社区公共基金？')) return;
+  if (!data.community_pool) data.community_pool = { balance: 0, managers: [], pending_approvals: [], log: [] };
+  data.community_pool.balance += amount;
+  data.community_pool.log.push({ time: Clock.iso(), operator: currentUser.name, action: 'donation', amount: amount, note: '个人捐献' });
+  recordTransaction({ type: 'donation', from: currentUser.name, to: '社区池', amount: amount, scope: 'personal' });
+  saveData();
+  setStatus('已捐献 ' + amount + ' NT → 社区池');
+  if (document.getElementById('villageModalMap') && !document.getElementById('villageModalMap').classList.contains('hidden')) {
+    document.querySelector('#villageModalMap .vm-inner').innerHTML = '<button onclick="closeVillageModal(\'map\')" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted)">✕</button>' + renderMapEntrance();
+  }
+}
 // ── 社区窗口：嵌入社区副本 Modal 内（唯一版本）──
 function renderCommunityWindowEmbedded() {
   var h = '';
@@ -3945,18 +4046,29 @@ function renderCommunityWindowEmbedded() {
     h += '</div>';
   }
 
-  // ── 送个鼓励（紧凑版）──
+  // ── 送个鼓励 ──
   if (currentUser) {
     var myNT = calcNtTotal(currentUser.name);
+    var myName = escAttr(currentUser.name);
     h += '<div style="margin-bottom:10px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:#fefdf8"><div style="font-size:.72rem;font-weight:600;margin-bottom:4px">💬 送个鼓励</div>';
+    // 上次打赏结果（页面刷新后仍可见）
+    if (window._lastTipResult) {
+      h += '<div style="font-size:.68rem;padding:3px 6px;margin-bottom:4px;background:'+(window._lastTipResult.ok?'#e8f0e2':'#fce8e0')+';border-radius:4px;color:'+(window._lastTipResult.ok?'var(--green)':'var(--red)')+'">'+window._lastTipResult.msg+'</div>';
+    }
+    // 目标选择器
+    h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:.7rem">送给：';
+    h += '<input type="text" id="activityTipTarget" placeholder="点击选择成员…" readonly style="flex:1;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:.7rem;background:var(--card);cursor:pointer" onclick="showReviewerPicker(\'activityTipTarget\')">';
+    h += '<button class="btn" onclick="showReviewerPicker(\'activityTipTarget\')" style="font-size:.62rem;padding:2px 6px">👤</button></div>';
+    // 免费鼓励
     h += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:4px">';
     [{e:'👏',l:'太棒了'},{e:'💪',l:'加油'},{e:'🎨',l:'好看'},{e:'🔥',l:'厉害'},{e:'🌿',l:'治愈'},{e:'✨',l:'灵气'},{e:'💐',l:'感动'},{e:'👍',l:'佩服'}].forEach(function(ch){
-      h += '<button class="btn" onclick="var t=prompt(\'送给谁？\');if(t){sendTip(\''+escAttr(currentUser.name)+'\',t,{type:\'cheer\',emoji:\''+ch.e+'\',label:\''+ch.l+'\'});}" style="font-size:.62rem;padding:2px 5px">'+ch.e+'</button>';
+      h += '<button class="btn" onclick="var t=document.getElementById(\'activityTipTarget\').value;if(!t){alert(\'请先选择送给谁\');return;}var r=sendTip(\''+myName+'\',t,{type:\'cheer\',emoji:\''+ch.e+'\',label:\''+ch.l+'\'});window._lastTipResult=r.ok?{ok:true,msg:\'✅ 已送 \'+ch.e+ch.l+\' → \'+t}:{ok:false,msg:\'❌ \'+r.reason};document.getElementById(\'activityCommunityBody\').innerHTML=renderCommunityWindowEmbedded();" style="font-size:.62rem;padding:2px 5px">'+ch.e+'</button>';
     });
     h += '</div>';
+    // 付费礼物
     h += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:4px">';
     [{i:'🌹',l:'小花',n:1},{i:'🎁',l:'礼盒',n:5},{i:'🎂',l:'蛋糕',n:10},{i:'🚀',l:'火箭',n:50}].forEach(function(gf){
-      h += '<button class="btn" onclick="var t=prompt(\'送给谁？\');if(t){var r=sendTip(\''+escAttr(currentUser.name)+'\',t,{type:\'gift\',item:\''+gf.i+'\',label:\''+gf.l+'\',nt:'+gf.n+'});if(!r.ok)alert(r.reason);}" style="font-size:.62rem;padding:2px 5px">'+gf.i+gf.n+'</button>';
+      h += '<button class="btn" onclick="var t=document.getElementById(\'activityTipTarget\').value;if(!t){alert(\'请先选择送给谁\');return;}if(!confirm(\'确定送 \'+t+\' '+gf.i+gf.l+' '+gf.n+'NT ？\'))return;var r=sendTip(\''+myName+'\',t,{type:\'gift\',item:\''+gf.i+'\',label:\''+gf.l+'\',nt:'+gf.n+'});window._lastTipResult=r.ok?{ok:true,msg:\'✅ 已送 '+gf.i+gf.l+' → \'+t+\'（-'+gf.n+' NT）\'}:{ok:false,msg:\'❌ \'+r.reason};document.getElementById(\'activityCommunityBody\').innerHTML=renderCommunityWindowEmbedded();" style="font-size:.62rem;padding:2px 5px">'+gf.i+gf.n+'</button>';
     });
     h += '</div>';
     h += '<div style="font-size:.65rem;color:var(--muted)">你的余额：💎 '+myNT.toLocaleString()+' NT</div></div>';
@@ -4003,13 +4115,50 @@ function openActivityCommunity() {
   document.getElementById('activityCommunityBody').innerHTML = renderCommunityWindowEmbedded();
   panel.classList.add('show');
   bd.style.display = '';
+  // 一级 Modal 收窄，二级面板贴其右侧
+  _repositionActivityCommunity();
 }
 function closeActivityCommunity() {
+  // 三级窗口（选择器）开着时，先关三级，不关二级
+  var picker = document.getElementById('pickerDropdown');
+  if (picker && !picker.classList.contains('hidden')) {
+    closeReviewerPicker();
+    return;
+  }
   var panel = document.getElementById('activityCommunitySlide');
   var bd = document.getElementById('activityBackdrop');
   if (panel) panel.classList.remove('show');
   if (bd) bd.style.display = 'none';
+  // 恢复一级 Modal 宽度
+  var inner = document.querySelector('#villageModalActivity .vm-inner');
+  if (inner) { inner.style.maxWidth = ''; inner.style.transform = ''; inner.style.minHeight = ''; }
 }
+// 锚定一级 Modal 右侧重新定位二级面板（resize 安全）
+function _repositionActivityCommunity() {
+  var panel = document.getElementById('activityCommunitySlide');
+  if (!panel || !panel.classList.contains('show')) return;
+  var inner = document.querySelector('#villageModalActivity .vm-inner');
+  if (!inner) return;
+  // 一级 Modal 收窄以容纳二级面板
+  inner.style.maxWidth = '440px';
+  var ir = inner.getBoundingClientRect();
+  var gap = 16;
+  var panelW = Math.min(420, window.innerWidth - ir.right - gap - 16);
+  var shift = -(panelW + gap) / 2;           // 左移：使双面板整体居中
+  inner.style.transform = 'translateX(' + shift + 'px)';
+  var modalH = ir.bottom - ir.top;
+  var availH = Math.min(600, window.innerHeight - ir.top - 20);
+  // 重新读取 Modal 位置（transform 后已变化）
+  ir = inner.getBoundingClientRect();
+  panel.style.top = ir.top + 'px';
+  panel.style.left = (ir.right + gap) + 'px';
+  panel.style.right = 'auto';
+  panel.style.width = panelW + 'px';
+  panel.style.minHeight = modalH + 'px';    // 底部对齐：不低于 Modal 高度
+  panel.style.maxHeight = availH + 'px';     // 屏幕空间不够时限制最大高度
+  panel.style.overflowY = 'auto';
+}
+window.addEventListener('resize', _repositionActivityCommunity);
 
 function renderWorkspace() {
   if (!currentUser && !window._viewingMember) return;
@@ -5511,8 +5660,10 @@ function renderHubSlideContent(page) {
     h += renderAuctionHub();
   } else if (page === 'archive') {
     h += renderArchiveHub();
+  } else if (page === 'map') {
+    h += renderMapEntrance();
   } else {
-    h += '<div style="text-align:center;color:var(--muted);padding:30px 0"><div style="font-size:2.5rem;margin-bottom:8px">🧭</div><div style="font-weight:600;font-size:.85rem">实景地图</div><div style="font-size:.72rem;margin-top:4px">真正的南塘村落地图 · 敬请期待</div></div>';
+    h += '<div style="text-align:center;color:var(--muted);padding:30px 0"><div style="font-size:2rem;margin-bottom:8px">📡</div><div style="font-size:.78rem">页面开发中</div></div>';
   }
   body.innerHTML = h;
 }
@@ -5530,7 +5681,7 @@ function renderHubDropdown() {
   var activeAuctions = (data.auctions||[]).filter(function(a){return a.status==='signup'||a.status==='pending';}).length;
   var upcomingMeetings = (data.council_meetings||[]).filter(function(m){return m.time>=Clock.today();}).length;
   var items = [
-    { id:'map', icon:'🧭', label:'实景地图', info:'待开放', ok:false },
+    { id:'map', icon:'🧭', label:'实景地图', info:'', ok:true },
     { id:'inn', icon:'🏨', label:'客栈', info:confirmedGuests+'/'+totalBeds+'人', ok:true },
     { id:'canteen', icon:'🥬', label:'素社食堂', info:'午/晚餐', ok:true },
     { id:'bazaar', icon:'🏪', label:'集市', info:listedCount+'件在售', ok:true },
@@ -6684,6 +6835,38 @@ function getContacts() {
 }
 
 function renderArchiveHub() {
+  var tab = window._archiveTab || 'members';
+  var h = '';
+  // 标签导航
+  var tags = [{k:'members',l:'📂 成员'},{k:'tasks',l:'📋 归档任务'},{k:'periods',l:'📦 往期营期'},{k:'log',l:'📜 日志'},{k:'archives',l:'📝 社区档案'}];
+  h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">';
+  tags.forEach(function(t){
+    h += '<button class="btn'+(tab===t.k?' pri':'')+'" onclick="window._archiveTab=\''+t.k+'\';var b=document.getElementById(\'hubSlideBody\');if(b)b.innerHTML=renderArchiveHub()" style="font-size:.72rem;padding:4px 10px">'+t.l+'</button>';
+  });
+  h += '</div>';
+  // 根据标签渲染
+  if (tab === 'tasks') {
+    var archiveTasks = []; var allTasks = data.tasks || [];
+    allTasks.forEach(function(t, i){ var dd = getTaskDoneDate(t, null); if (dd && daysSince(dd) > ARCHIVE_DAYS) archiveTasks.push({task:t, idx:i, doneDate:dd}); });
+    if (archiveTasks.length === 0) { h += '<div style="text-align:center;color:var(--muted);padding:30px">📋 暂无归档任务</div>'; }
+    else { h += '<div id="hubArchiveTaskList"></div>'; setTimeout(function(){ renderArchiveList('hubArchiveTaskList', archiveTasks, 'week', 'hub'); }, 10); }
+    return h;
+  }
+  if (tab === 'periods') {
+    var periods = data.archived_periods || {}; var pKeys = Object.keys(periods).sort().reverse();
+    if (pKeys.length === 0) { h += '<div style="text-align:center;color:var(--muted);padding:30px">📦 还没有完结的营期</div>'; }
+    else { pKeys.forEach(function(key){ var p=periods[key]; h += '<div class="card" style="padding:10px 14px;margin-bottom:8px"><div style="font-weight:600">🏕️ '+esc(key)+'</div><div style="font-size:.72rem;color:var(--muted)">📋 '+(p.tasks||[]).length+' 任务 · 👥 '+Object.keys(p.members||{}).length+' 成员 · 完结于 '+(p.closed_at||'').slice(0,10)+'</div></div>'; }); }
+    return h;
+  }
+  if (tab === 'log') {
+    var log = data.activity_log || []; log.slice().reverse().slice(0,50).forEach(function(l){ h += '<div style="font-size:.72rem;padding:2px 0;border-bottom:1px dotted var(--border);color:var(--muted)">'+(l.text||'')+'</div>'; });
+    if (log.length === 0) h += '<div style="text-align:center;color:var(--muted);padding:30px">📜 暂无日志</div>';
+    return h;
+  }
+  if (tab === 'archives') {
+    return h + renderCommunityArchives();
+  }
+  // 默认：成员目录
   var users = getUsers();
   var members = data.members || {};
   var groups = {};
@@ -6694,7 +6877,6 @@ function renderArchiveHub() {
     if (!groups[identity]) groups[identity] = [];
     groups[identity].push({ name: name, nt: calcNtTotal(name), days: u.created ? daysSince(u.created) : 0, season: mi.season || u.season || '' });
   });
-  var h = '';
   var totalPeople = Object.keys(users).length;
   if (totalPeople === 0) {
     return '<div style="text-align:center;color:var(--muted);padding:40px 0"><div style="font-size:2.5rem;margin-bottom:8px">📚</div><div>暂无成员档案</div><div style="font-size:.72rem;margin-top:4px">注册用户后将自动出现在这里</div></div>';
@@ -6801,6 +6983,79 @@ function closeMemberDossier() {
   if (body) body.innerHTML = renderArchiveHub();
   var title = document.getElementById('hubSlideTitle');
   if (title) title.textContent = '📚 档案室';
+}
+
+// ── 社区档案库 ──
+function submitArchiveEntry() {
+  var title = prompt('档案标题：');
+  if (!title || !title.trim()) return;
+  var content = prompt('档案内容：');
+  if (!content || !content.trim()) return;
+  if (!data.community_archives) data.community_archives = [];
+  var entry = { id: 'arc_' + Clock.stamp() + Math.random().toString(36).slice(2,6), type: 'person', title: title.trim(), content: content.trim(), tags: [], entered_by: currentUser ? currentUser.name : '未知', verified_by: '', entered_at: Clock.today(), status: 'pending', reward_entered: 0, reward_verified: 0 };
+  data.community_archives.push(entry);
+  saveData();
+  setStatus('档案已提交：' + title + '（待核查）');
+  var body = document.getElementById('hubSlideBody'); if (body) body.innerHTML = renderArchiveHub();
+}
+function verifyArchiveEntry(id, approved) {
+  var entry = (data.community_archives || []).find(function(e) { return e.id === id; });
+  if (!entry) return;
+  if (approved) {
+    entry.status = 'verified';
+    entry.verified_by = currentUser ? currentUser.name : '未知';
+    if (!data.community_pool) data.community_pool = { balance: 0, managers: [], pending_approvals: [], log: [] };
+    // 奖励录入者 5 NT
+    if (entry.entered_by && entry.reward_entered === 0) {
+      data.community_pool.balance -= 5;
+      entry.reward_entered = 5;
+      recordTransaction({ type: 'reward', from: '社区池', to: entry.entered_by, amount: 5, task_name: '录入档案：' + entry.title, scope: 'camp' });
+      data.community_pool.log.push({ time: Clock.iso(), operator: '系统', action: 'reward_entry', amount: 5, note: '奖励录入：' + entry.entered_by + ' → ' + entry.title });
+    }
+    // 奖励核查者 3 NT
+    if (entry.verified_by && entry.reward_verified === 0) {
+      data.community_pool.balance -= 3;
+      entry.reward_verified = 3;
+      recordTransaction({ type: 'reward', from: '社区池', to: entry.verified_by, amount: 3, task_name: '核查档案：' + entry.title, scope: 'camp' });
+      data.community_pool.log.push({ time: Clock.iso(), operator: '系统', action: 'reward_verify', amount: 3, note: '奖励核查：' + entry.verified_by + ' → ' + entry.title });
+    }
+  } else {
+    entry.status = 'rejected';
+    entry.verified_by = currentUser ? currentUser.name : '';
+  }
+  saveData();
+  setStatus(approved ? '已通过：' + entry.title : '已退回：' + entry.title);
+  var body = document.getElementById('hubSlideBody'); if (body) body.innerHTML = renderArchiveHub();
+}
+function renderCommunityArchives() {
+  var h = '';
+  var archives = data.community_archives || [];
+  h += '<div style="margin-bottom:8px;display:flex;gap:8px"><input placeholder="🔍 搜索档案…" oninput="var q=this.value.toLowerCase();document.querySelectorAll(\'.arc-card\').forEach(function(c){c.style.display=(!q||(c.dataset.t||\'\').indexOf(q)!==-1)?\'\':\'none\'})" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.72rem;background:var(--card)"><button class="btn pri" onclick="submitArchiveEntry()" style="font-size:.72rem;padding:4px 12px;white-space:nowrap">📝 新建档案</button></div>';
+  var pending = archives.filter(function(a){ return a.status === 'pending'; });
+  var verified = archives.filter(function(a){ return a.status !== 'pending'; });
+  if (pending.length > 0) {
+    h += '<div style="font-size:.75rem;font-weight:600;margin-bottom:6px;color:var(--accent)">⏳ 待核查（' + pending.length + '条）</div>';
+    pending.forEach(function(a){ h += _renderArchiveCard(a, true); });
+  }
+  verified.sort(function(a,b){ return (b.entered_at||'').localeCompare(a.entered_at||''); });
+  if (verified.length > 0) {
+    h += '<div style="font-size:.75rem;font-weight:600;margin-bottom:6px">📋 已入库（' + verified.length + '条）</div>';
+    verified.forEach(function(a){ h += _renderArchiveCard(a, false); });
+  }
+  if (archives.length === 0) h += '<div style="text-align:center;color:var(--muted);padding:30px">📝 暂无社区档案<br><span style="font-size:.72rem">点击「新建档案」录入历史资料</span></div>';
+  return h;
+}
+function _renderArchiveCard(a, isPending) {
+  var h = '';
+  h += '<div class="arc-card" data-t="' + escAttr(a.title + ' ' + (a.tags||[]).join(' ')) + '" style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:' + (isPending ? '#fffdf5' : 'var(--card)') + '">';
+  h += '<div style="font-weight:600;font-size:.78rem">' + esc(a.title) + '</div>';
+  h += '<div style="font-size:.68rem;color:var(--muted);margin:2px 0">录入：' + esc(a.entered_by) + ' · ' + (a.entered_at||'') + (a.verified_by ? ' · 核查：' + esc(a.verified_by) : '') + '</div>';
+  h += '<div style="font-size:.72rem;color:var(--text);margin:4px 0">' + esc((a.content||'').slice(0, 120)) + (a.content && a.content.length > 120 ? '…' : '') + '</div>';
+  if (isPending && currentUser && hasRole(currentUser, ['admin', 'builder'])) {
+    h += '<div style="margin-top:6px"><button class="btn green" onclick="verifyArchiveEntry(\'' + escAttr(a.id) + '\',true)" style="font-size:.65rem;padding:2px 8px">✅ 通过</button> <button class="btn danger" onclick="verifyArchiveEntry(\'' + escAttr(a.id) + '\',false)" style="font-size:.65rem;padding:2px 8px">❌ 退回</button></div>';
+  }
+  h += '</div>';
+  return h;
 }
 
 function renderMemberDossier() {
@@ -8131,7 +8386,6 @@ function sendTip(fromName, toName, opts) {
     var users = getUsers(); var su = users[fromName] || {};
     if (su.role === 'npc' || su.role === 'visitor') {
       var pool = data.budget || {};
-      var dailyLimit = pool.community_pool_daily || 10;
       var today = Clock.today();
       var todaySpent = (data.tips || []).filter(function(t) { return t.from === fromName && t.type === 'gift' && t.at && t.at.slice(0,10) === today; }).reduce(function(s, t) { return s + (t.nt || 0); }, 0);
       if (todaySpent + opts.nt > dailyLimit) return { ok: false, reason: '今日打赏额度不足（剩余 ' + (dailyLimit - todaySpent) + ' NT）' };
@@ -9070,8 +9324,6 @@ function renderStep1() {
   el = document.getElementById('wizLodgingNT'); if (el) el.value = b.lodging_nt || (useDefaults ? 40 : '');
   el = document.getElementById('wizMealRMB'); if (el) el.value = b.meal_rmb || (useDefaults ? 8 : '');
   el = document.getElementById('wizMealNT'); if (el) el.value = b.meal_nt || (useDefaults ? 10 : '');
-  el = document.getElementById('wizCheerPoolTotal'); if (el) el.value = b.community_pool_total || 500;
-  el = document.getElementById('wizCheerPoolDaily'); if (el) el.value = b.community_pool_daily || 10;
   updateWizBudgetCalc();
   // Team
   var members = data.members || {};
