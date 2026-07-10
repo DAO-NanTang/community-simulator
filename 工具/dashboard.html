@@ -4250,15 +4250,28 @@ function renderWorkspace() {
   var myPublishedArchive = [];
   tasks.forEach(function(t, i) {
     if (t.poster !== name) return;
-    if (t.status === 'active' || t.status === 'pending_approval') {
-      myPublishedActive.push({ task: t, idx: i });
-    } else if (t.status === 'completed' || t.status === 'withdrawn' || t.status === '已确认') {
+    // 撤回中的任务单独处理
+    if (t.status === 'withdrawing' || t.status === 'withdrawn') {
+      var wdDate = getTaskDoneDate(t, null);
+      if (daysSince(wdDate) <= ARCHIVE_DAYS) {
+        myPublishedRecent.push({ task: t, idx: i, doneDate: wdDate });
+      } else {
+        myPublishedArchive.push({ task: t, idx: i, doneDate: wdDate });
+      }
+      return;
+    }
+    // 有领取者完成的 = 已完结，按完成日期归档
+    var hasCompleted = (t.claimants || []).some(function(c) { return c.status === 'completed'; });
+    if (hasCompleted) {
       var doneDate = getTaskDoneDate(t, null);
       if (daysSince(doneDate) <= ARCHIVE_DAYS) {
         myPublishedRecent.push({ task: t, idx: i, doneDate: doneDate });
       } else {
         myPublishedArchive.push({ task: t, idx: i, doneDate: doneDate });
       }
+    } else {
+      // 无人完成 = 仍在进行中
+      myPublishedActive.push({ task: t, idx: i });
     }
   });
   var myPublishedTotal = myPublishedActive.length + myPublishedRecent.length + myPublishedArchive.length;
