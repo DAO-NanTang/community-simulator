@@ -4425,6 +4425,21 @@ function renderWorkspace() {
   // ═══ RIGHT: switches by workspacePanel ═══
   html += '<div style="flex:1;min-width:0">';
 
+  // ── 共用筛选栏（置顶，覆盖「我发布的」+「我领取的」）──
+  if (selfId && selfId.can.seeMembers) {
+    html += '<div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">';
+    [{key:'all',label:'📋 全部'},{key:'work',label:'🏛️ 创世工作'},{key:'quest',label:'📋 大厅委托'},{key:'personal',label:'✏️ 私人委托'}].forEach(function(f) {
+      html += '<button class="btn'+(wsSourceFilter===f.key?' pri':'')+'" onclick="wsSourceFilter=\''+f.key+'\';renderWorkspace()" style="font-size:.78rem;padding:5px 12px">'+f.label+'</button>';
+    });
+    html += '</div>';
+  }
+  html += '<div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">';
+  filters.forEach(function(f) {
+    var active = wsTabFilter === f.key;
+    html += '<button class="btn'+(active?' pri':'')+'" onclick="wsTabFilter=\''+f.key+'\';renderWorkspace()" style="font-size:.75rem;padding:4px 10px">'+f.label+(f.count>0?' <b>'+f.count+'</b>':'')+'</button>';
+  });
+  html += '</div>';
+
   if (workspacePanel === 'flow') {
     var myFlow = finance.filter(function(tx) { return tx.to === name || tx.from === name; }).slice(-30).reverse();
     html += '<div class="card"><h3>💰 近期流水</h3>';
@@ -4545,22 +4560,6 @@ function renderWorkspace() {
       html += '<div style="font-size:.72rem;color:var(--muted);padding:8px;text-align:center">任务完成超过 7 天后会自动归入存档</div>';
     }
     html += '</div>';
-    html += '</div>';
-
-    // 来源标签（共建者/管理员可见）
-    if (selfId && selfId.can.seeMembers) {
-      html += '<div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap">';
-      [{key:'all',label:'📋 全部'},{key:'work',label:'🏛️ 创世工作'},{key:'quest',label:'📋 大厅委托'},{key:'personal',label:'✏️ 私人委托'}].forEach(function(f) {
-        html += '<button class="btn'+(wsSourceFilter===f.key?' pri':'')+'" onclick="wsSourceFilter=\''+f.key+'\';renderWorkspace()" style="font-size:.78rem;padding:5px 12px">'+f.label+'</button>';
-      });
-      html += '</div>';
-    }
-    // scope + 状态过滤
-    html += '<div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap">';
-    filters.forEach(function(f) {
-      var active = wsTabFilter === f.key;
-      html += '<button class="btn'+(active?' pri':'')+'" onclick="wsTabFilter=\''+f.key+'\';renderWorkspace()" style="font-size:.75rem;padding:4px 10px">'+f.label+(f.count>0?' <b>'+f.count+'</b>':'')+'</button>';
-    });
     html += '</div>';
 
     // Task cards — grouped: active → submitted → completed (archive)
