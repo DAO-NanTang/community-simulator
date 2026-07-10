@@ -535,6 +535,29 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .wiz-s1-group { display: none; }
 .wiz-s1-group.active { display: block; }
 .wiz-s1-group.active > .card { width: 100%; margin-bottom: 14px; }
+
+/* ══════ 移动端全局护栏（B0）· 仅 ≤768px 生效，桌面不受影响 ══════ */
+@media (max-width: 768px) {
+  /* 1. 禁止页面横向溢出 */
+  html, body { max-width: 100%; overflow-x: hidden; }
+  main { max-width: 100%; padding: 12px 8px; box-sizing: border-box; }
+
+  /* 2. 卡片/弹窗/登录卡流式 */
+  .card, .modal, .login-card, .village-modal .vm-inner { max-width: 100% !important; box-sizing: border-box; }
+
+  /* 3. 输入/下拉/文本域不溢出（全页含弹窗/侧栏内；max-width 只封顶，小框仍保持原宽） */
+  input:not([type=checkbox]):not([type=radio]),
+  select, textarea { max-width: 100% !important; box-sizing: border-box; }
+
+  /* 4. 表格改横向滚动，不撑破整页（全页含弹窗内） */
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+  /* 5. 图片不溢出（全页） */
+  img { max-width: 100%; height: auto; }
+
+  /* 6. 固定侧栏最小钳制：宽度不超视口，避免溢出横拖（完整全宽抽屉留 B2） */
+  .invite-sidebar, .hub-sub-panel { max-width: 100vw !important; box-sizing: border-box; }
+}
 </style>
 <script src="https://unpkg.com/@phosphor-icons/web@2.1.1" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" defer></script>
