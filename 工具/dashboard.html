@@ -9511,46 +9511,83 @@ function saveStep0() {
   saveData();
   openIgniteCeremony(function() { switchStep(1); });
 }
-// ── Step 1 子导航 ──
-var wizS1Tab = 'cal';
-function wizS1Switch(tab) {
-  wizS1Tab = tab;
-  document.querySelectorAll('.wiz-s1-group').forEach(function(g) { g.classList.remove('active'); });
-  var group = document.getElementById('wizS1Group' + (tab==='cal'?'Cal':tab==='fin'?'Fin':'Team'));
-  if (group) group.classList.add('active');
-  document.querySelectorAll('#wizS1Nav button').forEach(function(b) { b.classList.remove('pri','active'); });
-  var btn = document.getElementById('wizS1Tab' + (tab==='cal'?'Cal':tab==='fin'?'Fin':'Team'));
-  if (btn) { btn.classList.add('pri','active'); }
-}
-function wizS1Setup() {
-  var step = document.getElementById('wiz-step1'); if (!step) return;
-  // Only setup once
-  if (document.getElementById('wizS1Nav')) { wizS1Switch(wizS1Tab); return; }
-  // Collect all top-level cards in the step
-  var cards = step.querySelectorAll(':scope > .card');
-  var groups = { cal: [], fin: [], team: [] };
-  var currentGroup = 'cal';
-  cards.forEach(function(card) {
-    var h3 = card.querySelector('h3'); var title = h3 ? h3.textContent : '';
-    if (title.indexOf('收入')!==-1 || title.indexOf('支出')!==-1 || title.indexOf('鼓励')!==-1) currentGroup = 'fin';
-    else if (title.indexOf('团队')!==-1) currentGroup = 'team';
-    groups[currentGroup].push(card);
+// ═══ 步骤子导航系统 ═══
+var wizStepTabs = { s1:'cal', s2:'tasks', s3:'claim' };
+function wizSubSwitch(step, tab) {
+  wizStepTabs[step] = tab;
+  var prefix = step === 's1' ? 'S1' : (step === 's2' ? 'S2' : 'S3');
+  var tabs = step==='s1' ? ['Cal','Fin','Team'] : (step==='s2' ? ['Tasks','Tpl'] : ['Claim','Cards']);
+  var keys = step==='s1' ? ['cal','fin','team'] : (step==='s2' ? ['tasks','tpl'] : ['claim','cards']);
+  tabs.forEach(function(t, i) {
+    var g = document.getElementById('wiz'+prefix+'Group'+t); if (g) g.classList.toggle('active', keys[i]===tab);
+    var b = document.getElementById('wiz'+prefix+'Tab'+t); if (b) { b.classList.toggle('pri', keys[i]===tab); b.classList.toggle('active', keys[i]===tab); }
   });
-  // Create group wrappers and move cards
-  ['cal','fin','team'].forEach(function(g) {
-    var wrapper = document.createElement('div'); wrapper.className = 'wiz-s1-group'; wrapper.id = 'wizS1Group' + (g==='cal'?'Cal':g==='fin'?'Fin':'Team');
-    groups[g].forEach(function(c) { wrapper.appendChild(c); });
+}
+function wizSubSetup(stepId, stepKey, tabsDef, cardGrouper) {
+  var step = document.getElementById(stepId); if (!step) return;
+  var prefix = stepKey==='s1'?'S1':(stepKey==='s2'?'S2':'S3');
+  if (document.getElementById('wiz'+prefix+'Nav')) { wizSubSwitch(stepKey, wizStepTabs[stepKey]); return; }
+  var groups = {}; tabsDef.forEach(function(t) { groups[t.key] = []; });
+  var cards = step.querySelectorAll(':scope > .card');
+  cards.forEach(function(card) {
+    var g = cardGrouper(card);
+    if (groups[g]) groups[g].push(card);
+    else groups[tabsDef[0].key].push(card);
+  });
+  tabsDef.forEach(function(t) {
+    var wrapper = document.createElement('div'); wrapper.className = 'wiz-s1-group'; wrapper.id = 'wiz'+prefix+'Group'+t.id;
+    groups[t.key].forEach(function(c) { wrapper.appendChild(c); });
     step.appendChild(wrapper);
   });
-  // Also wrap non-card elements (损益汇总, 导出按钮) that are after the last card
   var remaining = step.querySelectorAll(':scope > div:not(.card):not(.wiz-s1-group)');
-  var finGroup = document.getElementById('wizS1GroupFin');
-  remaining.forEach(function(el) { if (finGroup && el.id!=='schedEditModal') finGroup.appendChild(el); });
-  // Insert sub-nav at top
-  var nav = document.createElement('div'); nav.id = 'wizS1Nav';
-  nav.innerHTML = '<button class="btn pri active" id="wizS1TabCal" onclick="wizS1Switch(\'cal\')">📅 日历</button> <button class="btn" id="wizS1TabFin" onclick="wizS1Switch(\'fin\')">💰 财政</button> <button class="btn" id="wizS1TabTeam" onclick="wizS1Switch(\'team\')">👥 团队</button>';
+  var lastGroup = document.getElementById('wiz'+prefix+'Group'+tabsDef[tabsDef.length-1].id);
+  remaining.forEach(function(el) { if (lastGroup && el.id.indexOf('schedEdit')===-1 && el.id.indexOf('wizS')===-1) lastGroup.appendChild(el); });
+  var nav = document.createElement('div'); nav.id = 'wiz'+prefix+'Nav'; nav.style.cssText = 'display:flex;gap:6px;justify-content:center;margin-bottom:14px;flex-wrap:wrap';
+  var navHTML = ''; tabsDef.forEach(function(t, i) {
+    navHTML += '<button class="btn'+(i===0?' pri active':'')+'" id="wiz'+prefix+'Tab'+t.id+'" onclick="wizSubSwitch(\''+stepKey+'\',\''+t.key+'\')">'+t.label+'</button> ';
+  });
+  nav.innerHTML = navHTML;
   step.insertBefore(nav, step.firstChild);
-  wizS1Switch(wizS1Tab);
+  wizSubSwitch(stepKey, wizStepTabs[stepKey]);
+}
+
+// Step ①: 日历 | 财政 | 团队
+var wizS1Switch = function(t) { wizSubSwitch('s1', t); };
+function wizS1Setup() {
+  wizSubSetup('wiz-step1', 's1', [
+    { key:'cal', id:'Cal', label:'📅 日历' },
+    { key:'fin', id:'Fin', label:'💰 财政' },
+    { key:'team', id:'Team', label:'👥 团队' }
+  ], function(card) {
+    var h3 = card.querySelector('h3'); var title = h3 ? h3.textContent : '';
+    if (title.indexOf('收入')!==-1 || title.indexOf('支出')!==-1 || title.indexOf('鼓励')!==-1) return 'fin';
+    if (title.indexOf('团队')!==-1) return 'team';
+    return 'cal';
+  });
+}
+
+// Step ②: 任务列表 | 模板管理
+function wizS2Setup() {
+  wizSubSetup('wiz-step2', 's2', [
+    { key:'tasks', id:'Tasks', label:'📋 任务列表' },
+    { key:'tpl', id:'Tpl', label:'📁 模板管理' }
+  ], function(card) {
+    var html = card.innerHTML || '';
+    if (html.indexOf('wizTemplateSelect')!==-1 || html.indexOf('aiImportPanel')!==-1) return 'tpl';
+    return 'tasks';
+  });
+}
+
+// Step ③: 认领任务 | 成员卡片
+function wizS3Setup() {
+  wizSubSetup('wiz-step3', 's3', [
+    { key:'claim', id:'Claim', label:'⚔️ 认领任务' },
+    { key:'cards', id:'Cards', label:'👤 成员卡片' }
+  ], function(card) {
+    var html = card.innerHTML || '';
+    if (html.indexOf('wizClaimPerson')!==-1 || html.indexOf('wizClaimCatFilter')!==-1 || html.indexOf('wizSelectAll')!==-1) return 'claim';
+    return 'cards';
+  });
 }
 // ── Step 1: Framework ──
 function renderStep1() {
@@ -10547,6 +10584,7 @@ function refreshWizTemplateSelect() {
       var isPreset = PRESET_TEMPLATES.hasOwnProperty(e[0]);
       return '<option value="' + escAttr(e[0]) + '">' + (isPreset?'🔒':'📝') + ' ' + esc(e[0]) + ' (' + (e[1].tasks||[]).length + '项)</option>';
     }).join('');
+  wizS2Setup();
 }
 
 function saveStep2() {
@@ -10853,6 +10891,7 @@ function removeStaffCard(idx) {
   if (data.members && data.members[sc.name]) data.members[sc.name]._staff_removed = true;
   saveData();
   renderStep3();
+  wizS3Setup();
 }
 
 function saveStep3() {
