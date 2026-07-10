@@ -483,7 +483,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 }
 .workshop-mode #tab-settings {
   display: block !important;
-  width: 100%; max-width: 720px;
+  width: 100%; max-width: 820px;
   margin: 0 auto;
 }
 /* 卡片样式 — 仿注册页 .login-card */
@@ -499,11 +499,11 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 .workshop-mode #tab-settings .card h3 { color: #3d3629; }
 /* 导航条：白底卡片，火苗可见 */
 .workshop-mode #wizardNav {
-  position: sticky; top: 8px; z-index: 102;
-  background: rgba(255,255,255,.92);
-  border-radius: 14px; padding: 12px 8px 8px;
-  margin-bottom: 14px;
-  box-shadow: 0 2px 16px rgba(0,0,0,.15);
+  position: sticky; top: 24px; z-index: 102;
+  background: rgba(255,255,255,.94);
+  border-radius: 16px; padding: 16px 20px 10px;
+  margin: 12px 0 20px;
+  box-shadow: 0 2px 20px rgba(0,0,0,.12);
 }
 /* 底部状态栏：一行排列 */
 .workshop-status-bar {
@@ -9412,7 +9412,7 @@ function renderWizardNav() {
   if (!data.camp_progress) data.camp_progress = { step: 0, steps: {'0':'active','1':'locked','2':'locked','3':'locked','4':'locked'} };
   var cp = data.camp_progress;
   var campCreated = data.camp_info && data.camp_info.current && data.camp_info.current.identity && data.camp_info.current.identity.name;
-  var html = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center">';
+  var html = '<div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap;justify-content:center">';
   steps.forEach(function(s, i) {
     var flame = getStepFlame(s.num);
     var isActive = cp.step === s.num;
@@ -9422,20 +9422,22 @@ function renderWizardNav() {
     var cls = isActive ? 'btn pri' : 'btn';
     var op = canClick ? '' : 'opacity:.35;pointer-events:none';
     var title = canClick ? '' : 'title="请先完成 Step ⓪ 创营"';
-    html += '<div style="text-align:center">' +
-      '<button class="' + cls + '" onclick="switchStep(' + s.num + ')" style="font-size:.78rem;padding:6px 12px;' + op + '" ' + title + '>' +
+    html += '<div style="text-align:center;flex-shrink:0">' +
+      '<button class="' + cls + '" onclick="switchStep(' + s.num + ')" style="font-size:.8rem;padding:7px 14px;white-space:nowrap;' + op + '" ' + title + '>' +
       badge + ' ' + s.num + '. ' + s.label + '</button>' +
       '<span class="nav-flame' + (flame.cls ? ' ' + flame.cls : '') + '" title="' + flame.label + '">' + flame.emoji + '</span></div>';
-    if (i < 4) html += '<span style="color:var(--border);font-size:1rem">→</span>';
+    if (i < 4) html += '<span style="color:#ccc;font-size:.8rem;flex-shrink:0">→</span>';
   });
   html += '</div>';
   var ci = data.camp_info;
   var campName = (ci && ci.current && ci.current.identity && ci.current.identity.name) || '未创建';
   var ver = (ci && ci.current && ci.current.version) || 0;
   var who = (ci && ci.current && ci.current.updated_by) || '';
-  html += '<div class="workshop-status-bar"><span>当前营队：' + campName + ' · v' + ver + (who ? ' · ' + who : '') + '</span>' +
-    '<button class="btn" onclick="showChangelogPanel()" style="font-size:.65rem;padding:2px 8px;margin-left:8px">📋 版本历史</button>' +
-    '<button class="btn" onclick="exitWorkshop()" style="font-size:.65rem;padding:2px 8px;margin-left:4px">← 退出工坊</button></div>';
+  html += '<div class="workshop-status-bar">' +
+    '<button class="btn" onclick="exitWorkshop()" style="font-size:.7rem;padding:4px 12px">← 退出工坊</button>' +
+    '<span style="flex:1;text-align:center">' + campName + ' · v' + ver + (who ? ' · ' + who : '') + '</span>' +
+    '<button class="btn" onclick="showChangelogPanel()" style="font-size:.7rem;padding:4px 12px">📋 版本历史</button>' +
+    '</div>';
   document.getElementById('wizardNav').innerHTML = html;
 }
 
