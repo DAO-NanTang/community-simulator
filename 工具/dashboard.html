@@ -4594,33 +4594,30 @@ function renderWorkspace() {
   var archiveTotal = pubArchive.length + claimArchive.length;
 
   if (archiveTotal > 0 || true) { // 始终显示存档区
-    html += '<div class="card" style="padding:16px 18px;margin-bottom:12px">';
-    html += '<h3 style="margin:0 0 10px;font-size:1rem;cursor:pointer" data-archive-toggle="wsArchiveRoot" data-count="' + archiveTotal + '" onclick="toggleArchive(\'wsArchiveRoot\')">📦 统一存档（' + archiveTotal + '项）▾</h3>';
-    html += '<div id="wsArchiveRoot" style="display:none">';
+    html += '<div class="card" style="padding:16px 18px;margin-bottom:12px"><h3 style="margin:0 0 12px;font-size:1rem">📦 存档</h3>';
 
     // 我发布的存档
-    html += '<div style="font-size:.85rem;font-weight:600;margin:8px 0 4px;color:var(--muted);cursor:pointer" data-archive-toggle="wsPubArchive" data-count="' + pubArchive.length + '" onclick="toggleArchive(\'wsPubArchive\')">📤 我发布的存档（' + pubArchive.length + '项）▾</div>';
-    html += '<div id="wsPubArchive" style="display:none">';
-    html += '<div id="wsPubArchiveBar" style="display:flex;gap:3px;margin-bottom:6px">';
+    html += '<div style="font-size:.9rem;font-weight:600;margin-bottom:4px;color:var(--text);cursor:pointer" data-archive-toggle="wsPubArchive" data-count="' + pubArchive.length + '" onclick="toggleArchive(\'wsPubArchive\')">📤 我发布的存档（' + pubArchive.length + '项）▾</div>';
+    html += '<div id="wsPubArchive" style="display:none;margin-bottom:10px">';
+    html += '<div id="wsPubArchiveBar" style="display:flex;gap:4px;margin-bottom:8px">';
     [{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'all',l:'全部'}].forEach(function(v) {
-      html += '<button class="btn' + (wsPubArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="switchArchiveView(\'wsPubArchive\',\'' + v.k + '\')" style="font-size:.7rem;padding:3px 10px">' + v.l + '</button>';
+      html += '<button class="btn' + (wsPubArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="switchArchiveView(\'wsPubArchive\',\'' + v.k + '\')" style="font-size:.75rem;padding:4px 12px">' + v.l + '</button>';
     });
     html += '</div><div id="wsPubArchiveList"></div>';
-    if (pubArchive.length === 0) html += '<div style="font-size:.82rem;color:var(--muted);padding:8px;text-align:center">暂无已完成的发布任务</div>';
+    if (pubArchive.length === 0) html += '<div style="font-size:.85rem;color:var(--muted);padding:8px;text-align:center">暂无</div>';
     html += '</div>';
 
     // 我领取的存档
-    html += '<div style="font-size:.85rem;font-weight:600;margin:10px 0 4px;color:var(--muted);cursor:pointer" data-archive-toggle="wsDoneArchive" data-count="' + claimArchive.length + '" onclick="toggleArchive(\'wsDoneArchive\')">📥 我领取的存档（' + claimArchive.length + '项）▾</div>';
+    html += '<div style="font-size:.9rem;font-weight:600;margin-bottom:4px;color:var(--text);cursor:pointer" data-archive-toggle="wsDoneArchive" data-count="' + claimArchive.length + '" onclick="toggleArchive(\'wsDoneArchive\')">📥 我领取的存档（' + claimArchive.length + '项）▾</div>';
     html += '<div id="wsDoneArchive" style="display:none">';
-    html += '<div id="wsDoneArchiveBar" style="display:flex;gap:3px;margin-bottom:6px">';
+    html += '<div id="wsDoneArchiveBar" style="display:flex;gap:4px;margin-bottom:8px">';
     [{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'all',l:'全部'}].forEach(function(v) {
-      html += '<button class="btn' + (wsDoneArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="switchArchiveView(\'wsDoneArchive\',\'' + v.k + '\')" style="font-size:.7rem;padding:3px 10px">' + v.l + '</button>';
+      html += '<button class="btn' + (wsDoneArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="switchArchiveView(\'wsDoneArchive\',\'' + v.k + '\')" style="font-size:.75rem;padding:4px 12px">' + v.l + '</button>';
     });
     html += '</div><div id="wsDoneArchiveList"></div>';
-    if (claimArchive.length === 0) html += '<div style="font-size:.82rem;color:var(--muted);padding:8px;text-align:center">暂无已完成的领取任务</div>';
+    if (claimArchive.length === 0) html += '<div style="font-size:.85rem;color:var(--muted);padding:8px;text-align:center">暂无</div>';
     html += '</div>';
 
-    html += '</div>'; // close wsArchiveRoot
     html += '</div>';
   }
 
