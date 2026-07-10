@@ -4187,16 +4187,14 @@ function _repositionActivityCommunity() {
   var panelW = Math.min(420, window.innerWidth - ir.right - gap - 16);
   var shift = -(panelW + gap) / 2;           // 左移：使双面板整体居中
   inner.style.transform = 'translateX(' + shift + 'px)';
-  var modalH = ir.bottom - ir.top;
-  var availH = Math.min(600, window.innerHeight - ir.top - 20);
   // 重新读取 Modal 位置（transform 后已变化）
   ir = inner.getBoundingClientRect();
+  var modalH = ir.bottom - ir.top;
   panel.style.top = ir.top + 'px';
   panel.style.left = (ir.right + gap) + 'px';
   panel.style.right = 'auto';
   panel.style.width = panelW + 'px';
-  panel.style.minHeight = modalH + 'px';    // 底部对齐：不低于 Modal 高度
-  panel.style.maxHeight = availH + 'px';     // 屏幕空间不够时限制最大高度
+  panel.style.height = modalH + 'px';        // 底部对齐：高度等于 Modal
   panel.style.overflowY = 'auto';
 }
 window.addEventListener('resize', _repositionActivityCommunity);
