@@ -10347,6 +10347,7 @@ function updateWizBudgetCalc() {
 
   renderBudgetFramework();
   saveData();
+  wizS1Setup();
 }
 
 function addWizMember() {
@@ -10364,6 +10365,7 @@ function renameWizMember(oldName, newName) {
   data.tasks.forEach(function(t) { if (t.assignee === oldName) t.assignee = newName; if (t.confirmer === oldName) t.confirmer = newName; });
   saveData();
   renderStep1();
+  wizS1Setup();
 }
 
 function deleteWizMember(name) {
