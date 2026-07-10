@@ -1203,7 +1203,7 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
       </div>
       <div style="text-align:right;flex-shrink:0">
         <input id="hubSearch" placeholder="🔍 搜索任务…" oninput="renderHubQuestHall()" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;width:160px;background:var(--bg)">
-        <div style="font-size:.65rem;color:var(--accent);margin-top:4px;cursor:pointer" onclick="alert('📦 往期档案功能即将开放')">📦 往期档案</div>
+        <div style="font-size:.65rem;color:var(--accent);margin-top:4px;cursor:pointer" onclick="villagePeriod='archive';refreshQuestViews()">📦 往期档案</div>
       </div>
     </div>
     <!-- Main: left user card + right task list -->
@@ -1569,6 +1569,134 @@ function daysBetween(a, b) {
 }
 function daysSince(x) { return daysBetween(Clock.today(), x); }
 function daysUntil(x) { return daysBetween(x, Clock.today()); }
+var ARCHIVE_DAYS = 7;
+
+// ═══ 工作台存档机制 ═══
+
+// 计算任务的「完成日期」：领取者审核通过时间 / 撤回时间 / 发布时间（兜底）
+function getTaskDoneDate(task, claim) {
+  if (claim) {
+    if (claim.reviewed_at) return claim.reviewed_at;
+    return task.posted_at || '';
+  }
+  if (task.status === 'withdrawn' && task.withdraw_requested_at) return task.withdraw_requested_at;
+  var claimants = task.claimants || [];
+  var latestDate = '';
+  claimants.forEach(function(c) {
+    if (c.status === 'completed' && c.reviewed_at && (!latestDate || c.reviewed_at > latestDate)) {
+      latestDate = c.reviewed_at;
+    }
+  });
+  if (latestDate) return latestDate;
+  return task.posted_at || '';
+}
+
+// 存档展开/折叠
+function toggleArchive(sectionId) {
+  var el = document.getElementById(sectionId);
+  if (!el) return;
+  var isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? '' : 'none';
+  // 更新按钮文字
+  var btns = document.querySelectorAll('[data-archive-toggle="' + sectionId + '"]');
+  btns.forEach(function(btn) {
+    var cnt = btn.getAttribute('data-count') || '';
+    btn.textContent = isHidden ? ('📦 存档（' + cnt + '项）▴') : ('📦 存档（' + cnt + '项）▾');
+  });
+}
+
+// 切换存档视图模式
+function switchArchiveView(sectionId, mode) {
+  if (sectionId === 'wsPubArchive') { wsPubArchiveView = mode; }
+  else if (sectionId === 'wsDoneArchive') { wsDoneArchiveView = mode; }
+  // 更新筛选按钮样式
+  var bar = document.getElementById(sectionId + 'Bar');
+  if (bar) {
+    bar.querySelectorAll('button').forEach(function(b) {
+      b.className = b.getAttribute('data-mode') === mode ? 'btn pri' : 'btn';
+    });
+  }
+  // 重新渲染列表
+  var listEl = document.getElementById(sectionId + 'List');
+  if (!listEl) return;
+  var archiveData = listEl._archiveData || [];
+  var ctx = listEl._archiveContext || 'workspace';
+  var viewMode = (sectionId === 'wsPubArchive') ? wsPubArchiveView : wsDoneArchiveView;
+  renderArchiveList(sectionId + 'List', archiveData, viewMode, ctx);
+}
+
+// 存档列表渲染（周/月/年/全部）
+function renderArchiveList(containerId, archiveTasks, viewMode, context) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  context = context || 'workspace';
+  // 缓存数据，供视图切换时复用
+  container._archiveData = archiveTasks;
+  container._archiveContext = context;
+  var html = '';
+  viewMode = viewMode || 'week';
+
+  if (viewMode === 'all') {
+    archiveTasks.slice().sort(function(a, b) { return (b.doneDate || '').localeCompare(a.doneDate || ''); })
+      .forEach(function(e) { html += renderQuestCard(e.task, {context:context, userName:currentUser?currentUser.name:'', isMember:true, taskIndex:e.idx}); });
+    container.innerHTML = html; return;
+  }
+
+  // 分组
+  var groups = {};
+  archiveTasks.forEach(function(e) {
+    var d = parseMD(e.doneDate);
+    var key;
+    if (!d || isNaN(d.getTime())) { key = '_unknown'; }
+    else if (viewMode === 'week') {
+      var day = d.getDay() || 7;
+      var mon = new Date(d); mon.setDate(d.getDate() - day + 1);
+      key = mon.getFullYear() + '-' + String(mon.getMonth()+1).padStart(2,'0') + '-' + String(mon.getDate()).padStart(2,'0');
+    } else if (viewMode === 'month') {
+      key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    } else {
+      key = String(d.getFullYear());
+    }
+    (groups[key] = groups[key] || []).push(e);
+  });
+
+  // 本周 / 上周 计算（仅周视图需要）
+  var thisMonday = null, lastMonday = null;
+  if (viewMode === 'week') {
+    var todayD = parseMD(Clock.today());
+    if (todayD && !isNaN(todayD.getTime())) {
+      var tdDay = todayD.getDay() || 7;
+      thisMonday = new Date(todayD); thisMonday.setDate(todayD.getDate() - tdDay + 1);
+      lastMonday = new Date(thisMonday); lastMonday.setDate(thisMonday.getDate() - 7);
+    }
+  }
+
+  Object.keys(groups).sort().reverse().forEach(function(key) {
+    var list = groups[key];
+    var label;
+    if (key === '_unknown') { label = '未知日期'; }
+    else if (viewMode === 'week') {
+      var p = key.split('-'); var mon = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+      var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      var fmt = function(d) { return (d.getMonth()+1) + '/' + d.getDate(); };
+      if (thisMonday && mon.getTime() === thisMonday.getTime()) label = '本周 ' + fmt(mon) + ' – ' + fmt(sun);
+      else if (lastMonday && mon.getTime() === lastMonday.getTime()) label = '上周 ' + fmt(mon) + ' – ' + fmt(sun);
+      else label = fmt(mon) + ' – ' + fmt(sun);
+    } else if (viewMode === 'month') {
+      label = key.split('-')[0] + '年' + parseInt(key.split('-')[1]) + '月';
+    } else {
+      label = key + '年';
+    }
+    var groupId = containerId + '_grp_' + key.replace(/[^a-zA-Z0-9]/g, '_');
+    html += '<div style="font-size:.72rem;font-weight:600;margin:6px 0 4px;color:var(--muted);cursor:pointer" onclick="var d=document.getElementById(\'' + groupId + '\');d.style.display=d.style.display===\'none\'?\'\':\'none\'">▸ ' + label + ' (' + list.length + ')</div>';
+    html += '<div id="' + groupId + '" style="display:none">';
+    list.sort(function(a,b){ return (b.doneDate||'').localeCompare(a.doneDate||''); });
+    list.forEach(function(e) { html += renderQuestCard(e.task, {context:context, userName:currentUser?currentUser.name:'', isMember:true, taskIndex:e.idx}); });
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
 
 // ── Constants (must be before any function that uses them) ──
 const PIE_COLORS = ['#d4a853','#6b9b4e','#5b8cb8','#c47d5a','#8b6bae','#c4553d','#5fa89b','#d49b3d','#9b6b8e','#6b8e6b'];
@@ -2833,7 +2961,7 @@ function renderHubUserCard() {
 }
 function renderHubQuestHall() { openHubQuestHall(); }
 
-function toggleWSDone(el, cnt) { window._wsDoneOpen=!window._wsDoneOpen; var list=document.getElementById('wsDoneList'); if(list)list.style.display=window._wsDoneOpen?'':'none'; el.textContent=window._wsDoneOpen?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
+
 function toggleQuestSection(sec, cnt, el) {var key='_questFold'+sec.charAt(0).toUpperCase()+sec.slice(1);var ids={urgent:'qsUrgent',normal:'qsNormal',claimed:'qsClaimed'};window[key]=!window[key];var div=document.getElementById(ids[sec]);if(div)div.style.display=window[key]?'none':'';if(el)el.textContent=el.textContent.replace(/[▾▴]/,'')+(window[key]?' ▾':' ▴');}
 function toggleCardExpand(name, ctx) { if(!window._cardExpanded)window._cardExpanded={}; window._cardExpanded[name+'_'+ctx]=!window._cardExpanded[name+'_'+ctx]; var m={village:'renderVillageQuestHall',questboard:'renderQuestBoard',workspace:'renderWorkspace',member:null,taskhall:null}; var fn=m[ctx]; if(fn&&typeof window[fn]==='function')window[fn](); }
 function toggleMemDone(el, cnt) { window._memDoneOpen=!window._memDoneOpen; var list=document.getElementById('memDoneList'); if(list)list.style.display=window._memDoneOpen?'':'none'; el.textContent=window._memDoneOpen?'📦 已完成（'+cnt+'项）▴':'📦 已完成（'+cnt+'项）▾'; }
@@ -2904,7 +3032,7 @@ function renderVillageQuestHall() {
   var sortedDates = Object.keys(dates).sort();
   var tlHTML = '<span style="margin-right:4px">📅</span>';
   sortedDates.slice(0,14).forEach(function(d){ tlHTML += '<span style="cursor:pointer;padding:1px 5px;border-radius:3px;'+(d===today?'background:var(--accent);color:#fff;font-weight:600':'')+'" onclick="villageSearchText=\''+d+'\';document.getElementById(\'villageSearchInput\').value=\''+d+'\';refreshQuestViews()">'+d.slice(5)+'</span>'; });
-  tlHTML += ' <span style="cursor:pointer;color:var(--accent);margin-left:4px" onclick="alert(\'📦 往期档案功能即将开放\')">📦 往期档案</span>';
+  tlHTML += ' <span style="cursor:pointer;color:var(--accent);margin-left:4px" onclick="villagePeriod=\'archive\';refreshQuestViews()">📦 往期档案</span>';
   var el = document.getElementById('npcTimelineBar'); if (el) el.innerHTML = tlHTML;
 
   // ── Search text ──
@@ -2944,8 +3072,37 @@ function renderVillageQuestHall() {
   // ── Filter + three-layer logic ──
   // ── 往期档案模式 ──
   if (villagePeriod === 'archive') {
-    document.getElementById('villageQuestList').innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px"><div style="font-size:3rem;margin-bottom:10px">📦</div><div style="font-weight:600;margin-bottom:4px">往期档案</div><div style="font-size:.78rem">浏览功能即将开放，敬请期待</div></div>';
     document.getElementById('villageQuickBar').innerHTML = barHTML;
+    var periods = data.archived_periods || {};
+    var periodKeys = Object.keys(periods).sort().reverse();
+    if (periodKeys.length === 0) {
+      document.getElementById('villageQuestList').innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px"><div style="font-size:3rem;margin-bottom:10px">📦</div><div style="font-weight:600;margin-bottom:4px">往期档案</div><div style="font-size:.78rem">还没有完结的营期</div></div>';
+    } else {
+      var archiveHTML = '<div style="font-weight:600;margin-bottom:10px">📦 往期档案（' + periodKeys.length + '期）</div>';
+      periodKeys.forEach(function(key) {
+        var p = periods[key];
+        var taskCount = (p.tasks || []).length;
+        var memberCount = Object.keys(p.members || {}).length;
+        var closedDate = p.closed_at ? p.closed_at.slice(0, 10) : '';
+        var pid = 'villageArchive_' + key.replace(/[^a-zA-Z0-9一-鿿]/g, '_');
+        archiveHTML += '<div class="card" style="padding:10px 14px;margin-bottom:8px;cursor:pointer" onclick="var el=document.getElementById(\'' + pid + '\');el.style.display=el.style.display===\'none\'?\'\':\'none\'">';
+        archiveHTML += '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600">🏕️ ' + esc(key) + '</span><span style="font-size:.72rem;color:var(--muted)">' + (closedDate || '') + '</span></div>';
+        archiveHTML += '<div style="font-size:.72rem;color:var(--muted)">📋 ' + taskCount + ' 任务 · 👥 ' + memberCount + ' 成员</div>';
+        archiveHTML += '<div id="' + pid + '" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div></div>';
+        // 将快照 tasks 转为 archiveTasks 格式并渲染
+        setTimeout((function(k, elId) {
+          return function() {
+            var per = periods[k];
+            var at = (per.tasks || []).map(function(t, i) {
+              return { task: t, idx: i, doneDate: getTaskDoneDate(t, null) || (per.closed_at ? per.closed_at.slice(0,10) : '') };
+            });
+            at.sort(function(a, b) { return (b.doneDate || '').localeCompare(a.doneDate || ''); });
+            renderArchiveList(elId, at, 'all', 'village');
+          };
+        })(key, pid), 10);
+      });
+      document.getElementById('villageQuestList').innerHTML = archiveHTML;
+    }
     return;
   }
 
@@ -3899,12 +4056,24 @@ function renderWorkspace() {
   });
 
   // ── Tasks I published (我发布的，含营队任务) ──
-  var myPublished = [];
+  // 拆为三组：进行中 / 近期完成(≤7天) / 存档(>7天)
+  var myPublishedActive = [];
+  var myPublishedRecent = [];
+  var myPublishedArchive = [];
   tasks.forEach(function(t, i) {
-    if (t.poster === name && (t.status === 'active' || t.status === 'pending_approval')) {
-      myPublished.push({ task: t, idx: i });
+    if (t.poster !== name) return;
+    if (t.status === 'active' || t.status === 'pending_approval') {
+      myPublishedActive.push({ task: t, idx: i });
+    } else if (t.status === 'completed' || t.status === 'withdrawn' || t.status === '已确认') {
+      var doneDate = getTaskDoneDate(t, null);
+      if (daysSince(doneDate) <= ARCHIVE_DAYS) {
+        myPublishedRecent.push({ task: t, idx: i, doneDate: doneDate });
+      } else {
+        myPublishedArchive.push({ task: t, idx: i, doneDate: doneDate });
+      }
     }
   });
+  var myPublishedTotal = myPublishedActive.length + myPublishedRecent.length + myPublishedArchive.length;
 
   // ── Camp tasks pending admin approval ──
   var pendingCamp = (selfId && selfId.isAdmin) ? tasks.filter(function(t) { return t.status === 'pending_approval'; }) : [];
@@ -4076,11 +4245,33 @@ function renderWorkspace() {
     }
 
     // ── 我发布的任务 ──
-    if (myPublished.length > 0) {
-      html += '<div class="card" style="background:#f0f6fe;border-color:#6a9fd8;margin-bottom:12px"><h3>📤 我发布的（' + myPublished.length + '项）</h3>';
-      myPublished.forEach(function(p) {
-        html += renderQuestCard(p.task, { context: 'workspace', userName: currentUser.name, isMember: !!selfId, taskIndex: p.idx });
-      });
+    if (myPublishedTotal > 0) {
+      html += '<div class="card" style="background:#f0f6fe;border-color:#6a9fd8;margin-bottom:12px"><h3>📤 我发布的（' + myPublishedTotal + '项）</h3>';
+      // 进行中
+      if (myPublishedActive.length > 0) {
+        myPublishedActive.forEach(function(p) {
+          html += renderQuestCard(p.task, { context: 'workspace', userName: currentUser.name, isMember: !!selfId, taskIndex: p.idx });
+        });
+      }
+      // 近期完成
+      if (myPublishedRecent.length > 0) {
+        html += '<div style="font-size:.78rem;font-weight:600;margin:8px 0 4px;color:var(--green)">▸ 近期完成（' + myPublishedRecent.length + '项）</div>';
+        myPublishedRecent.forEach(function(p) {
+          html += renderQuestCard(p.task, { context: 'workspace', userName: currentUser.name, isMember: !!selfId, taskIndex: p.idx });
+        });
+      }
+      // 存档
+      if (myPublishedArchive.length > 0) {
+        html += '<div style="font-size:.78rem;font-weight:600;margin:8px 0 4px;color:var(--muted);cursor:pointer" data-archive-toggle="wsPubArchive" data-count="' + myPublishedArchive.length + '" onclick="toggleArchive(\'wsPubArchive\')">📦 存档（' + myPublishedArchive.length + '项）▾</div>';
+        html += '<div id="wsPubArchive" style="display:none">';
+        html += '<div id="wsPubArchiveBar" style="display:flex;gap:3px;margin-bottom:6px">';
+        [{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'all',l:'全部'}].forEach(function(v) {
+          html += '<button class="btn' + (wsPubArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="switchArchiveView(\'wsPubArchive\',\'' + v.k + '\')" style="font-size:.65rem;padding:2px 8px">' + v.l + '</button>';
+        });
+        html += '</div>';
+        html += '<div id="wsPubArchiveList"></div>';
+        html += '</div>';
+      }
       html += '</div>';
     }
 
@@ -4110,6 +4301,17 @@ function renderWorkspace() {
       var activeTasks = filtered.filter(function(e){ return e.claim.status==='in_progress'||e.claim.status==='triggered'||e.claim.status==='rejected'; });
       var submittedTasks = filtered.filter(function(e){ return e.claim.status==='submitted'; });
       var doneTasks = filtered.filter(function(e){ return e.claim.status==='completed'; });
+      // 拆分已完成：近期(≤7天) vs 存档(>7天)
+      var doneRecent = [];
+      var doneArchive = [];
+      doneTasks.forEach(function(e) {
+        var doneDate = getTaskDoneDate(e.task, e.claim);
+        if (daysSince(doneDate) <= ARCHIVE_DAYS) {
+          doneRecent.push({ task: e.task, idx: e.idx, doneDate: doneDate });
+        } else {
+          doneArchive.push({ task: e.task, idx: e.idx, doneDate: doneDate });
+        }
+      });
       var wsOpts = { context:'workspace', userName:currentUser.name, isMember:true };
       html += '<div class="card" style="padding:10px 14px">';
       if (activeTasks.length>0) {
@@ -4120,10 +4322,21 @@ function renderWorkspace() {
         html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--accent)">⏳ 审核中（'+submittedTasks.length+'项）</div>';
         submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
       }
-      if (doneTasks.length>0) {
-        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="toggleWSDone(this,'+doneTasks.length+')">'+(window._wsDoneOpen?'📦 已完成（'+doneTasks.length+'项）▴':'📦 已完成（'+doneTasks.length+'项）▾')+'</div>';
-        html += '<div id="wsDoneList" style="display:'+(window._wsDoneOpen?'':'none')+'" onclick="event.stopPropagation()">';
-        doneTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
+      // 近期完成
+      if (doneRecent.length > 0) {
+        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--green)">▸ 近期完成（'+doneRecent.length+'项）</div>';
+        doneRecent.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
+      }
+      // 存档
+      if (doneArchive.length > 0) {
+        html += '<div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" data-archive-toggle="wsDoneArchive" data-count="' + doneArchive.length + '" onclick="toggleArchive(\'wsDoneArchive\')">📦 存档（' + doneArchive.length + '项）▾</div>';
+        html += '<div id="wsDoneArchive" style="display:none">';
+        html += '<div id="wsDoneArchiveBar" style="display:flex;gap:3px;margin-bottom:6px">';
+        [{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'},{k:'all',l:'全部'}].forEach(function(v) {
+          html += '<button class="btn' + (wsDoneArchiveView===v.k?' pri':'') + '" data-mode="' + v.k + '" onclick="switchArchiveView(\'wsDoneArchive\',\'' + v.k + '\')" style="font-size:.65rem;padding:2px 8px">' + v.l + '</button>';
+        });
+        html += '</div>';
+        html += '<div id="wsDoneArchiveList"></div>';
         html += '</div>';
       }
       html += '</div>';
@@ -4135,9 +4348,19 @@ function renderWorkspace() {
   html += '</div>'; // close flex container
 
   container.innerHTML = html;
+
+  // ── 填充存档列表（DOM 就绪后渲染）──
+  if (myPublishedArchive && myPublishedArchive.length > 0) {
+    renderArchiveList('wsPubArchiveList', myPublishedArchive, wsPubArchiveView);
+  }
+  if (typeof doneArchive !== 'undefined' && doneArchive.length > 0) {
+    renderArchiveList('wsDoneArchiveList', doneArchive, wsDoneArchiveView);
+  }
 }
 var flowFilter = 'all';
 var wsSourceFilter = 'all';
+var wsPubArchiveView = 'week';   // 工作台「我发布的」存档视图：week|month|year|all
+var wsDoneArchiveView = 'week';  // 工作台「已完成」存档视图：week|month|year|all
 
 // ═══ 个人物品 ═══
 function showAddItem() {
@@ -5626,14 +5849,23 @@ function renderQuestBoard() {
   else { claimed.forEach(function(t) { html += renderQuestCard(t, cardOpts); }); }
   html += '</div></div>';
 
-  // ── Archive: completed/confirmed tasks ──
-  var archiveTasks = tasks.filter(function(t) { return t.status==='已完成'||t.status==='已确认'; });
+  // ── Archive: 统一用 getTaskDoneDate 判断，复用 renderArchiveList ──
+  var archiveTasks = [];
+  tasks.forEach(function(t, i) {
+    var doneDate = getTaskDoneDate(t, null);
+    if (doneDate && daysSince(doneDate) > ARCHIVE_DAYS) {
+      archiveTasks.push({ task: t, idx: i, doneDate: doneDate });
+    }
+  });
   if (archiveTasks.length > 0) {
-    html += '<div class="card"><h3 style="cursor:pointer" onclick="var el=document.getElementById(\"questArchive\");el.style.display=el.style.display===\"none\"?\"\":\"none\";this.textContent=el.style.display===\"none\"?\"📦 已归档（'+archiveTasks.length+'项）▾\":\"📦 已归档（'+archiveTasks.length+'项）▴\"">📦 已归档（'+archiveTasks.length+'项）▾</h3>';
-    html += '<div id="questArchive" style="display:none;font-size:.78rem">';
-    archiveTasks.slice(0,20).forEach(function(t) { html += renderQuestCard(t, cardOpts); });
-    if (archiveTasks.length > 20) html += '<div style="color:var(--muted);text-align:center;padding:4px">还有 '+(archiveTasks.length-20)+' 条...</div>';
-    html += '</div></div>';
+    html += '<div class="card"><h3 style="cursor:pointer" onclick="toggleArchive(\'questArchive\')" data-archive-toggle="questArchive" data-count="' + archiveTasks.length + '">📦 已归档（' + archiveTasks.length + '项）▾</h3>';
+    html += '<div id="questArchive" style="display:none">';
+    html += '<div style="display:flex;gap:4px;margin-bottom:8px" id="questArchiveBar">';
+    [{v:'week',l:'周'},{v:'month',l:'月'},{v:'year',l:'年'},{v:'all',l:'全部'}].forEach(function(m){
+      html += '<button class="btn'+(m.v==='week'?' pri':'')+'" data-mode="'+m.v+'" onclick="switchArchiveView(\'questArchive\',\''+m.v+'\')" style="font-size:.7rem;padding:3px 10px">'+m.l+'</button>';
+    });
+    html += '</div><div id="questArchiveList"></div></div></div>';
+    setTimeout(function() { renderArchiveList('questArchiveList', archiveTasks, 'week', 'questboard'); }, 10);
   }
 
   // ── Recent submissions feed ──
