@@ -661,16 +661,6 @@
 
   <!-- Tab: Quest Board (Adventurer) -->
   <div id="tab-questboard" class="hidden">
-    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="questFilterBar">
-      <button class="btn pri" onclick="questFilter='all';renderQuestBoard()">全部</button>
-      <button class="btn" onclick="questFilter='主线';renderQuestBoard()">🔴 主线</button>
-      <button class="btn" onclick="questFilter='支线';renderQuestBoard()">🟡 支线</button>
-      <button class="btn" onclick="questFilter='共创';renderQuestBoard()">🟢 共创</button>
-      <button class="btn" onclick="questFilter='隐藏';renderQuestBoard()">🟣 隐藏</button>
-      <span style="margin:0 4px;color:var(--border)">|</span>
-      <button class="btn" onclick="questFilter='claimable';renderQuestBoard()">⬜ 可领取</button>
-      <button class="btn" onclick="questFilter='claimed';renderQuestBoard()">✅ 已领取</button>
-    </div>
     <div id="questBoardContent"></div>
   </div>
 
@@ -5734,10 +5724,15 @@ function renderQuestBoard() {
   var id = currentUser ? getIdentity(currentUser) : null;
   var today = Clock.today();
 
-  // ── Row 1: Scope + Quick (bigger) ──
+  // ── Row 1: Type filter (主线/支线/共创/隐藏) ──
+  var typeBtns = [{v:'all',l:'全部'},{v:'主线',l:'🔴 主线'},{v:'支线',l:'🟡 支线'},{v:'共创',l:'🟢 共创'},{v:'隐藏',l:'🟣 隐藏'},{v:'claimable',l:'⬜ 可领取'},{v:'claimed',l:'✅ 已领取'}];
+  var fhtml = '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px;align-items:center">';
+  typeBtns.forEach(function(s) { fhtml += '<button class="btn'+(questFilter===s.v?' pri':'')+'" onclick="questFilter='+escAttr("'"+s.v+"'")+';renderQuestBoard()" style="font-size:.78rem;padding:3px 10px">'+s.l+'</button>'; });
+  fhtml += '</div>';
+  // ── Row 2: Scope + Quick ──
   var scopeBtns = [{v:'all',l:'全部'},{v:'camp',l:'🏕️ 营地'},{v:'personal',l:'👤 私人'}];
   var quickBtns = [{v:'today',l:'📅 今天'},{v:'urgent',l:'⏰ 即将截止'},{v:'need_people',l:'👥 缺人中'},{v:'submitted_all',l:'✅ 已提交'}];
-  var fhtml = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;align-items:center">';
+  fhtml += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;align-items:center">';
   scopeBtns.forEach(function(s) { fhtml += '<button class="btn'+(questScopeFilter===s.v?' pri':'')+'" onclick="questScopeFilter='+escAttr("'"+s.v+"'")+';renderQuestBoard()" style="font-size:.82rem;padding:4px 14px">'+s.l+'</button>'; });
   fhtml += '<span style="color:var(--border);margin:0 4px;align-self:center">|</span>';
   quickBtns.forEach(function(q) { fhtml += '<button class="btn'+(questQuickFilter===q.v?' pri':'')+'" onclick="questQuickFilter=questQuickFilter==='+escAttr("'"+q.v+"'")+'?'+escAttr("'")+':'+escAttr("'"+q.v+"'")+';renderQuestBoard()" style="font-size:.82rem;padding:4px 14px">'+q.l+'</button>'; });
@@ -5770,8 +5765,6 @@ function renderQuestBoard() {
 
   // ── Unclaimed reminder ──
 
-  var filterTypes = ['all','主线','支线','共创','隐藏','claimable','claimed'];
-  document.querySelectorAll('#questFilterBar .btn').forEach(function(b, i) { b.className = (questFilter === filterTypes[i]) ? 'btn pri' : 'btn'; });
   var filtered = tasks.filter(function(t) {
     if (t.status !== 'active') return false; if (!t.claimants) return false;
     var myClaim = (t.claimants || []).find(function(c) { return c.name === name; });
@@ -5881,6 +5874,7 @@ function renderQuestBoard() {
 
   container.innerHTML = npcHTML + fhtml + html;
 }
+var questFilter = 'all';      // 任务类型筛选
 var questQuickFilter = '';
 var questCatFilter = '';
 var questLocFilter = '';  // 地理位置过滤（预留）
@@ -6306,6 +6300,20 @@ function closeSettlementModal() {
 }
 
 function executeSettlement(idx, claimantName) {
+  // 预付款发布：确认支付后完成任务发布
+  if (_settlementPending && _settlementPending.task) {
+    var task = _settlementPending.task;
+    if (!data.tasks) data.tasks = [];
+    data.tasks.push(task);
+    var estimated = (task.points || 0) * ((task.max_slots || 1) || 1);
+    recordTransaction({ type: TX_TYPES.TASK_POST, from: currentUser.name, to: '托管('+(task.escrow_ref||'escrow')+')', amount: estimated, task_name: task.name, scope: task.scope||'personal' });
+    closeSettlementModal();
+    closePostTaskModal();
+    _pendingPostTask = null;
+    _settlementPending = null;
+    refreshAfterAction('已发布（预付）：' + task.name + ' · 锁定 ' + estimated.toLocaleString() + ' NT');
+    return;
+  }
   // 支持参数传入或从 _settlementPending 读取
   if (idx === undefined && _settlementPending) {
     var sp = _settlementPending;
@@ -6601,9 +6609,24 @@ function confirmPostTask() {
   document.getElementById('postTaskConfirmWrap').style.display = '';
   document.getElementById('postTaskConfirmWrap').innerHTML = renderPostConfirmCard(task);
 }
+var _settlementPending = null; // { idx, claimantName } 或 { task } 预付款待发布
 function executePostTask() {
   var task = _pendingPostTask;
   if (!task) return;
+
+  // 预付款：弹出支付确认，不直接发布
+  if (task.prepaid) {
+    var estimated = (task.points || 0) * ((task.max_slots || 1) || 1);
+    document.getElementById('settlementInfo').innerHTML =
+      '<div><b>🔒 预付款锁定</b></div>'+
+      '<div>任务：<b>'+esc(task.name)+'</b></div>'+
+      '<div>金额：<b>'+estimated.toLocaleString()+' NT</b>（'+task.points+' × '+(task.max_slots||1)+'人）</div>'+
+      '<div style="font-size:.75rem;color:var(--muted);margin-top:4px">NT 将转入托管锁定，任务完成后结算释放</div>';
+    document.getElementById('settlementModal').classList.add('show');
+    _settlementPending = { task: task };
+    return;
+  }
+
   if (!data.tasks) data.tasks = [];
   data.tasks.push(task);
   if (task.scope === 'personal' && task.points > 0) {
