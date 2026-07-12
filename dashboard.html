@@ -785,7 +785,7 @@
         <div style="font-size:.8rem;color:var(--muted)" id="hubNpcText">你好！欢迎来到任务大厅～</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
-        <input id="hubSearch" placeholder="🔍 搜索任务…" oninput="_debounce('hs',300,renderHubQuestHall)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;width:160px;background:var(--bg)">
+        <input id="hubSearch" placeholder="🔍 搜索任务…" oninput="_debounce('hs',300,openHubQuestHall)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;width:160px;background:var(--bg)">
         <div style="font-size:.65rem;color:var(--accent);margin-top:4px;cursor:pointer" onclick="villagePeriod='archive';refreshQuestViews()">📦 往期档案</div>
       </div>
     </div>
@@ -2632,7 +2632,6 @@ function renderHubUserCard() {
     '<div style="font-size:.68rem;color:var(--muted);line-height:2;border-top:1px dotted var(--border);padding-top:8px">'+
     '<div>📋 接了 <b>'+myActive+'</b> 项</div><div>⏳ 待交 <b>'+mySubmit+'</b> 项</div><div>✅ 完成 <b>'+myDone+'</b> 项</div></div>';
 }
-function renderHubQuestHall() { openHubQuestHall(); }
 
 
 function toggleQuestSection(sec, cnt, el) {var key='questFold'+sec.charAt(0).toUpperCase()+sec.slice(1);var ids={urgent:'qsUrgent',normal:'qsNormal',claimed:'qsClaimed'};appState[key]=!appState[key];var div=document.getElementById(ids[sec]);if(div)div.style.display=appState[key]?'none':'';if(el)el.textContent=el.textContent.replace(/[▾▴]/,'')+(appState[key]?' ▾':' ▴');}
@@ -6051,7 +6050,6 @@ function backToPostForm() {
   document.getElementById('campTaskFormWrap').style.display = '';
   _pendingPostTask = null;
 }
-function backToCampForm() { backToPostForm(); }
 
 function confirmPostTask() {
   var name = document.getElementById('postTaskName').value.trim();
@@ -7128,7 +7126,7 @@ function switchTaskView(mode) {
   document.getElementById('taskMapView').classList.toggle('hidden', mode !== 'map');
   document.getElementById('completenessCard').classList.toggle('hidden', mode !== 'list');
   document.getElementById('taskViewTitle').textContent = mode === 'list' ? '任务清单' : '攻略地图';
-  if (mode === 'map') renderStrategyMap();
+  if (mode === 'map') renderDailyView('player');
   if (mode === 'list') renderTasks();
 }
 
@@ -7239,7 +7237,7 @@ function renderDailyView(role) {
   if (milestonesEl) milestonesEl.innerHTML = milestones.map(function(m, i) {
     var mDates = m.date ? normalizeMD(m.date) : '';
     var isToday = mDates === (selDate.slice(5,7)+'/'+selDate.slice(8));
-    var isPast = mDates && parseDateStr(mDates) < parseDateStr(selMD.replace('-','/'));
+    var isPast = mDates && parseDate(mDates) < parseDate(selMD.replace('-','/'));
     var hasDate = !!m.date;
     var bg = isToday ? '#fdf5e0' : (isPast ? '#e8f0e2' : '#fefdf9');
     var bd = isToday ? '2px solid var(--accent)' : (isPast ? '1px solid var(--green)' : '1px solid var(--border)');
@@ -7247,11 +7245,11 @@ function renderDailyView(role) {
     // Count active tasks on this milestone date (staff view only)
     var taskCount = 0;
     if (isStaffView && mDates) {
-      var mTS = parseDateStr(mDates);
+      var mTS = parseDate(mDates);
       taskCount = tasks.filter(function(t) {
         if ((t.active||'yes')==='no') return false;
-        var dl = parseDateStr(normalizeMD(t.deadline));
-        var st = t.start ? parseDateStr(normalizeMD(t.start)) : dl;
+        var dl = parseDate(normalizeMD(t.deadline));
+        var st = t.start ? parseDate(normalizeMD(t.start)) : dl;
         var isDaily = /每日|每天/.test(t.deadline||'');
         return (mTS >= st && mTS <= dl) || isDaily;
       }).length;
@@ -7278,9 +7276,9 @@ function renderDailyView(role) {
     if (!isStaffView && t.assignee && isTaskAssigneeStaff) return false;
     // Hide tasks marked as 'no' (🔴不做)
     if ((t.active||'yes') === 'no') return false;
-    const dl = parseDateStr(normalizeMD(t.deadline));
-    const st = t.start ? parseDateStr(normalizeMD(t.start)) : dl;
-    const today = parseDateStr(selMD.replace('-','/'));
+    const dl = parseDate(normalizeMD(t.deadline));
+    const st = t.start ? parseDate(normalizeMD(t.start)) : dl;
+    const today = parseDate(selMD.replace('-','/'));
     if (!dl || dl === Infinity) return false;
     const inRange = today >= st && today <= dl;
     const isDaily = /每日|每天/.test(t.deadline||'');
@@ -7290,7 +7288,7 @@ function renderDailyView(role) {
   // Sort: urgent first, then by deadline
   activeToday.sort((a,b) => {
     if ((a.status==='进行中') !== (b.status==='进行中')) return a.status==='进行中'?-1:1;
-    return parseDateStr(normalizeMD(a.deadline)) - parseDateStr(normalizeMD(b.deadline));
+    return parseDate(normalizeMD(a.deadline)) - parseDate(normalizeMD(b.deadline));
   });
 
   document.getElementById(prefix + 'TaskCount').textContent = `${activeToday.length} 项任务`;
@@ -7338,8 +7336,6 @@ function renderDailyView(role) {
 }
 
 // Backward-compatible wrapper
-function renderStrategyMap() { renderDailyView('player'); }
-function renderTaskHall() { renderDailyView('staff'); }
 
 function normalizeMD(s) {
   if (!s) return '';
@@ -8042,11 +8038,6 @@ function parseDate(s) {
   return d ? d.getTime() : Infinity;
 }
 
-function parseDateStr(s) {
-  var d = parseMD(s);
-  return d ? d.getTime() : Infinity;
-}
-
 // ── Avatar helpers (DiceBear API) ──
 function avatarCircle(seed, size, styleIdx) {
   var name = typeof seed === 'string' ? seed : CHARACTER_SEEDS[seed % CHARACTER_SEEDS.length];
@@ -8265,7 +8256,7 @@ function renderTimeline() {
   });
 
   var dates = Object.keys(groups).sort(function(a, b) {
-    return parseDateStr(a) - parseDateStr(b);
+    return parseDate(a) - parseDate(b);
   });
 
   var html = '';
@@ -8310,7 +8301,7 @@ function renderCalendar() {
       var d = normalizeMD(t.deadline); if (d) dateSet[d] = true;
       if (t.start) { var s = normalizeMD(t.start); if (s) dateSet[s] = true; }
     });
-    schedule = { dates: Object.keys(dateSet).sort(function(a,b){ return parseDateStr(a)-parseDateStr(b); }), weekdays: [], slots: [] };
+    schedule = { dates: Object.keys(dateSet).sort(function(a,b){ return parseDate(a)-parseDate(b); }), weekdays: [], slots: [] };
   }
 
   var dates = schedule.dates || [];

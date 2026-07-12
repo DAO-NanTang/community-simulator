@@ -19,7 +19,6 @@ header { padding:14px 24px;border-bottom:1.5px solid #4a3828;position:relative;o
   background:linear-gradient(0deg,rgba(0,0,0,.25),rgba(0,0,0,.05) 40%,rgba(0,0,0,.15) 100%),
   url('../ai_expand_image1783014990973.png') center 70%/80% no-repeat; }
 header h1 { font-size: 1.2rem; color: #fff; text-shadow: 2px 2px 6px rgba(0,0,0,.5); }
-header .toolbar { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* Buttons */
 .btn { padding: 6px 14px; border: 1.5px solid #8b7355; border-radius: 3px; cursor: pointer; font-size: .82rem; font-family: var(--font); background: #e8d5b0; color: #3a3028; transition: .1s; white-space: nowrap; font-weight: 600; }
@@ -278,7 +277,6 @@ select.inline-input { cursor: pointer; }
 .map-player { position:absolute;left:50%;transform:translate(-50%,-50%);z-index:5;font-size:2rem;transition:top .5s;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
 
 /* Template select */
-.template-select { padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-family:var(--font); font-size:.82rem; background:var(--card); color:var(--text); max-width:200px; }
 
 /* ── Builder mode color scheme ── */
 body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6b7d60; --accent: #5a8a3c; --green: #4a7c32; --red: #c05540; --yellow: #b8862e; --border: #c8d8b8; --tab-bg: #d8e8cc; --tab-hover: #c8dcb8; --tab-active-bg: #f8fbf5; --btn-bg: #dce8d0; --btn-hover: #cde0bc; --btn-border: #8aa878; --header-start: #d8e8cc; --header-end: #eef5e8; }
