@@ -521,6 +521,29 @@ body.builder-mode { --bg: #eef5e8; --card: #f8fbf5; --text: #2d3a28; --muted: #6
 /* ══════ B1：登录双栏改竖排（≤768px，桌面不受影响）══════ */
 @media (max-width: 768px) {
   .login-split { flex-direction: column; }
-  .login-split .ls-left { flex: none; width: 100%; max-height: 160px; }   /* 成员选择列 → 顶部横条 */
+  .login-split .ls-left { flex: none; width: 100%; max-height: 160px; }
   .login-split .ls-right { min-width: 0; }
 }
+
+/* ══════ Mobile safe-area (iPhone notch / Android nav bar) ══════ */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: max(90px, calc(env(safe-area-inset-bottom) + 80px));
+  }
+}
+
+/* ══════ Skeleton shimmer ══════ */
+@keyframes skeletonShimmer {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+.skeleton {
+  animation: skeletonShimmer 1.2s infinite linear;
+  background: var(--border);
+  border-radius: 4px;
+}
+.skeleton-line  { height: 14px; margin-bottom: 8px; }
+.skeleton-line.short  { width: 55%; }
+.skeleton-line.shorter { width: 35%; }
+.skeleton-card { height: 80px; margin-bottom: 12px; }
