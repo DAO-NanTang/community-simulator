@@ -79,7 +79,7 @@ select.inline-input { cursor: pointer; }
 .modal-overlay.show { display: flex; }
 /* Village Square — full-page immersive like login */
 #plazaPlaceholder:not(.hidden) { display: block; position: fixed; inset: 0; z-index: 90; overflow-y: auto; background: #5a4a3a; }
-#plazaPlaceholder:not(.hidden)::before { content: ''; position: fixed; inset: 0; background: url(ai_expand_image1783014990973.png) center/cover no-repeat; filter: blur(3px) brightness(.55); z-index: -1; }
+#plazaPlaceholder:not(.hidden)::before { content: ''; position: fixed; inset: 0; background: url(../ai_expand_image1783014990973.png) center/cover no-repeat; filter: blur(3px) brightness(.55); z-index: -1; }
 #plazaPlaceholder:not(.hidden)::after { content: ''; position: fixed; inset: 0; background: linear-gradient(0deg,rgba(0,0,0,.25),rgba(0,0,0,.05) 40%,rgba(0,0,0,.15) 100%); z-index: -1; pointer-events: none; }
 .village-modal { z-index: 130; }
 .village-card { background: rgba(255,255,255,.92); border: 1px solid rgba(0,0,0,.08); border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: transform .15s, box-shadow .15s; color: #3d3629; }
