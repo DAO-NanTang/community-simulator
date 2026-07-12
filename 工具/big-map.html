@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌍 南塘周边 · 大地图</title>
+<style>
+:root {
+  --bg: #f5f0e8; --card: #fffdf9; --text: #3d3629; --muted: #9b9078;
+  --accent: #c88740; --green: #5d9442; --red: #b84c38;
+  --border: #e5ddce; --dark: #4a3828;
+  --font: system-ui, -apple-system, 'Segoe UI', 'Noto Sans SC', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font); color: var(--text); background: var(--bg);
+  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  user-select: none; -webkit-user-select: none;
+}
+#toolbar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  background: var(--card); border-bottom: 1.5px solid var(--dark);
+  flex-shrink: 0; z-index: 10; flex-wrap: wrap;
+}
+#toolbar .title { font-weight: 700; font-size: 1rem; color: var(--accent); margin-right: 8px; }
+#toolbar .sep { width: 1.5px; height: 22px; background: var(--border); margin: 0 4px; }
+.btn {
+  padding: 5px 12px; border: 1.5px solid var(--border); border-radius: 6px;
+  cursor: pointer; font-size: .8rem; font-family: var(--font);
+  background: var(--card); color: var(--text); transition: .12s; font-weight: 500;
+}
+.btn:hover { background: #f5efe4; border-color: var(--accent); }
+.btn.active { background: var(--accent); color: #fff; border-color: #8b5a1e; }
+.btn.pri { background: var(--green); color: #fff; border-color: #3d5a1e; }
+.btn.sm { padding: 4px 8px; font-size: .72rem; }
+#main { flex: 1; position: relative; overflow: hidden; background: #e8e0d0; }
+canvas { display: block; }
+#status {
+  display: flex; align-items: center; gap: 14px; padding: 4px 14px;
+  background: var(--card); border-top: 1px solid var(--border);
+  font-size: .7rem; color: var(--muted); flex-shrink: 0;
+}
+#toast {
+  position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+  background: var(--dark); color: #fff; padding: 8px 20px; border-radius: 20px;
+  font-size: .82rem; z-index: 100; pointer-events: none;
+  opacity: 0; transition: opacity .2s;
+}
+#toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span class="title">🌍 南塘周边</span>
+  <span class="sep"></span>
+  <button class="btn active" id="btnSelect" title="选择/拖动 (S)">🖐️ 选择</button>
+  <button class="btn" id="btnAddLoc" title="添加地点 (A)">📍 添加地点</button>
+  <button class="btn" id="btnAddRoad" title="连接道路 (R)">🛤️ 连路</button>
+  <span class="sep"></span>
+  <button class="btn sm" id="btnFit">📐 适应</button>
+  <button class="btn sm" id="btnZoomIn">🔍+</button>
+  <button class="btn sm" id="btnZoomOut">🔍-</button>
+  <span class="sep"></span>
+  <button class="btn pri sm" id="btnSave">💾 保存</button>
+  <button class="btn sm" id="btnLoad">📂 加载</button>
+  <button class="btn sm" id="btnExport">📋 导出</button>
+  <button class="btn sm" id="btnImport">📥 导入</button>
+  <input type="file" id="importFile" accept=".json" style="display:none">
+</div>
+
+<div id="main"><canvas id="c"></canvas></div>
+
+<div id="status">
+  <span id="msg">就绪</span>
+  <span style="margin-left:auto">🖐️拖动地点 | 🔍滚轮缩放 | 右键拖动平移 | S/A/R 切换工具</span>
+</div>
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// BIG MAP EDITOR
+// ============================================================
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let dpr = window.devicePixelRatio || 1;
+
+// --- Data ---
+let data = { locations: [], roads: [], terrains: [] };
+let nextId = 1;
+function uid() { return 'n' + (nextId++); }
+
+// --- Camera ---
+let cam = { x: 0, y: 0, zoom: 1, targetZoom: 1 };
+
+// --- Interaction ---
+let tool = 'select';     // 'select' | 'addLoc' | 'addRoad'
+let dragMode = null;     // null | 'pan' | 'moveNode'
+let dragTarget = null;
+let dragStart = null;
+let roadFrom = null;     // for addRoad mode
+let hoveredNode = null;
+let selectedNode = null;
+let mousePos = { x: 0, y: 0 };
+let dirty = false;
+
+// --- Location icons ---
+const LOC_ICONS = ['🏡','🏠','🏙️','🏘️','🛕','🏪','🏛️','🎭','🏚️','🏢','🍜','🌱','🚉','🏥','🏫','📍'];
+
+// ============================================================
+// DATA MODEL
+// ============================================================
+function addLocation(x, y, name, icon, type) {
+  const loc = { id: uid(), name: name || '新地点', icon: icon || '📍',
+    x: Math.round(x), y: Math.round(y), type: type || 'location' };
+  data.locations.push(loc);
+  dirty = true;
+  return loc;
+}
+
+function addRoad(fromId, toId, label) {
+  if (fromId === toId) return null;
+  if (data.roads.find(r => (r.from===fromId && r.to===toId) || (r.from===toId && r.to===fromId))) return null;
+  const road = { id: uid(), from: fromId, to: toId, label: label || '' };
+  data.roads.push(road);
+  dirty = true;
+  return road;
+}
+
+function getNode(id) { return data.locations.find(n => n.id === id); }
+
+function deleteSelected() {
+  if (!selectedNode) return;
+  if (selectedNode.type === 'crossroads') {
+    showToast('⚠️ 不能删除十字路口锚点');
+    return;
+  }
+  data.roads = data.roads.filter(r => r.from !== selectedNode.id && r.to !== selectedNode.id);
+  data.locations = data.locations.filter(n => n.id !== selectedNode.id);
+  selectedNode = null;
+  dirty = true;
+  render();
+  updateStatus();
+}
+
+// ============================================================
+// DEFAULT MAP: 南塘周边
+// ============================================================
+function createDefaultMap() {
+  data = { locations: [], roads: [] };
+  nextId = 1;
+
+  // Anchor十字路口 (center of map)
+  const anchor = addLocation(800, 600, '十字路口', '✚', 'crossroads');
+
+  // North: 合作社大院 ~200m
+  const coop = addLocation(800, 460, '🏡 合作社大院', '🏡', 'location');
+  // North: 十字路口2 ~600m
+  const cr2 = addLocation(800, 240, '十字路口', '✚', 'crossroads');
+  // North: 十字路口3 ~500m
+  const cr3 = addLocation(800, 40, '十字路口', '✚', 'crossroads');
+  // From cr3 east 600m → T路口
+  const tj = addLocation(1100, 40, 'T形路口', '┳', 'crossroads');
+  // From T路口 north 100m → 素社
+  const sushe = addLocation(1100, -60, '🏠 素社', '🏠', 'location');
+  // Further north → 市区
+  const city = addLocation(800, -260, '🏙️ 市区', '🏙️', 'location');
+  // East 900m → 三河镇
+  const sanhe = addLocation(1250, 600, '🏘️ 三河镇', '🏘️', 'location');
+  // West → 胡庙
+  const humiao = addLocation(400, 600, '🛕 胡庙', '🛕', 'location');
+
+  // Roads
+  addRoad(anchor.id, coop.id, '~200m');
+  addRoad(coop.id, cr2.id, '~600m');
+  addRoad(cr2.id, cr3.id, '~500m');
+  addRoad(cr3.id, tj.id, '~600m');
+  addRoad(tj.id, sushe.id, '~100m');
+  addRoad(cr3.id, city.id, '市区方向');
+  addRoad(anchor.id, sanhe.id, '~900m');
+  addRoad(anchor.id, humiao.id, '胡庙方向');
+
+  // Terrain areas
+  data.terrains = [
+    { x: anchor.x-50, y: anchor.y-50, w: 250, h: 200, type: 'village' },
+    { x: sanhe.x-40, y: sanhe.y-40, w: 200, h: 180, type: 'town' },
+    { x: humiao.x-30, y: humiao.y-30, w: 160, h: 150, type: 'village' },
+    { x: city.x-40, y: city.y-40, w: 200, h: 200, type: 'town' },
+    { x: coop.x-30, y: coop.y-30, w: 180, h: 160, type: 'village' },
+    { x: sushe.x-20, y: sushe.y-20, w: 120, h: 100, type: 'village' },
+    { x: 800, y: 350, w: 300, h: 100, type: 'field' },
+    { x: 900, y: 300, w: 200, h: 80, type: 'field' },
+  ];
+
+  dirty = false;
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+function worldToScreen(wx, wy) {
+  return { x: wx * cam.zoom + cam.x, y: wy * cam.zoom + cam.y };
+}
+function screenToWorld(sx, sy) {
+  return { x: (sx - cam.x) / cam.zoom, y: (sy - cam.y) / cam.zoom };
+}
+
+// ── Parchment texture (generated once) ──
+let parchmentCanvas = null;
+function getParchmentPattern() {
+  if (parchmentCanvas) return parchmentCanvas;
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 512;
+  const g = c.getContext('2d');
+  // Base color
+  g.fillStyle = '#f2e8d5'; g.fillRect(0, 0, 512, 512);
+  // Grain
+  for (let i = 0; i < 8000; i++) {
+    const x = Math.random() * 512, y = Math.random() * 512;
+    const a = Math.random() * 0.04;
+    g.fillStyle = `rgba(${139+Math.random()*40},${100+Math.random()*40},${50+Math.random()*40},${a})`;
+    g.fillRect(x, y, 2 + Math.random() * 3, 2 + Math.random() * 3);
+  }
+  // Subtle stains
+  for (let i = 0; i < 5; i++) {
+    const cx = Math.random() * 512, cy = Math.random() * 512;
+    const r = 30 + Math.random() * 80;
+    const grad = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+    grad.addColorStop(0, 'rgba(180,150,100,0.06)');
+    grad.addColorStop(1, 'rgba(180,150,100,0)');
+    g.fillStyle = grad; g.fillRect(cx - r, cy - r, r * 2, r * 2);
+  }
+  parchmentCanvas = c;
+  return parchmentCanvas;
+}
+
+function getTerrainColor(type) {
+  const map = {
+    field: 'rgba(160,200,140,.25)', forest: 'rgba(120,160,100,.2)',
+    water: 'rgba(100,160,210,.3)', village: 'rgba(210,190,160,.2)',
+    town: 'rgba(200,180,160,.25)',
+  };
+  return map[type] || 'rgba(180,170,150,.15)';
+}
+
+function render() {
+  const w = canvas.width / dpr, h = canvas.height / dpr;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  // ── Parchment background ──
+  const pp = getParchmentPattern();
+  const pat = ctx.createPattern(pp, 'repeat');
+  ctx.fillStyle = pat;
+  ctx.fillRect(0, 0, w, h);
+
+  // ── Terrain areas (soft blobs under roads) ──
+  data.terrains.forEach(t => {
+    const p = worldToScreen(t.x, t.y);
+    const rw = t.w * cam.zoom, rh = t.h * cam.zoom;
+    const r = Math.max(rw, rh) * 0.6;
+    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+    grad.addColorStop(0, getTerrainColor(t.type));
+    grad.addColorStop(0.7, getTerrainColor(t.type).replace(/[\d.]+\)$/, '0.05)'));
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(p.x - r, p.y - r, r * 2, r * 2);
+  });
+
+  // ── Roads ──
+  data.roads.forEach(road => {
+    const from = getNode(road.from), to = getNode(road.to);
+    if (!from || !to) return;
+    const a = worldToScreen(from.x, from.y);
+    const b = worldToScreen(to.x, to.y);
+    const lw = 12 * cam.zoom;
+
+    // Shadow/outline
+    ctx.strokeStyle = 'rgba(120,90,50,.4)'; ctx.lineWidth = lw + 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    // Main road
+    ctx.strokeStyle = '#e8d8b8'; ctx.lineWidth = lw; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    // Center line
+    ctx.strokeStyle = 'rgba(180,150,110,.5)'; ctx.lineWidth = lw * 0.25;
+    ctx.setLineDash([lw * 0.6, lw * 0.8]);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Distance label
+    if (road.label) {
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      const fs = Math.max(10, 13 * cam.zoom);
+      ctx.font = `${fs}px var(--font)`;
+      const tw = ctx.measureText(road.label).width;
+      const pad = 4;
+      // Label background
+      ctx.fillStyle = 'rgba(255,250,240,.9)';
+      ctx.strokeStyle = 'rgba(160,130,90,.5)'; ctx.lineWidth = 1;
+      roundRect(ctx, mx - tw/2 - pad, my - fs/2 - pad, tw + pad*2, fs + pad*2, 4);
+      ctx.fill(); ctx.stroke();
+      // Label text
+      ctx.fillStyle = '#6b5a3e';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(road.label, mx, my);
+      ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    }
+  });
+
+  // ── Crossroads ──
+  data.locations.forEach(node => {
+    const p = worldToScreen(node.x, node.y);
+    if (node.type === 'crossroads') {
+      const s = 5 * cam.zoom;
+      ctx.fillStyle = '#b8a080';
+      ctx.beginPath(); ctx.arc(p.x, p.y, s, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(100,70,30,.3)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(p.x, p.y, s + 1, 0, Math.PI * 2); ctx.stroke();
+    }
+  });
+
+  // ── Location markers ──
+  data.locations.forEach(node => {
+    if (node.type === 'crossroads') return;
+    const p = worldToScreen(node.x, node.y);
+    const isSel = selectedNode && selectedNode.id === node.id;
+    const isHov = hoveredNode && hoveredNode.id === node.id;
+    const isFrom = roadFrom && roadFrom.id === node.id;
+    const r = Math.max(20, 30 * cam.zoom);
+    const fs = Math.max(14, 22 * cam.zoom);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,.1)';
+    ctx.beginPath(); ctx.arc(p.x + 2, p.y + 2, r, 0, Math.PI * 2); ctx.fill();
+
+    // Badge circle
+    const bgGrad = ctx.createRadialGradient(p.x - r*0.3, p.y - r*0.3, 0, p.x, p.y, r);
+    bgGrad.addColorStop(0, '#fffef9'); bgGrad.addColorStop(1, '#e8dcc8');
+    ctx.fillStyle = bgGrad;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = isSel ? '#ff6b35' : isHov ? '#c88740' : isFrom ? '#5d9442' : '#b8a080';
+    ctx.lineWidth = isSel ? 3 : 2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.stroke();
+
+    // Selection ring
+    if (isSel) {
+      ctx.strokeStyle = '#ff6b35'; ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Emoji
+    ctx.font = `${fs}px var(--font)`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(node.icon, p.x, p.y);
+
+    // Name label (below badge)
+    const ls = Math.max(9, 11 * cam.zoom);
+    ctx.font = `600 ${ls}px var(--font)`;
+    const nw = ctx.measureText(node.name).width;
+    // Label bg
+    const lpad = 4;
+    ctx.fillStyle = 'rgba(255,252,245,.85)';
+    ctx.strokeStyle = 'rgba(160,130,90,.3)'; ctx.lineWidth = 0.8;
+    roundRect(ctx, p.x - nw/2 - lpad, p.y + r + 2, nw + lpad*2, ls + lpad, 3);
+    ctx.fill(); ctx.stroke();
+    // Name text
+    ctx.fillStyle = '#4a3a28';
+    ctx.fillText(node.name, p.x, p.y + r + 2 + ls/2 + 1);
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  });
+
+  // ── Road-from preview ──
+  if (roadFrom && mousePos) {
+    const from = worldToScreen(roadFrom.x, roadFrom.y);
+    ctx.strokeStyle = '#5d9442'; ctx.lineWidth = 3 * cam.zoom;
+    ctx.setLineDash([6 * cam.zoom, 4 * cam.zoom]);
+    ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(mousePos.x, mousePos.y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // ── Compass rose (top-right corner) ──
+  const crx = w - 50, cry = 50, crs = 30;
+  ctx.fillStyle = 'rgba(255,252,245,.7)';
+  ctx.beginPath(); ctx.arc(crx, cry, crs + 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#8b2020'; ctx.font = 'bold 14px var(--font)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('N', crx, cry - crs - 5);
+  ctx.strokeStyle = '#8b2020'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(crx, cry - crs); ctx.lineTo(crx, cry + crs);
+  ctx.moveTo(crx - crs, cry); ctx.lineTo(crx + crs, cry); ctx.stroke();
+  // Arrow head
+  ctx.fillStyle = '#8b2020';
+  ctx.beginPath(); ctx.moveTo(crx, cry - crs); ctx.lineTo(crx - 5, cry - crs + 10); ctx.lineTo(crx + 5, cry - crs + 10); ctx.fill();
+  ctx.textAlign = 'start';
+
+  // ── Scale bar (bottom-left corner) ──
+  const sbx = 20, sby = h - 30, sbw = 100 * cam.zoom;
+  ctx.strokeStyle = '#6b5a3e'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(sbx, sby); ctx.lineTo(sbx + sbw, sby); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sbx, sby - 5); ctx.lineTo(sbx, sby + 5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sbx + sbw, sby - 5); ctx.lineTo(sbx + sbw, sby + 5); ctx.stroke();
+  ctx.fillStyle = '#6b5a3e'; ctx.font = '10px var(--font)';
+  ctx.fillText('≈100m', sbx + sbw/2 - 15, sby - 6);
+
+  ctx.restore();
+}
+
+// Helper: rounded rect
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+// ============================================================
+// INTERACTION
+// ============================================================
+function resizeCanvas() {
+  canvas.width = canvas.parentElement.clientWidth * dpr;
+  canvas.height = canvas.parentElement.clientHeight * dpr;
+  canvas.style.width = canvas.parentElement.clientWidth + 'px';
+  canvas.style.height = canvas.parentElement.clientHeight + 'px';
+  render();
+}
+
+function findNodeAt(sx, sy) {
+  const w = screenToWorld(sx, sy);
+  const threshold = 20 / cam.zoom;
+  for (let i = data.locations.length - 1; i >= 0; i--) {
+    const n = data.locations[i];
+    const dx = w.x - n.x, dy = w.y - n.y;
+    if (Math.sqrt(dx*dx + dy*dy) < threshold) return n;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left), sy = (e.clientY - rect.top);
+
+  if (e.button === 2 || e.altKey) {
+    dragMode = 'pan'; dragStart = { x: sx, y: sy, cx: cam.x, cy: cam.y };
+    return;
+  }
+  if (e.button !== 0) return;
+
+  const hit = findNodeAt(sx, sy);
+
+  if (tool === 'select') {
+    if (hit) {
+      dragMode = 'moveNode';
+      dragTarget = hit;
+      selectedNode = hit;
+      dragStart = { x: hit.x, y: hit.y, sx, sy };
+      render(); updateStatus();
+    } else {
+      selectedNode = null;
+      dragMode = 'pan';
+      dragStart = { x: sx, y: sy, cx: cam.x, cy: cam.y };
+      render(); updateStatus();
+    }
+  } else if (tool === 'addLoc') {
+    if (!hit) {
+      const w = screenToWorld(sx, sy);
+      const icons = [...LOC_ICONS];
+      const icon = icons[Math.floor(Math.random() * icons.length)];
+      const loc = addLocation(w.x, w.y, '新地点', icon, 'location');
+      selectedNode = loc;
+      dirty = true;
+      render(); updateStatus();
+    }
+  } else if (tool === 'addRoad') {
+    if (hit) {
+      if (!roadFrom) {
+        roadFrom = hit;
+        render();
+      } else if (roadFrom.id !== hit.id) {
+        const rd = addRoad(roadFrom.id, hit.id, '');
+        if (rd) { promptRoadLabel(rd); }
+        roadFrom = null;
+        dirty = true;
+        render();
+      }
+    } else {
+      roadFrom = null;
+      render();
+    }
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left), sy = (e.clientY - rect.top);
+  mousePos = { x: sx, y: sy };
+
+  if (dragMode === 'pan' && dragStart) {
+    cam.x = dragStart.cx + (sx - dragStart.x);
+    cam.y = dragStart.cy + (sy - dragStart.y);
+    render();
+    return;
+  }
+  if (dragMode === 'moveNode' && dragTarget && dragStart) {
+    const w = screenToWorld(sx, sy);
+    dragTarget.x = Math.round(w.x);
+    dragTarget.y = Math.round(w.y);
+    dirty = true;
+    render();
+    return;
+  }
+
+  // Update hover
+  const hit = findNodeAt(sx, sy);
+  if (hit !== hoveredNode) {
+    hoveredNode = hit;
+    if (!dragMode) render();
+  }
+  if (tool === 'addRoad' && roadFrom) {
+    render(); // show preview line
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  dragMode = null; dragTarget = null; dragStart = null;
+  updateStatus();
+});
+
+canvas.addEventListener('dblclick', e => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left), sy = (e.clientY - rect.top);
+  const hit = findNodeAt(sx, sy);
+  if (hit && hit.type === 'location') {
+    editLocation(hit);
+  }
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left), sy = (e.clientY - rect.top);
+  const f = e.deltaY < 0 ? 1.15 : 0.87;
+  const oldZ = cam.zoom;
+  cam.zoom = Math.max(0.1, Math.min(4, cam.zoom * f));
+  cam.x = sx - (sx - cam.x) * cam.zoom / oldZ;
+  cam.y = sy - (sy - cam.y) * cam.zoom / oldZ;
+  render();
+});
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// ============================================================
+// PROMPTS & UI
+// ============================================================
+function promptRoadLabel(road) {
+  const label = prompt('道路标注（距离/说明）：', road.label || '');
+  if (label !== null) { road.label = label; dirty = true; render(); }
+}
+
+function editLocation(loc) {
+  const name = prompt('地点名称：', loc.name);
+  if (name !== null) { loc.name = name; dirty = true; render(); updateStatus(); }
+  const icon = prompt('图标 (emoji)：', loc.icon);
+  if (icon !== null) { loc.icon = icon; dirty = true; render(); }
+}
+
+// ============================================================
+// TOOLS
+// ============================================================
+function setTool(t) {
+  tool = t; roadFrom = null;
+  document.querySelectorAll('#toolbar .btn').forEach(b => b.classList.remove('active'));
+  const map = { select: 'btnSelect', addLoc: 'btnAddLoc', addRoad: 'btnAddRoad' };
+  document.getElementById(map[tool])?.classList.add('active');
+  canvas.style.cursor = tool === 'select' ? 'default' : 'crosshair';
+  render();
+}
+
+document.getElementById('btnSelect').addEventListener('click', () => setTool('select'));
+document.getElementById('btnAddLoc').addEventListener('click', () => setTool('addLoc'));
+document.getElementById('btnAddRoad').addEventListener('click', () => setTool('addRoad'));
+document.getElementById('btnFit').addEventListener('click', fitMap);
+document.getElementById('btnZoomIn').addEventListener('click', () => {
+  cam.zoom = Math.min(4, cam.zoom * 1.3); render();
+});
+document.getElementById('btnZoomOut').addEventListener('click', () => {
+  cam.zoom = Math.max(0.1, cam.zoom * 0.77); render();
+});
+document.getElementById('btnSave').addEventListener('click', saveData);
+document.getElementById('btnLoad').addEventListener('click', loadData);
+document.getElementById('btnExport').addEventListener('click', exportJSON);
+document.getElementById('btnImport').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', e => {
+  if (e.target.files[0]) importJSON(e.target.files[0]);
+  e.target.value = '';
+});
+
+// ============================================================
+// SAVE / LOAD
+// ============================================================
+function saveData() {
+  try {
+    localStorage.setItem('bigmap_data', JSON.stringify(data));
+    dirty = false; updateStatus(); showToast('💾 已保存');
+  } catch (e) { showToast('⚠️ 保存失败'); }
+}
+function loadData() {
+  try {
+    const raw = localStorage.getItem('bigmap_data');
+    if (raw) { data = JSON.parse(raw); dirty = false; render(); updateStatus(); showToast('📂 已加载'); return true; }
+  } catch (e) {}
+  showToast('⚠️ 没有已保存的数据'); return false;
+}
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '南塘周边_大地图.json'; a.click();
+  showToast('📋 已导出');
+}
+function importJSON(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const d = JSON.parse(e.target.result);
+      if (d.locations && d.roads) { data = d; if (!data.terrains) data.terrains = []; dirty = false; render(); fitMap(); updateStatus(); showToast('📥 已导入'); }
+      else showToast('⚠️ 格式错误');
+    } catch (err) { showToast('⚠️ 解析失败'); }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// CAMERA
+// ============================================================
+function fitMap() {
+  if (data.locations.length === 0) { cam.zoom = 1; cam.x = 0; cam.y = 0; return; }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  data.locations.forEach(n => {
+    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
+    maxX = Math.max(maxX, n.x); maxY = Math.max(maxY, n.y);
+  });
+  const mw = (maxX - minX + 200), mh = (maxY - minY + 200);
+  const cw = canvas.width / dpr, ch = canvas.height / dpr;
+  cam.zoom = Math.min(cw / mw, ch / mh, 1.5);
+  cam.x = cw / 2 - (minX + maxX) / 2 * cam.zoom;
+  cam.y = ch / 2 - (minY + maxY) / 2 * cam.zoom;
+  render();
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tid); t._tid = setTimeout(() => t.classList.remove('show'), 2000);
+}
+function updateStatus() {
+  document.getElementById('msg').textContent =
+    (dirty ? '🔴 未保存' : '🟢 已保存') +
+    ` · ${data.locations.length}个地点 · ${data.roads.length}条路` +
+    (selectedNode ? ` · 选中: ${selectedNode.name}` : '');
+}
+
+// ============================================================
+// KEYBOARD
+// ============================================================
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveData(); return; }
+  switch (e.key.toLowerCase()) {
+    case 's': setTool('select'); break;
+    case 'a': setTool('addLoc'); break;
+    case 'r': setTool('addRoad'); break;
+    case 'delete': case 'backspace': deleteSelected(); break;
+    case 'escape': roadFrom = null; selectedNode = null; render(); updateStatus(); break;
+  }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  if (!loadData()) {
+    createDefaultMap();
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+  fitMap();
+  updateStatus();
+  showToast('🌍 大地图就绪 · 拖动地点调整位置 · S/A/R 切换工具');
+}
+init();
+</script>
+</body>
+</html>

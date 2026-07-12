@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>头像风格预览 —— DiceBear</title>
+<style>
+  :root { --bg: #1a1510; --card: #252018; --text: #e0d5c0; --muted: #8a7a60; --accent: #c8a040; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 24px; }
+  h1 { text-align: center; margin-bottom: 6px; color: var(--accent); }
+  .sub { text-align: center; color: var(--muted); font-size: .8rem; margin-bottom: 24px; }
+  h2 { color: var(--accent); margin: 28px 0 12px; border-bottom: 1px solid #333; padding-bottom: 6px; font-size: 1rem; }
+  .grid { display: flex; gap: 12px; flex-wrap: wrap; }
+  .card { background: var(--card); border-radius: 10px; padding: 12px; text-align: center; min-width: 80px; }
+  .card img { display: block; margin: 0 auto 4px; border-radius: 50%; background: #f0e8d8; }
+  .card .label { font-size: .7rem; color: var(--muted); }
+  .card .name { font-size: .75rem; font-weight: 600; }
+  .card-duo { display: flex; gap: 0; justify-content: center; align-items: center; }
+  .card-duo img { margin: 0 -4px; }
+  .note { font-size: .75rem; color: var(--muted); margin: 8px 0; line-height: 1.5; }
+  input, select { padding: 6px 10px; border: 1px solid #555; border-radius: 6px; background: var(--card); color: var(--text); font-size: .85rem; margin: 4px; }
+  button { padding: 6px 14px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: #1a1510; cursor: pointer; font-size: .85rem; font-weight: 600; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+  .highlight { border: 3px solid var(--accent) !important; }
+</style>
+</head>
+<body>
+
+<h1>🎨 头像风格预览</h1>
+<p class="sub">DiceBear 免费开源头像 API · 改 seed 即可换人</p>
+
+<div class="row">
+  <select id="styleSelect" onchange="renderAll()">
+    <option value="avataaars">🎮 avataaars（卡通RPG风）</option>
+    <option value="pixel-art">👾 pixel-art（像素游戏风）</option>
+    <option value="adventurer">⚔️ adventurer（冒险者）</option>
+    <option value="adventurer-neutral">⚔️ adventurer-neutral（冒险者中性）</option>
+    <option value="big-smile">😊 big-smile（大头笑脸）</option>
+    <option value="bottts">🤖 bottts（机器人）</option>
+    <option value="lorelei">🔵 lorelei（圆润简约）</option>
+    <option value="notionists">✏️ notionists（涂鸦手绘）</option>
+    <option value="thumbs">👍 thumbs（拇指小人）</option>
+    <option value="fun-emoji">😀 fun-emoji（表情）</option>
+    <option value="identicon">🔷 identicon（几何）</option>
+    <option value="rings">⭕ rings（圆环）</option>
+    <option value="shapes">🟦 shapes（色块）</option>
+  </select>
+  <input type="text" id="customName" placeholder="自定义名字..." value="">
+  <button onclick="renderAll()">刷新</button>
+</div>
+
+<h2>一、单个头像（8 个不同人）</h2>
+<div class="grid" id="grid-single"></div>
+
+<h2>二、双人组合（并肩靠拢）</h2>
+<p class="note">左上和右上角各有一个小头像重叠在一起，模拟「两个人凑在一起看」</p>
+<div class="grid" id="grid-duo"></div>
+
+<h2>三、四种尺寸对比</h2>
+<div class="grid" id="grid-sizes"></div>
+
+<script>
+const names = ['砚仁','朝林','陈若雨','墨染','小红','王五','fc','跳大爷'];
+const duoPairs = [
+  ['砚仁','陈若雨'],
+  ['朝林','小红'],
+  ['墨染','fc'],
+];
+
+function avatarUrl(style, seed, size) {
+  var s = size || 120;
+  return 'https://api.dicebear.com/7.x/' + style + '/svg?seed=' + encodeURIComponent(seed) + '&size=' + s;
+}
+
+function renderAll() {
+  var style = document.getElementById('styleSelect').value;
+  var custom = document.getElementById('customName').value.trim();
+
+  // Single avatars
+  var singleHtml = '';
+  var allNames = custom ? [custom].concat(names) : names;
+  allNames.forEach(function(n) {
+    singleHtml += '<div class="card"><img src="' + avatarUrl(style, n) + '" width="80" height="80"><div class="name">' + n + '</div><div class="label">seed=' + n + '</div></div>';
+  });
+  document.getElementById('grid-single').innerHTML = singleHtml;
+
+  // Duo avatars (two people leaning in together, partially overlapping)
+  var duoHtml = '';
+  duoPairs.forEach(function(pair) {
+    duoHtml += '<div class="card" style="min-width:160px"><div class="card-duo">' +
+      '<div style="position:relative;width:180px;height:120px">' +
+        '<img src="' + avatarUrl(style, pair[0]) + '" width="100" height="100" style="position:absolute;left:8px;top:10px;z-index:1;border:3px solid var(--card);border-radius:50%">' +
+        '<img src="' + avatarUrl(style, pair[1]) + '" width="100" height="100" style="position:absolute;right:8px;top:10px;z-index:0;border:3px solid var(--card);border-radius:50%">' +
+      '</div>' +
+    '</div><div class="name" style="font-size:.85rem">' + pair[0] + ' & ' + pair[1] + '</div></div>';
+  });
+  document.getElementById('grid-duo').innerHTML = duoHtml;
+
+  // Size comparison
+  var sizeHtml = '';
+  [40, 80, 120, 200].forEach(function(sz) {
+    sizeHtml += '<div class="card"><img src="' + avatarUrl(style, '砚仁', sz) + '" width="' + sz + '" height="' + sz + '"><div class="label">' + sz + 'px</div></div>';
+  });
+  document.getElementById('grid-sizes').innerHTML = sizeHtml;
+}
+
+renderAll();
+</script>
+</body>
+</html>

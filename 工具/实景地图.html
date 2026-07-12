@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>南塘合作社 · 实景地图 v7</title>
+<style>
+:root {
+  --bg:#f7f3ed;--card:#fffdf9;--border:#e5ddce;--text:#3d3629;--muted:#9b9078;
+  --accent:#c88740;--green:#5d9442;--red:#b84c38;--gold:#c8892e;
+  --font:system-ui,-apple-system,'Segoe UI','Noto Sans SC',sans-serif;
+  --cw:26px;--ch:26px;--lw:24px;--lh:16px;
+  --fl-road:#5e5e5e;--fl-field:#4d5a48;--fl-water:#4a5460;--fl-bld:#58544e;
+  --ln-wall:#999;--ln-fence:#888;--ln-window:#7a9aaa;--ln-door:#7a6a5a;--ln-grid:#2a2a2a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;padding:8px 12px}
+
+.page{max-width:1100px;margin:0 auto}
+
+/* Cards */
+.card{background:var(--card);border:1px solid #c4b898;border-radius:4px;padding:10px 14px;margin-bottom:5px}
+.hdr{display:flex;align-items:center;justify-content:center;gap:8px}
+.hdr h1{font-size:.9rem;color:#5a3e28;font-weight:500}
+.ver{font-size:.45rem;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 4px}
+.mbtn{padding:4px 12px;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:.65rem;font-family:var(--font);background:var(--card);color:var(--muted);margin-left:auto;transition:.12s}
+.mbtn:hover{color:var(--accent);border-color:var(--accent)}.mbtn.on{background:var(--accent);color:#fff}
+
+/* Tabs */
+.mtabs{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
+.mtab{padding:4px 14px;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:.72rem;font-family:var(--font);background:var(--card);color:var(--muted);transition:.12s}
+.mtab:hover{color:var(--accent)}.mtab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.stabs{display:none;gap:3px;margin-top:6px;padding-top:5px;border-top:1px solid var(--border);justify-content:center}
+.stabs.on{display:flex}
+.stab{padding:2px 12px;border:1px solid var(--border);border-radius:3px;cursor:pointer;font-size:.62rem;font-family:var(--font);background:var(--card);color:var(--muted)}
+.stab:hover{color:var(--accent)}.stab.active{background:var(--accent);color:#fff}
+
+.edit-only{display:none}.edit-only.on{display:flex}
+.lyr{display:flex;gap:3px;align-items:center;margin-right:8px}
+.lyr span{font-size:.55rem;color:var(--muted)}
+.lyr-btn{padding:3px 8px;border:1px solid var(--border);border-radius:3px;cursor:pointer;font-size:.58rem;font-family:var(--font);background:var(--card);color:var(--muted)}
+.lyr-btn:hover{color:var(--accent)}.lyr-btn.active{color:var(--accent);border-color:var(--accent);background:rgba(200,135,64,.08)}
+
+/* Toolbar */
+.tbar{display:none;gap:4px;align-items:center;flex-wrap:wrap}
+.tbar.on{display:flex}
+.tbtn{padding:3px 8px;border:1px solid var(--border);border-radius:3px;cursor:pointer;font-size:.6rem;font-family:var(--font);background:var(--card);color:var(--muted);white-space:nowrap;transition:.1s;display:flex;align-items:center;gap:2px}
+.tbtn:hover{color:var(--accent);border-color:var(--accent)}
+.tbtn.active{color:var(--accent);border-color:var(--accent);background:rgba(200,135,64,.08)}
+.tbtn .ico{font-size:.8rem}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid var(--border);margin-right:2px}
+
+/* Main area: grid + sidebar */
+.main-row{display:flex;gap:6px;min-height:0}
+.grid-col{flex:1;min-width:0}
+.emoji-col{width:150px;flex-shrink:0}
+
+/* Grid */
+.gwrap{overflow:auto;max-height:62vh;position:relative;display:flex;align-items:center;justify-content:center}
+.gstage{display:block;position:relative;transform-origin:center center;transition:transform .15s;padding:3px;margin:0 auto}
+.gtable{border-collapse:separate;border-spacing:0;font-size:11px;line-height:1}
+.gtable td{width:var(--cw);height:var(--ch);text-align:center;vertical-align:middle;padding:0;cursor:pointer;background:#1c1c1c;position:relative;border:0.5px solid #252525;transition:background .04s}
+.gtable td:hover{background:#2a2a2a}
+.gtable td.sel{outline:2px solid var(--accent);outline-offset:-2px;z-index:3}
+.gtable td.rlbl,.gtable td.clbl{background:#f8f4ee;color:var(--muted);font-size:.45rem;cursor:default;border-color:var(--border)}
+.gtable td.rlbl{width:var(--lw)}.gtable td.clbl{height:var(--lh)}
+.gtable td.f-road{background:var(--fl-road)}.gtable td.f-field{background:var(--fl-field)}
+.gtable td.f-water{background:var(--fl-water)}.gtable td.f-bld{background:var(--fl-bld)}
+
+/* Border helpers: wall/window/door/fence */
+/* Wall (solid) */
+.gtable td.Wt{box-shadow:inset 0 2px 0 0 var(--ln-wall)}.gtable td.Wr{box-shadow:inset -2px 0 0 0 var(--ln-wall)}
+.gtable td.Wb{box-shadow:inset 0 -2px 0 0 var(--ln-wall)}.gtable td.Wl{box-shadow:inset 2px 0 0 0 var(--ln-wall)}
+/* Window (dashed) */
+.gtable td.Nt{box-shadow:inset 0 2px 0 0 var(--ln-window)}.gtable td.Nr{box-shadow:inset -2px 0 0 0 var(--ln-window)}
+.gtable td.Nb{box-shadow:inset 0 -2px 0 0 var(--ln-window)}.gtable td.Nl{box-shadow:inset 2px 0 0 0 var(--ln-window)}
+.gtable td.Nt.Nr{box-shadow:inset 0 2px 0 0 var(--ln-window),inset -2px 0 0 0 var(--ln-window)}
+/* Door (double) */
+.gtable td.Dt{box-shadow:inset 0 1px 0 0 var(--ln-door),inset 0 4px 0 0 var(--ln-door)}
+.gtable td.Dr{box-shadow:inset -1px 0 0 0 var(--ln-door),inset -4px 0 0 0 var(--ln-door)}
+.gtable td.Db{box-shadow:inset 0 -1px 0 0 var(--ln-door),inset 0 -4px 0 0 var(--ln-door)}
+.gtable td.Dl{box-shadow:inset 1px 0 0 0 var(--ln-door),inset 4px 0 0 0 var(--ln-door)}
+/* Fence */
+.gtable td.Ft{box-shadow:inset 0 1.5px 0 0 var(--ln-fence)}.gtable td.Fr{box-shadow:inset -1.5px 0 0 0 var(--ln-fence)}
+.gtable td.Fb{box-shadow:inset 0 -1.5px 0 0 var(--ln-fence)}.gtable td.Fl{box-shadow:inset 1.5px 0 0 0 var(--ln-fence)}
+
+/* Object overlay */
+.oly{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10}
+.oly.active{pointer-events:auto}
+.obj{position:absolute;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:none;white-space:nowrap;line-height:1.1;font-size:12px;width:var(--cw);height:var(--ch);font-weight:600;color:#f0f0f0;text-shadow:0 0 3px rgba(0,0,0,.8)}
+.obj:hover{outline:1px dashed var(--accent)}.obj.selected{outline:2px solid var(--accent);z-index:21;background:rgba(200,135,64,.1)}
+.obj .hdl{position:absolute;width:8px;height:8px;background:var(--accent);border:1px solid #fff;z-index:22;pointer-events:auto;display:none}
+.obj.resizing .hdl{display:block}
+.obj .hdl.tl{top:-4px;left:-4px;cursor:nw-resize}
+.obj .hdl.br{bottom:-4px;right:-4px;cursor:se-resize}
+.box-sel{position:absolute;border:2px dashed var(--accent);background:rgba(200,135,64,.1);pointer-events:none;z-index:50;display:none}
+
+/* Info */
+.ip{display:none;flex-direction:column;max-height:130px}
+.ip.on{display:flex}
+.ip h3{font-size:.8rem;color:#5a3e28;font-weight:500;margin-bottom:6px}
+.ipb{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;font-size:.6rem;overflow-y:auto}
+.ipb table{font-size:.6rem;border-collapse:collapse}.ipb td,.ipb th{padding:2px 5px;border-bottom:1px solid var(--border)}
+.ipb th{color:var(--muted)}.kv{display:flex;gap:6px;padding:2px 0}.kv .k{color:var(--muted)}
+.tag{padding:1px 5px;border-radius:3px;font-size:.52rem;border:1px solid var(--border)}
+.tag.ok{color:var(--green);border-color:var(--green)}.tag.wn{color:var(--gold);border-color:var(--gold)}.tag.bd{color:var(--red);border-color:var(--red)}
+.abtn{padding:3px 8px;border:1px solid var(--border);border-radius:3px;background:var(--card);color:var(--text);cursor:pointer;font-family:var(--font);font-size:.55rem}
+.abtn:hover{color:var(--accent);border-color:var(--accent)}.abtn.pri{background:var(--accent);color:#fff}
+
+/* Emoji sidebar */
+.ecard{background:var(--card);border:1px solid #c4b898;border-radius:4px;padding:8px;height:100%;display:flex;flex-direction:column;overflow:hidden}
+.ecard h4{font-size:.62rem;color:#5a3e28;font-weight:500;margin-bottom:6px;flex-shrink:0}
+.ecat{font-size:.52rem;color:var(--muted);margin:6px 0 3px;flex-shrink:0;border-top:1px solid var(--border);padding-top:4px}
+.egrid{display:flex;flex-wrap:wrap;gap:2px;overflow-y:auto;flex:1}
+.ebtn2{padding:1px 3px;font-size:.85rem;cursor:pointer;border:1px solid transparent;background:transparent;border-radius:2px;line-height:1;transition:.1s}
+.ebtn2:hover{background:var(--bg);border-color:var(--border)}.ebtn2.picked{background:rgba(200,135,64,.15);border-color:var(--accent)}
+
+/* Legend */
+.lbar{font-size:.5rem;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ld{display:inline-block;width:8px;height:8px;border-radius:2px;vertical-align:middle;margin-right:2px;border:0.5px solid var(--border)}
+.ll{display:inline-block;width:8px;height:2px;vertical-align:middle;margin-right:2px}
+.cinp{position:fixed;z-index:200;background:var(--card);border:2px solid var(--accent);border-radius:4px;color:var(--text);font-family:var(--font);font-size:13px;text-align:center;padding:3px 5px;outline:none;display:none;min-width:30px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.zh{position:absolute;bottom:3px;right:6px;font-size:.5rem;color:var(--muted);pointer-events:none}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="card hdr" style="position:relative">
+  <h1>🏘️ 南塘合作社 · 实景地图</h1><span class="ver">v7</span>
+  <span style="font-size:.5rem;color:var(--muted)" id="gh"></span>
+</div>
+
+<div class="card">
+  <div style="display:flex;align-items:center;gap:6px">
+    <div class="mtabs" id="mtabs" style="flex:1">
+      <button class="mtab active" data-b="world">🗺️方位图</button>
+      <button class="mtab" data-b="dorm">🏘️宿舍</button>
+      <button class="mtab" data-b="coop">🏠合作社</button>
+      <button class="mtab" data-b="field">🥬菜地</button>
+    </div>
+    <div class="lyr edit-only" style="margin-left:12px"><span>图层:</span>
+      <button class="lyr-btn active" data-lyr="grid">📐网格</button>
+      <button class="lyr-btn" data-lyr="content">📝内容</button>
+    </div>
+    <button class="mbtn" id="modeBtn2" style="margin-left:8px">✏️ 编辑</button>
+  </div>
+  <div class="stabs" id="stabs"></div>
+</div>
+
+<div class="card edit-only" style="padding:6px 14px"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center" id="catTags">
+  <button class="stab active" data-cat="全部">📂全部</button>
+</div></div>
+
+<div class="card tbar edit-only" id="tbar">
+  <button class="tbtn active" data-t="sel"><span class="ico">🖱️</span>选择</button>
+  <span style="color:var(--border)">|</span>
+  <button class="tbtn" data-t="wall"><span class="ico">🧱</span>墙</button>
+  <button class="tbtn" data-t="window"><span class="ico">🪟</span>窗</button>
+  <button class="tbtn" data-t="door"><span class="ico">🚪</span>门</button>
+  <button class="tbtn" data-t="fence"><span class="ico">🚧</span>围</button>
+  <span style="color:var(--border)">|</span>
+  <button class="tbtn" data-t="road"><span class="sw" style="background:var(--fl-road)"></span>路</button>
+  <button class="tbtn" data-t="field"><span class="sw" style="background:var(--fl-field)"></span>田</button>
+  <button class="tbtn" data-t="water"><span class="sw" style="background:var(--fl-water)"></span>水</button>
+  <button class="tbtn" data-t="bld"><span class="sw" style="background:var(--fl-bld)"></span>房</button>
+  <span style="color:var(--border)">|</span>
+  <button class="tbtn" data-t="box"><span class="ico">📐</span>框</button>
+  <button class="tbtn" data-t="erase"><span class="ico">🧹</span>擦</button>
+  <span style="color:var(--border)">|</span>
+  <button class="tbtn" id="btnInsRow">⬇行+</button>
+  <button class="tbtn" id="btnDelRow">行−</button>
+  <button class="tbtn" id="btnInsCol">➡列+</button>
+  <button class="tbtn" id="btnDelCol">列−</button>
+</div>
+
+<div class="main-row">
+  <div class="emoji-col edit-only">
+    <div class="ecard" id="ecard">
+      <h4>🎨 素材库 <button class="abtn pri" id="btnAddText" style="font-size:.5rem;padding:2px 6px;margin-left:4px">📝文字</button></h4>
+      <div class="egrid" id="egrid"></div>
+    </div>
+  </div>
+  <div class="grid-col">
+    <div class="card" style="position:relative">
+      <div class="gwrap" id="gwrap"><div class="gstage" id="gstage"><div class="oly" id="oly"></div></div><div class="box-sel" id="boxSel"></div></div>
+      <div class="zh" id="zh"></div>
+    </div>
+    <div class="card ip" id="ip"><h3 id="ipt">📍 信息</h3><div class="ipb" id="ipb"></div></div>
+    <div class="card lbar" style="margin-bottom:0">
+      <span><span class="ld" style="background:var(--fl-bld)"></span>建筑</span>
+      <span><span class="ld" style="background:var(--fl-road)"></span>道路</span>
+      <span><span class="ld" style="background:var(--fl-field)"></span>田地</span>
+      <span style="color:var(--border)">|</span>
+      <span><span class="ll" style="background:var(--ln-wall)"></span>墙</span>
+      <span><span class="ll" style="background:var(--ln-window)"></span>窗</span>
+      <span><span class="ll" style="background:var(--ln-door);width:5px;margin-right:2px"></span><span class="ll" style="background:var(--ln-door);width:5px"></span>门</span>
+      <span><span class="ll" style="background:var(--ln-fence)"></span>围</span>
+      <span style="color:var(--border)">|</span><span>空格+滚轮=缩放</span>
+    </div>
+  </div>
+
+</div>
+
+</div>
+<input class="cinp" id="cinp">
+
+<script>
+// ============================================================
+const N=30;
+// Emoji 素材库
+const EMOJI_LIB={
+  '🏠建筑':['🏠','🏘️','🏫','🏙️','🏛️','🏗️','🏚️','🏡','🏢','🏪','⛪','🕌','🕍','⛩️'],
+  '🛏️家具':['🛏️','🛋️','🪑','🚪','🪟','🪜','🗄️','📦','🛁','🚿','🪞','🪥','🧴','🧻'],
+  '🍳厨房':['🍳','🥘','🍲','🫕','🍽️','🥣','🥢','🔪','🫗','🧂','🫙','🥫','🫘'],
+  '🥬蔬菜':['🥬','🍅','🥒','🌽','🥕','🧅','🥔','🍆','🥦','🫑','🌶️','🫛','🧄','🍄'],
+  '🌳植物':['🌳','🌲','🌿','🌸','🌺','🌻','🪴','🌾','🎋','🎍','🍀','☘️','🌵','🌴'],
+  '🧰工具':['🔧','🔨','🪓','⛏️','🪣','🧹','🧺','🪡','🧵','🪢','📐','✂️','🔗','🪝'],
+  '🚜户外':['🚜','🅿️','🚲','🛵','🚗','🚌','🛻','🏍️','🛴','🦽','🦼','🚶','🧑‍🌾','👨‍🌾'],
+  '🔔标记':['⭐','🔴','🟢','🔵','🟡','🟠','🟣','❤️','💚','💙','📍','📌','🏁','🚩'],
+};
+let pickedEmoji=null,curCat='🏠建筑';
+function buildCatTags(){
+  const bar=document.getElementById('catTags');bar.innerHTML='';
+  Object.keys(EMOJI_LIB).forEach(cat=>{
+    const b=document.createElement('button');b.className='stab'+(curCat===cat?' active':'');
+    b.textContent=cat;b.addEventListener('click',()=>{curCat=cat;buildCatTags();buildEmojiLib();});
+    bar.appendChild(b);
+  });
+}
+function buildEmojiLib(){
+  const grid=document.getElementById('egrid');grid.innerHTML='';
+  const entries=[[curCat,EMOJI_LIB[curCat]]];
+  for(const[cat,emos]of entries){
+    const h=document.createElement('div');h.className='ecat';h.textContent=cat;grid.appendChild(h);
+    emos.forEach(em=>{
+      const b=document.createElement('button');b.className='ebtn2';b.textContent=em;
+      b.title=em;b.addEventListener('click',()=>{if(!edit||layer!=='content')return;document.querySelectorAll('.ebtn2').forEach(x=>x.classList.remove('picked'));b.classList.add('picked');pickedEmoji=em;});
+      grid.appendChild(b);
+    });
+  }
+}
+buildEmojiLib();
+
+// ============================================================
+// 数据
+// ============================================================
+function eg(r,c){r=r||N;c=c||N;const F=[],B=[];for(let i=0;i<r;i++){F[i]=[];B[i]=[];for(let j=0;j<c;j++){F[i][j]=null;B[i][j]={t:null,r:null,b:null,l:null};}}return{fills:F,borders:B};}
+let oid=1;function nuid(){return'obj'+(oid++);}
+
+const DATA={
+  world:{nm:'方位图',tp:'world',gr:{r:30,c:30},sc:'~100m/格',d:eg(30,30),objs:[],
+    hs:{'🏠合作社':{r:11,c:15,tg:'coop'},'🏘️宿舍':{r:11,c:11,tg:'dorm'},'🥬菜地':{r:11,c:18,tg:'field'}},
+    init(d,objs){for(let r=13;r<=15;r++)d.fills[r][15]='road';for(let c=5;c<=25;c++)d.fills[14][c]='road';
+      objs.push({id:nuid(),r:14,c:15,txt:'十字路口'},{id:nuid(),r:1,c:15,txt:'北↑'},{id:nuid(),r:22,c:15,txt:'南↓'},{id:nuid(),r:12,c:1,txt:'西←'},{id:nuid(),r:12,c:29,txt:'→东'},{id:nuid(),r:6,c:5,txt:'🏫胡庙'},{id:nuid(),r:11,c:11,txt:'🏘️宿舍'},{id:nuid(),r:11,c:15,txt:'🏠合作社'},{id:nuid(),r:11,c:18,txt:'🥬菜地'},{id:nuid(),r:14,c:27,txt:'🏘️三河镇'},{id:nuid(),r:19,c:15,txt:'🏙️阜阳市'});}
+  },
+  dorm:{nm:'宿舍',tp:'building',fl:1,gr:{r:30,c:60},sc:'~1.5m/格',bb:{r1:4,r2:22,c1:2,c2:28},d:eg(30,60),objs:[],fp:{layout:{fills:eg(30,60).fills,borders:eg(30,60).borders,objs:[]}},
+    rm:{'mzl':{nm:'梅',it:[{n:'上下铺床',q:2,s:'good'}]},'lan':{nm:'兰',it:[{n:'上下铺床',q:2,s:'good'}]},'zhu':{nm:'竹',it:[{n:'上下铺床',q:2,s:'good'}]},'ju':{nm:'菊',it:[{n:'上下铺床',q:2,s:'good'}]}},
+    init(g,objs){const W='wall',F='fence',R='road',B='bld';
+      for(let r=0;r<g.fills.length;r++){g.fills[r][0]=R;g.fills[r][58]=R;g.fills[r][59]=R;}
+      for(let c=0;c<g.fills[0].length;c++)g.fills[23][c]=R;
+      for(let c=2;c<58;c++)g.fills[21][c]='field';
+      for(let c=2;c<58;c++){g.borders[22][c].b=F;g.borders[3][c].t=F;}
+      for(let r=3;r<23;r++){g.borders[r][2].l=F;g.borders[r][57].r=F;}
+      for(let r=4;r<22;r++)for(let c=3;c<=5;c++)g.fills[r][c]=B;
+      for(let c=3;c<=5;c++){g.borders[4][c].t=W;g.borders[21][c].b=W;}
+      for(let r=4;r<22;r++)g.borders[r][5].r=W;
+      for(let r=4;r<10;r++)for(let c=6;c<10;c++)g.fills[r][c]=B;
+      for(let r=4;r<10;r++)g.fills[r][10]=B;
+      for(let r=4;r<8;r++)for(let c=11;c<15;c++)g.fills[r][c]=B;
+      for(let r=9;r<10;r++)for(let c=11;c<15;c++)g.fills[r][c]=B;
+      for(let r=10;r<12;r++)for(let c=11;c<16;c++)g.fills[r][c]=R;
+      for(let r=12;r<13;r++)for(let c=11;c<16;c++)g.fills[r][c]=B;
+      for(let r=12;r<13;r++)g.fills[r][9]='water';
+      for(let r=13;r<18;r++)for(let c=5;c<9;c++)g.fills[r][c]=B;
+      for(let r=4;r<7;r++)for(let c=15;c<19;c++)g.fills[r][c]=B;
+      for(let r=10;r<14;r++)for(let c=15;c<19;c++)g.fills[r][c]=B;
+      for(let r=13;r<20;r++)for(let c=19;c<27;c++)g.fills[r][c]='field';
+      objs.push({id:nuid(),r:6,c:4,txt:'🧹杂物'},{id:nuid(),r:9,c:4,txt:'🎋梅'},{id:nuid(),r:11,c:4,txt:'🎋兰'},{id:nuid(),r:13,c:4,txt:'🎋竹'},{id:nuid(),r:15,c:4,txt:'🎋菊'},{id:nuid(),r:19,c:4,txt:'🧹杂物'},{id:nuid(),r:6,c:7,txt:'🛏️四人'},{id:nuid(),r:6,c:10,txt:'🎋'},{id:nuid(),r:5,c:12,txt:'📚博物'},{id:nuid(),r:9,c:12,txt:'🍵茶室'},{id:nuid(),r:10,c:13,txt:'══走廊══'},{id:nuid(),r:12,c:13,txt:'🍳厨房'},{id:nuid(),r:12,c:9,txt:'💧池'},{id:nuid(),r:15,c:6,txt:'🍽️餐厅'},{id:nuid(),r:19,c:5,txt:'🚪大门'},{id:nuid(),r:5,c:16,txt:'📦仓库'},{id:nuid(),r:8,c:16,txt:'水泥地'},{id:nuid(),r:11,c:16,txt:'🚻男厕'},{id:nuid(),r:16,c:22,txt:'🥬菜地3垄'},{id:nuid(),r:1,c:15,txt:'北↑'},{id:nuid(),r:22,c:14,txt:'南↓'},{id:nuid(),r:1,c:14,txt:'🏠老戴小院'},{id:nuid(),r:0,c:29,txt:'🅿️'},{id:nuid(),r:12,c:1,txt:'路←'},{id:nuid(),r:12,c:58,txt:'→🅿️'},{id:nuid(),r:23,c:28,txt:'══马路══'},{id:nuid(),r:21,c:20,txt:'🎋竹子🎋'});}
+  },
+  coop:{nm:'合作社大院',tp:'building',fl:3,gr:{r:30,c:60},sc:'~1.5m/格',bb:{r1:6,r2:20,c1:3,c2:27},d:eg(30,60),objs:[],fp:{'1F':{fills:eg(30,60).fills,borders:eg(30,60).borders,objs:[]},'2F':{fills:eg(30,60).fills,borders:eg(30,60).borders,objs:[]},'3F':{fills:eg(30,60).fills,borders:eg(30,60).borders,objs:[]}},
+    rm:{'lv':{nm:'大客厅',it:[{n:'长桌',q:2,s:'good'}]},'kt':{nm:'厨房',it:[{n:'灶台',q:1,s:'good'}]}},
+    init(g,objs){const W='wall',F='fence',R='road',B='bld';
+      for(let r=27;r<=29;r++)for(let c=0;c<g.fills[0].length;c++)g.fills[r][c]=R;
+      for(let r=1;r<=4;r++)for(let c=3;c<=26;c++)g.fills[r][c]='field';
+      for(let r=6;r<=20;r++)for(let c=3;c<=7;c++)g.fills[r][c]=B;
+      for(let c=3;c<=7;c++){g.borders[6][c].t=W;g.borders[20][c].b=W;}
+      for(let r=6;r<=20;r++)g.borders[r][7].r=W;
+      for(let r=6;r<=20;r++)for(let c=8;c<=17;c++)g.fills[r][c]=B;
+      for(let c=8;c<=17;c++){g.borders[6][c].t=W;g.borders[20][c].b=W;}
+      for(let r=6;r<=20;r++)for(let c=18;c<=19;c++)g.fills[r][c]=B;
+      for(let r=6;r<=20;r++)for(let c=20;c<=26;c++)g.fills[r][c]=B;
+      for(let c=20;c<=26;c++){g.borders[6][c].t=W;g.borders[20][c].b=W;}
+      for(let r=21;r<=26;r++)for(let c=4;c<=26;c++)g.fills[r][c]=null;
+      for(let c=3;c<=26;c++)g.borders[27][c].t=F;
+      for(let c=3;c<=26;c++)g.borders[5][c].t=F;
+      for(let r=5;r<28;r++){g.borders[r][3].l=F;g.borders[r][26].r=F;}
+      const f1=this.fp['1F'];
+      for(let c=8;c<=17;c++)f1.fills[13][c]=R;
+      objs.push({id:nuid(),r:29,c:20,txt:'══门前路══'},{id:nuid(),r:2,c:8,txt:'🥬A区'},{id:nuid(),r:2,c:21,txt:'🥒B区'},{id:nuid(),r:12,c:4,txt:'🏛️西厢瓦房3F'},{id:nuid(),r:10,c:11,txt:'🏠合作社平房3F'},{id:nuid(),r:12,c:22,txt:'🎭戏台1F瓦房'},{id:nuid(),r:23,c:14,txt:'🟫操场'},{id:nuid(),r:22,c:13,txt:'🪦合作丰碑'},{id:nuid(),r:26,c:5,txt:'🚪'},{id:nuid(),r:26,c:24,txt:'🚪'},{id:nuid(),r:0,c:15,txt:'北↑'},{id:nuid(),r:28,c:20,txt:'南↓'});
+      f1.objs.push({id:nuid(),r:13,c:12,txt:'══走廊══'},{id:nuid(),r:9,c:12,txt:'🛋️大客厅'},{id:nuid(),r:16,c:12,txt:'🍳厨房📚图书'});}
+  },
+  field:{nm:'菜地',tp:'field',gr:{r:30,c:30},sc:'~0.5m/格',d:eg(30,30),objs:[],
+    zn:[{id:'A',crop:'番茄',em:'🍅',pd:'2026-07-01',hd:45,st:'growing'},{id:'B',crop:'黄瓜',em:'🥒',pd:'2026-06-20',hd:30,st:'ready'},{id:'C',crop:'玉米',em:'🌽',pd:'2026-07-03',hd:60,st:'growing'},{id:'D',crop:'空心菜',em:'🥬',pd:'2026-06-15',hd:20,st:'overdue'}],
+    init(g,objs){for(let c=2;c<28;c++){g.borders[2][c].t='fence';g.borders[17][c].b='fence';}for(let r=2;r<18;r++){g.borders[r][2].l='fence';g.borders[r][27].r='fence';}for(let r=3;r<17;r++)for(let c=3;c<27;c++)g.fills[r][c]='field';for(let r=2;r<18;r++){g.borders[r][8].l='road';g.borders[r][15].l='road';g.borders[r][21].l='road';}objs.push({id:nuid(),r:9,c:5,txt:'🍅A区·番茄'},{id:nuid(),r:9,c:11,txt:'🥒B区·黄瓜'},{id:nuid(),r:9,c:18,txt:'🌽C区·玉米'},{id:nuid(),r:9,c:23,txt:'🥬D区·空心菜'});}
+  }
+};
+for(const k in DATA){const b=DATA[k];if(b.init){b.init(b.d,b.objs);}}
+
+// ============================================================
+// 状态
+let cur='world',floor='layout',edit=false,tool='sel',layer='grid',sel=null,selObj=null,drag=false,ds=null,dl=null,boxSel=null,boxDrag=false,moveMode=false,moveStart=null,moveData=null,objDrag=false,objDragStart=null,resizeObj=null,rhDrag=null,zoom=1,spaceDown=false;
+const $=id=>document.getElementById(id),gwrap=$('gwrap'),gstage=$('gstage'),oly=$('oly'),stabs=$('stabs'),tbar=$('tbar'),modeBtn=$('modeBtn'),gh=$('gh'),ip=$('ip'),ipt=$('ipt'),ipb=$('ipb'),zh=$('zh'),cinp=$('cinp');
+
+// ============================================================
+function B(){return DATA[cur];}
+function R(){return B().gr.r;}function C(){return B().gr.c;}
+function ib(r,c){const bb=B().bb;return bb?r>=bb.r1&&r<=bb.r2&&c>=bb.c1&&c<=bb.c2:true;}
+function gd(){const b=B();if(b.tp==='world'||b.tp==='field')return b.d;return floor==='layout'?b.d:b.fp[floor];}
+function objs(){const b=B();if(b.tp==='world'||b.tp==='field')return b.objs;const g=gd();return g.objs||[];}
+function cf(r,c){const g=gd();return g.fills[r]?g.fills[r][c]:null;}
+function cb(r,c){const g=gd();return g.borders[r]?g.borders[r][c]:{t:null,r:null,b:null,l:null};}
+function wf(r,c,v){const g=gd();if(g.fills[r])g.fills[r][c]=v;}
+function wb(r,c,e,v){const g=gd();if(g.borders[r])g.borders[r][c][e]=v;}
+
+// ============================================================
+// 边框 CSS 类名映射: wall→W, window→N, door→D, fence→F
+const BK={'wall':'W','window':'N','door':'D','fence':'F'};
+function bCls(borders){
+  const cls=[],b=borders;
+  function add(k,e){if(b[e]===k){const p=BK[k];cls.push(p+e);}}
+  add('wall','t');add('wall','r');add('wall','b');add('wall','l');
+  add('window','t');add('window','r');add('window','b');add('window','l');
+  add('door','t');add('door','r');add('door','b');add('door','l');
+  add('fence','t');add('fence','r');add('fence','b');add('fence','l');
+  return cls.join(' ');
+}
+function cl(fill,borders){const cls=[];if(fill)cls.push('f-'+fill);cls.push(bCls(borders));return cls.join(' ');}
+
+// ============================================================
+// 渲染
+function renderObjs(){
+  oly.innerHTML='';const all=objs();
+  if(edit&&layer==='content')oly.classList.add('active');else oly.classList.remove('active');
+  all.forEach(o=>{const el=document.createElement('div');el.className='obj';if(selObj===o.id)el.classList.add('selected');el.textContent=o.txt;const lw=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--lw'))||24;const lh=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--lh'))||16;const sz=o.sz||1;el.style.fontSize=(11*sz)+'px';el.style.width=(26*sz)+'px';el.style.height=(26*sz)+'px';el.style.left=(lw+o.c*26-(sz-1)*13)+'px';el.style.top=(lh+o.r*26-(sz-1)*13)+'px';
+    if(edit&&layer==='content'){el.style.pointerEvents='auto';el.addEventListener('mousedown',e=>{e.stopPropagation();e.preventDefault();selObjObj(o);resizeObj=o.id;render();objDrag=true;objDragStart={x:e.clientX,y:e.clientY,o,or:o.r,oc:o.c};document.addEventListener('mousemove',objDragMove);document.addEventListener('mouseup',objDragEnd);});el.addEventListener('dblclick',e=>{e.stopPropagation();selObjObj(o);const o2=objs().find(x=>x.id===o.id);if(o2){const v=prompt('编辑文字:',o2.txt||'');if(v!==null){o2.txt=v;render();}}});}
+    if(resizeObj===o.id){el.classList.add('resizing');const h1=document.createElement('div');h1.className='hdl tl';h1.addEventListener('mousedown',e=>{e.stopPropagation();e.preventDefault();rhDrag={o,corner:'tl',x:e.clientX,y:e.clientY,sz:o.sz||1};document.addEventListener('mousemove',rhMove);document.addEventListener('mouseup',rhEnd);});el.appendChild(h1);const h2=document.createElement('div');h2.className='hdl br';h2.addEventListener('mousedown',e=>{e.stopPropagation();e.preventDefault();rhDrag={o,corner:'br',x:e.clientX,y:e.clientY,sz:o.sz||1};document.addEventListener('mousemove',rhMove);document.addEventListener('mouseup',rhEnd);});el.appendChild(h2);}
+    oly.appendChild(el);
+  });
+}
+function selObjObj(o){selObj=o.id;sel=null;render();}
+function editObj(o){const v=prompt('编辑:',o.txt);if(v!==null){const arr=objs();const idx=arr.findIndex(x=>x.id===o.id);if(idx>=0)arr[idx].txt=v;render();}}
+function delObj(){if(!selObj)return;const arr=objs();const idx=arr.findIndex(x=>x.id===selObj);if(idx>=0){arr.splice(idx,1);selObj=null;render();}}
+
+function renderGrid(){
+  gstage.querySelectorAll('table').forEach(t=>t.remove());const tbl=document.createElement('table');tbl.className='gtable';tbl.style.cssText='position:relative;z-index:1';
+  const cr=document.createElement('tr');const cc=document.createElement('td');cc.className='clbl';cc.textContent='R\\C';cr.appendChild(cc);
+  for(let c=0;c<C();c++){const td=document.createElement('td');td.className='clbl';td.textContent=c+1;cr.appendChild(td);}tbl.appendChild(cr);
+  for(let r=0;r<R();r++){const tr=document.createElement('tr');const rl=document.createElement('td');rl.className='rlbl';rl.textContent=r+1;tr.appendChild(rl);
+    for(let c=0;c<C();c++){const td=document.createElement('td');td.className=cl(cf(r,c),cb(r,c));td.dataset.r=r;td.dataset.c=c;if(sel&&sel.r===r&&sel.c===c)td.classList.add('sel');td.addEventListener('mousedown',e=>md(r,c,td,e));td.addEventListener('mouseenter',e=>me(r,c,td,e));tr.appendChild(td);}tbl.appendChild(tr);}
+  gstage.insertBefore(tbl,gstage.firstChild);
+}
+
+function render(){renderGrid();renderObjs();upui();}
+
+function upui(){const b=B();gh.textContent=`${R()}×${C()} ${b.sc}`;stabs.innerHTML='';if(b.tp==='building'&&b.fl>1){stabs.className='stabs on';for(let i=1;i<=b.fl;i++){const k=i+'F';const btn=document.createElement('button');btn.className='stab'+(floor===k?' active':'');btn.textContent=k;btn.addEventListener('click',()=>{floor=k;sel=null;selObj=null;render();hip();});stabs.appendChild(btn);}}else{stabs.className='stabs';}const mb=$('modeBtn2');mb.textContent=edit?'🔒 查看':'✏️ 编辑';mb.className='mbtn'+(edit?' on':'');zh.textContent=zoom!==1?Math.round(zoom*100)+'%':'';}
+
+function tdom(r,c){return gstage.querySelector(`td[data-r="${r}"][data-c="${c}"]`);}
+
+// ============================================================
+// Info panel
+function hip(){ip.className='card ip';}
+function sri(r,c){const b=B();if(b.tp!=='building'||!ib(r,c)||!b.rm)return hip();const ks=Object.keys(b.rm);if(!ks.length)return hip();const rm=b.rm[ks[0]];ipt.textContent='🛏️ '+rm.nm;let rows=rm.it.map(it=>`<tr><td>${it.n}</td><td>×${it.q}</td><td><span class="tag ${it.s==='good'?'ok':it.s==='worn'?'wn':'bd'}">${it.s==='good'?'良好':it.s==='worn'?'老旧':'损坏'}</span></td></tr>`).join('');ipb.innerHTML=`<table><tr><th>物品</th><th>数量</th><th>状态</th></tr>${rows}</table>`;ip.className='card ip on';}
+function sfi(r,c){const b=B();if(b.tp!=='field'||!b.zn)return hip();let zi=0;if(c>=9)zi=1;if(c>=16)zi=2;if(c>=22)zi=3;const z=b.zn[zi];if(!z)return hip();const pd=new Date(z.pd),hv=new Date(pd.getTime()+z.hd*86400000),now=new Date('2026-07-06'),rm=Math.ceil((hv-now)/86400000);let st,sc;if(z.st==='ready'){st='🟢已成熟';sc='ok';}else if(z.st==='overdue'){st='🔴已逾期';sc='bd';}else{st='🌱生长中剩'+rm+'天';sc='wn';}ipt.textContent=z.em+' '+z.id+'区·'+z.crop;ipb.innerHTML=`<div class="kv"><span class="k">种下</span>${z.pd}</div><div class="kv"><span class="k">预计成熟</span>${hv.toISOString().slice(5,10)}</div><div class="kv"><span class="k">周期</span>${z.hd}天</div><div class="kv"><span class="k">状态</span><span class="tag ${sc}">${st}</span></div>`;ip.className='card ip on';}
+
+// ============================================================
+// 鼠标
+function showBox(){const el=$('boxSel');if(!boxSel){el.style.display='none';return}const r1=boxSel.r1,r2=boxSel.r2,c1=boxSel.c1,c2=boxSel.c2;const t1=tdom(r1,c1),t2=tdom(r2,c2);if(!t1||!t2){el.style.display='none';return}const w=gwrap.getBoundingClientRect(),r1r=t1.getBoundingClientRect(),r2r=t2.getBoundingClientRect();el.style.display='block';el.style.left=(Math.min(r1r.left,r2r.left)-w.left)+'px';el.style.top=(Math.min(r1r.top,r2r.top)-w.top)+'px';el.style.width=(Math.abs(r2r.right-r1r.left))+'px';el.style.height=(Math.abs(r2r.bottom-r1r.top))+'px';}
+function hideBox(){$('boxSel').style.display='none';boxSel=null;}
+
+function md(r,c,td,e){e.preventDefault();
+  if(!edit){sel={r,c};render();const b=B();if(b.tp==='world'&&b.hs){for(const[k,h]of Object.entries(b.hs)){if(Math.abs(r-h.r)<=1&&Math.abs(c-h.c)<=1){swb(h.tg);return;}}}if(b.tp==='building'&&ib(r,c))sri(r,c);else if(b.tp==='field')sfi(r,c);else hip();return;}
+  if(layer!=='grid')return;
+  if(tool==='sel'){if(e.shiftKey){boxDrag=true;boxSel={r1:r,c1:c,r2:r,c2:c};sel=null;gstage.querySelectorAll('td.sel').forEach(t=>t.classList.remove('sel'));showBox();}else if(boxSel&&!moveMode&&r>=boxSel.r1&&r<=boxSel.r2&&c>=boxSel.c1&&c<=boxSel.c2){moveMode=true;moveStart={r,c};moveData={fills:[],borders:[],dr:0,dc:0};for(let rr=boxSel.r1;rr<=boxSel.r2;rr++){moveData.fills[rr-boxSel.r1]=[];moveData.borders[rr-boxSel.r1]=[];for(let cc=boxSel.c1;cc<=boxSel.c2;cc++){moveData.fills[rr-boxSel.r1][cc-boxSel.c1]=cf(rr,cc);moveData.borders[rr-boxSel.r1][cc-boxSel.c1]=cb(rr,cc);wr(rr,cc);}}}else{sel={r,c};boxSel=null;render();hideBox();selObj=null;}}
+  else if(['road','field','water','bld'].includes(tool)){drag=true;ds={r,c};dl={r,c};const t=tool==='bld'?'bld':tool;wf(r,c,t);const td=tdom(r,c);if(td)td.className=cl(cf(r,c),cb(r,c));}
+  else if(tool==='wall'||tool==='window'||tool==='door'||tool==='fence'){const edge=he(e,td);if(edge){tgb(r,c,edge,tool);ds={r,c};dl={r,c};drag=true;}}
+  else if(tool==='box'){drag=true;ds={r,c};dl={r,c};sel={r,c};render();}
+  else if(tool==='erase'){wr(r,c);drag=true;ds={r,c};dl={r,c};}
+  document.addEventListener('mouseup',mu);
+}
+function wr(r,c){wf(r,c,null);wb(r,c,'t',null);wb(r,c,'r',null);wb(r,c,'b',null);wb(r,c,'l',null);const dirs=[{dr:-1,dc:0,e:'b'},{dr:1,dc:0,e:'t'},{dr:0,dc:-1,e:'r'},{dr:0,dc:1,e:'l'}];dirs.forEach(({dr,dc,e})=>{const nr=r+dr,nc=c+dc;if(nr>=0&&nr<R()&&nc>=0&&nc<C()){wb(nr,nc,e,null);const td=tdom(nr,nc);if(td)td.className=cl(cf(nr,nc),cb(nr,nc));}});const td=tdom(r,c);if(td)td.className=cl(cf(r,c),cb(r,c));}
+function me(r,c,td,e){
+  if(boxDrag){boxSel.r2=r;boxSel.c2=c;showBox();return;}
+  if(moveMode&&moveStart){const dr=r-moveStart.r,dc=c-moveStart.c;if(dr===moveData.dr&&dc===moveData.dc)return;moveData.dr=dr;moveData.dc=dc;renderGrid();for(let rr=boxSel.r1;rr<=boxSel.r2;rr++)for(let cc=boxSel.c1;cc<=boxSel.c2;cc++){const nr=rr+dr,nc=cc+dc;if(nr<0||nr>=R()||nc<0||nc>=C())continue;const td=tdom(nr,nc);if(td)td.className=cl(moveData.fills[rr-boxSel.r1][cc-boxSel.c1],moveData.borders[rr-boxSel.r1][cc-boxSel.c1]);}return;}
+  if(!drag||!edit||layer!=='grid')return;if(dl&&dl.r===r&&dl.c===c)return;dl={r,c};
+  if(['road','field','water','bld'].includes(tool)){const t=tool==='bld'?'bld':tool;each(ds.r,ds.c,r,c,(rr,cc)=>{wf(rr,cc,t);const td=tdom(rr,cc);if(td)td.className=cl(cf(rr,cc),cb(rr,cc));});}
+  if(tool==='wall'||tool==='window'||tool==='door'||tool==='fence'){const edge=he(e,td);if(edge)tgb(r,c,edge,tool);}
+  if(tool==='erase')wr(r,c);if(tool==='box'){sel={r,c};render();}
+}
+function mu(e){
+  if(boxDrag){boxDrag=false;showBox();document.removeEventListener('mouseup',mu);return;}
+  if(moveMode&&moveData){for(let rr=boxSel.r1;rr<=boxSel.r2;rr++)for(let cc=boxSel.c1;cc<=boxSel.c2;cc++){const nr=rr+moveData.dr,nc=cc+moveData.dc;if(nr<0||nr>=R()||nc<0||nc>=C())continue;wf(nr,nc,moveData.fills[rr-boxSel.r1][cc-boxSel.c1]);const b=moveData.borders[rr-boxSel.r1][cc-boxSel.c1];wb(nr,nc,'t',b.t);wb(nr,nc,'r',b.r);wb(nr,nc,'b',b.b);wb(nr,nc,'l',b.l);}moveMode=false;moveData=null;moveStart=null;boxSel={r1:boxSel.r1+moveData.dr,c1:boxSel.c1+moveData.dc,r2:boxSel.r2+moveData.dr,c2:boxSel.c2+moveData.dc};render();showBox();document.removeEventListener('mouseup',mu);return;}
+  if(!drag){document.removeEventListener('mouseup',mu);return;}drag=false;
+  if(tool==='box'&&ds&&dl){const r1=Math.min(ds.r,dl.r),r2=Math.max(ds.r,dl.r),c1=Math.min(ds.c,dl.c),c2=Math.max(ds.c,dl.c);for(let c=c1;c<=c2;c++){apb(r1,c,'t','wall');apb(r2,c,'b','wall');}for(let r=r1;r<=r2;r++){apb(r,c1,'l','wall');apb(r,c2,'r','wall');}render();}ds=null;dl=null;document.removeEventListener('mouseup',mu);}
+
+// ============================================================
+function apb(r,c,edge,type){if(r<0||r>=R()||c<0||c>=C())return;wb(r,c,edge,type);const OPP={t:'b',b:'t',l:'r',r:'l'},DR={t:-1,b:1,l:0,r:0},DC={t:0,b:0,l:-1,r:1};const nr=r+DR[edge],nc=c+DC[edge];if(nr>=0&&nr<R()&&nc>=0&&nc<C()){wb(nr,nc,OPP[edge],type);const td=tdom(nr,nc);if(td)td.className=cl(cf(nr,nc),cb(nr,nc));}const td=tdom(r,c);if(td)td.className=cl(cf(r,c),cb(r,c));}
+function tgb(r,c,edge,type){const cur=edge==='t'?cb(r,c).t:edge==='r'?cb(r,c).r:edge==='b'?cb(r,c).b:cb(r,c).l;apb(r,c,edge,cur===type?null:type);}
+function each(r1,c1,r2,c2,fn){const dr=Math.abs(r2-r1),dc=Math.abs(c2-c1),sr=r1<r2?1:-1,sc=c1<c2?1:-1;let err=dr-dc,r=r1,c=c1;while(true){fn(r,c);if(r===r2&&c===c2)break;const e2=2*err;if(e2>-dc){err-=dc;r+=sr;}if(e2<dr){err+=dr;c+=sc;}}}
+function he(e,td){const rect=td.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top,m=5,h=[];if(y<m)h.push('t');if(y>rect.height-m)h.push('b');if(x<m)h.push('l');if(x>rect.width-m)h.push('r');return h.length>0?h[0]:null;}
+
+// 对象拖拽
+function objDragMove(e){if(!objDrag||!objDragStart)return;const dx=e.clientX-objDragStart.x,dy=e.clientY-objDragStart.y,dc=Math.round(dx/26),dr=Math.round(dy/26);const nr=objDragStart.or+dr,nc=objDragStart.oc+dc;if(nr<0||nr>=R()||nc<0||nc>=C())return;const arr=objs();const idx=arr.findIndex(x=>x.id===objDragStart.o.id);if(idx>=0){arr[idx].r=nr;arr[idx].c=nc;renderObjs();}}
+function objDragEnd(){objDrag=false;objDragStart=null;document.removeEventListener('mousemove',objDragMove);document.removeEventListener('mouseup',objDragEnd);}
+function rhMove(e){if(!rhDrag)return;const d=(e.clientX-rhDrag.x)+(rhDrag.y-e.clientY);const ns=Math.max(0.4,Math.min(3,rhDrag.sz+d/80));rhDrag.o.sz=ns;renderObjs();}
+function rhEnd(){rhDrag=null;document.removeEventListener('mousemove',rhMove);document.removeEventListener('mouseup',rhEnd);}
+// 点击空白退出缩放模式
+// 点击空白区域放置素材
+oly.addEventListener('click',e=>{if(!edit||layer!=='content')return;if(e.target.closest('.obj'))return;if(pickedEmoji){const oRect=oly.getBoundingClientRect();const x=e.clientX-oRect.left,y=e.clientY-oRect.top;const lw=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--lw'))||24;const lh=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--lh'))||16;const c=Math.round((x-lw)/26),r=Math.round((y-lh)/26);if(r>=0&&r<R()&&c>=0&&c<C()){objs().push({id:nuid(),r,c,txt:pickedEmoji,sz:1});pickedEmoji=null;document.querySelectorAll('.ebtn2').forEach(x=>x.classList.remove('picked'));render();}}else{resizeObj=null;selObj=null;render();}});
+// 选中对象时滚轮调大小
+gwrap.addEventListener('wheel',e=>{if(spaceDown||!selObj||layer!=='content')return;e.preventDefault();const o=objs().find(x=>x.id===selObj);if(!o)return;o.sz=Math.max(0.4,Math.min(3,(o.sz||1)+(e.deltaY>0?-0.1:0.1)));render();},{passive:false});
+
+// ============================================================
+// 行列操作
+function insRow(){if(!edit)return;const g=B().gr,pos=sel?sel.r:Math.floor(g.r/2);[gd()].forEach(L=>{const nc=L.fills[0]?L.fills[0].length:g.c;L.fills.splice(pos,0,Array(nc).fill(null));L.borders.splice(pos,0,Array(nc).fill(null).map(()=>({t:null,r:null,b:null,l:null})));});objs().forEach(o=>{if(o.r>=pos)o.r++;});if(B().bb){const bb=B().bb;if(pos<=bb.r1)bb.r1++;if(pos<=bb.r2)bb.r2++;}g.r++;sel=null;render();}
+function delRow(){if(!edit||R()<=5)return;const g=B().gr,pos=sel?sel.r:Math.floor(g.r/2);[gd()].forEach(L=>{L.fills.splice(pos,1);L.borders.splice(pos,1);});const arr=objs();for(let i=arr.length-1;i>=0;i--){if(arr[i].r===pos)arr.splice(i,1);else if(arr[i].r>pos)arr[i].r--;}if(B().bb){const bb=B().bb;if(pos<bb.r1)bb.r1--;if(pos<=bb.r2)bb.r2--;}g.r--;sel=null;render();}
+function insCol(){if(!edit)return;const g=B().gr,pos=sel?sel.c:Math.floor(g.c/2);[gd()].forEach(L=>{for(let r=0;r<L.fills.length;r++){L.fills[r].splice(pos,0,null);L.borders[r].splice(pos,0,{t:null,r:null,b:null,l:null});}});objs().forEach(o=>{if(o.c>=pos)o.c++;});if(B().bb){const bb=B().bb;if(pos<=bb.c1)bb.c1++;if(pos<=bb.c2)bb.c2++;}g.c++;sel=null;render();}
+function delCol(){if(!edit||C()<=5)return;const g=B().gr,pos=sel?sel.c:Math.floor(g.c/2);[gd()].forEach(L=>{for(let r=0;r<L.fills.length;r++){L.fills[r].splice(pos,1);L.borders[r].splice(pos,1);}});const arr=objs();for(let i=arr.length-1;i>=0;i--){if(arr[i].c===pos)arr.splice(i,1);else if(arr[i].c>pos)arr[i].c--;}if(B().bb){const bb=B().bb;if(pos<bb.c1)bb.c1--;if(pos<=bb.c2)bb.c2--;}g.c--;sel=null;render();}
+$('btnInsRow').addEventListener('click',insRow);$('btnDelRow').addEventListener('click',delRow);
+$('btnInsCol').addEventListener('click',insCol);$('btnDelCol').addEventListener('click',delCol);
+
+// ============================================================
+// 图层 & 工具
+document.querySelectorAll('.lyr-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.lyr-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');layer=btn.dataset.lyr;pickedEmoji=null;sel=null;selObj=null;boxSel=null;document.querySelectorAll('.ebtn2').forEach(x=>x.classList.remove('picked'));render();});});
+function swb(id){cur=id;const b=B();floor=b.tp==='building'&&b.fl>1?'1F':'layout';sel=null;selObj=null;boxSel=null;hip();document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));const tab=document.querySelector(`.mtab[data-b="${id}"]`);if(tab)tab.classList.add('active');render();}
+function tge(){edit=!edit;sel=null;selObj=null;hip();document.querySelectorAll('.edit-only').forEach(el=>{if(edit)el.classList.add('on');else el.classList.remove('on');});render();}
+$('mtabs').addEventListener('click',e=>{const t=e.target.closest('.mtab');if(t)swb(t.dataset.b);});
+$('modeBtn2').addEventListener('click',tge);
+$('tbar').addEventListener('click',e=>{const b=e.target.closest('.tbtn');if(!b||!b.dataset.t)return;document.querySelectorAll('#tbar .tbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');tool=b.dataset.t;pickedEmoji=null;document.querySelectorAll('.ebtn2').forEach(x=>x.classList.remove('picked'));});
+
+// 缩放
+function updZoom(){gstage.style.transform=`scale(${zoom})`;zh.textContent=zoom!==1?Math.round(zoom*100)+'%':'';}
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&document.activeElement!==cinp){e.preventDefault();spaceDown=true;}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;}});
+gwrap.addEventListener('wheel',e=>{if(!spaceDown)return;e.preventDefault();const d=e.deltaY>0?0.9:1.1;zoom=Math.min(3,Math.max(0.3,zoom*d));updZoom();},{passive:false});
+
+// 键盘
+document.addEventListener('keydown',e=>{if(document.activeElement===cinp)return;
+  switch(e.key){case'Delete':case'Backspace':if(edit){if(layer!=='grid')delObj();else if(sel){wr(sel.r,sel.c);sel=null;render();}}break;case'Escape':sel=null;selObj=null;boxSel=null;drag=false;render();hip();hideBox();break;case'ArrowUp':if(selObj&&layer==='content'){const o=objs().find(x=>x.id===selObj);if(o){o.r=Math.max(0,o.r-1);render();}}else ms(-1,0);break;case'ArrowDown':if(selObj&&layer==='content'){const o=objs().find(x=>x.id===selObj);if(o){o.r=Math.min(R()-1,o.r+1);render();}}else ms(1,0);break;case'ArrowLeft':if(selObj&&layer==='content'){const o=objs().find(x=>x.id===selObj);if(o){o.c=Math.max(0,o.c-1);render();}}else ms(0,-1);break;case'ArrowRight':if(selObj&&layer==='content'){const o=objs().find(x=>x.id===selObj);if(o){o.c=Math.min(C()-1,o.c+1);render();}}else ms(0,1);break;case'v':if(edit)st('sel');break;case'w':if(edit)st('wall');break;case'f':if(edit)st('fence');break;case'b':if(edit)st('box');break;case'e':if(edit)st('erase');break;case'd':if(edit)st('door');break;}});
+function ms(dr,dc){if(!sel)return;const nr=Math.max(0,Math.min(R()-1,sel.r+dr)),nc=Math.max(0,Math.min(C()-1,sel.c+dc));sel={r:nr,c:nc};render();if(!edit){const b=B();if(b.tp==='building'&&ib(nr,nc))sri(nr,nc);else if(b.tp==='field')sfi(nr,nc);}}
+function st(t){document.querySelectorAll('#tbar .tbtn').forEach(x=>x.classList.remove('active'));const btn=document.querySelector(`#tbar .tbtn[data-t="${t}"]`);if(btn)btn.classList.add('active');tool=t;}
+
+buildCatTags();
+$('btnAddText').addEventListener('click',()=>{if(!edit||layer!=='content')return;const v=prompt('输入文字:','');if(v){pickedEmoji=v;}});
+render();
+console.log('✅ v7 — 分类标签 | 左侧素材库 | 深色网格');
+</script>
+</body>
+</html>

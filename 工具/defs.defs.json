@@ -1,0 +1,32 @@
+{
+	"type": "defs",
+	"version": 2,
+	"nextIDs": {
+		"": 1
+	},
+	"generalDefs": {
+		"roomWidthMultiple": 16,
+		"roomHeightMultiple": 16,
+		"displayGrid": {
+			"enabled": false,
+			"width": 16,
+			"height": 16
+		},
+		"jsonExportType": "standard",
+		"jsonMinimize": false,
+		"jsonUseTrailingCommas": false,
+		"jsonUseBareIdentifiers": false
+	},
+	"mapDef": {
+		"properties": []
+	},
+	"roomDef": {
+		"inheritPropertiesFromMap": false,
+		"properties": []
+	},
+	"layerDefs": [],
+	"tilesetDefs": [],
+	"tileAttributeDefs": [],
+	"tileBrushDefs": [],
+	"objectDefs": []
+}

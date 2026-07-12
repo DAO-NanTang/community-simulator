@@ -1,0 +1,13 @@
+#!/bin/sh
+# 时间层护栏：提交前检查 dashboard.html 是否有裸 new Date()/Date.now()。
+# 有则拦截提交（防止旧副本覆盖 / 新代码引入老写法导致时区 bug 复发）。
+# 需临时跳过：git commit --no-verify
+node 工具/check_time_layer.js 工具/dashboard.html
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "⛔ 提交被时间层护栏拦下：dashboard.html 有裸时间调用。"
+  echo "   请把无参 new Date()/Date.now() 改成 Clock.today()/iso()/hour()/ms() 等。"
+  echo "   （确需跳过：git commit --no-verify）"
+  exit 1
+fi
+exit 0
