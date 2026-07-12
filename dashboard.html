@@ -1356,9 +1356,17 @@ var safeStorage = {
 };
 
 // ── 统一持久化入口（替代散落的 safeStorage.setItem('camp_data', ...)）──
+var _saveTimer = null;
 function saveData() {
-  safeStorage.setItem('camp_data', JSON.stringify(data));
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(function() {
+    safeStorage.setItem('camp_data', JSON.stringify(data));
+    _saveTimer = null;
+  }, 500);
 }
+window.addEventListener('beforeunload', function() {
+  if (_saveTimer) { clearTimeout(_saveTimer); safeStorage.setItem('camp_data', JSON.stringify(data)); }
+});
 
 // ── Member filter ──
 let memberFilter = 'builder';
@@ -3455,7 +3463,7 @@ function saveMember() {
   if (!newName) { alert('请输入姓名'); return; }
   if (!data.members) data.members = {};
   if (oldName && oldName !== newName) {
-    data.tasks.forEach(function(t) { if (t.assignee === oldName) t.assignee = newName; if (t.confirmer === oldName) t.confirmer = newName; });
+    data.tasks.forEach(function(t) { if (t.assignee === oldName) t.assignee = newName; if (t.confirmer === oldName) t.confirmer = newName; (t.claimants||[]).forEach(function(c){if(c.name===oldName)c.name=newName;}); });
     delete data.members[oldName];
   }
   if (oldName && oldName !== newName && data.finance_cny && data.finance_cny.transactions) {
@@ -3486,6 +3494,7 @@ function saveMember() {
 function deleteMember() {
   var name = document.getElementById('editMemberOldName').value;
   if (!name || !confirm('确定删除成员「' + name + '」？任务不会被删除，但会标记为未分配。')) return;
+  if (currentUser && name === currentUser.name) { alert('不能删除当前登录用户，请先切换账号'); return; }
   data.tasks.forEach(function(t) { if (t.assignee === name) t.assignee = ''; if (t.confirmer === name) t.confirmer = ''; });
   delete data.members[name];
   if (data.finance_cny && data.finance_cny.by_person && data.finance_cny.by_person[name]) { delete data.finance_cny.by_person[name]; }
@@ -5448,7 +5457,7 @@ function renderQuestCard(t, opts) {
   if (t.reviewer) h += '<span>✅ '+esc(t.reviewer)+'</span>';
   if (t.start) h += '<span>🗓️ '+esc(t.start)+'</span>'; h += '<span>📅 '+(t.posted_at||t.deadline||'—')+'</span>';
   var dlStyle = ''; var dlText = t.deadline||'—';
-  if (t.deadline) { var dl = parseDL(t.deadline); if (dl) { var hoursLeft = (dl - new Date(today+'T00:00:00')) / 3600000; if (hoursLeft <= 24 && hoursLeft >= 0) dlStyle = 'color:var(--red);font-weight:700'; else if (hoursLeft <= 48 && hoursLeft >= 0) dlStyle = 'color:#c8892e;font-weight:600'; } }
+  if (t.deadline) { var dl = parseMD(t.deadline); if (dl) { var hoursLeft = (dl - new Date(today+'T00:00:00')) / 3600000; if (hoursLeft <= 24 && hoursLeft >= 0) dlStyle = 'color:var(--red);font-weight:700'; else if (hoursLeft <= 48 && hoursLeft >= 0) dlStyle = 'color:#c8892e;font-weight:600'; } }
   h += '<span style="'+dlStyle+'">⏰ '+esc(dlText)+'</span><span>👥 '+slots+'</span>';
   if (opts.showAssignee) h += '<span>👤 '+esc(t.assignee||'—')+'</span>';
   h += '<span style="color:var(--accent);font-weight:600">💎 '+(t.points||0)+' NT</span></div>';
@@ -5497,7 +5506,7 @@ function renderQuestCard(t, opts) {
   }
   if (opts.showStatusEdit) {
     var statuses = ['待开始','进行中','已完成'];
-    h += '<select onchange="data.tasks['+idx+'].status=this.value;localStorage.setItem(\"camp_data\",JSON.stringify(data));updateAll();'+(_refreshFn[ctx]||'')+'" style="font-size:.68rem;padding:1px 4px;border:1px solid var(--border);border-radius:4px;margin-right:4px">';
+    h += '<select onchange="data.tasks['+idx+'].status=this.value;updateAll();'+(_refreshFn[ctx]||'')+'" style="font-size:.68rem;padding:1px 4px;border:1px solid var(--border);border-radius:4px;margin-right:4px">';
     statuses.forEach(function(s){ h += '<option value="'+s+'"'+(t.status===s?' selected':'')+'>'+s+'</option>'; });
     h += '</select>';
   }
@@ -6958,19 +6967,20 @@ function switchTab(name, opts) {
 }
 
 // ── Update all views ──
+function _tabHidden(id) { var el = document.getElementById('tab-'+id); return el && el.classList.contains('hidden'); }
 function updateAll() {
   recalcFinanceByPerson();
   updateStats();
   renderTasks();
   renderCompleteness();
-  renderMembers();
-  renderTimeline();
+  if (!_tabHidden('members')) renderMembers();
+  if (!_tabHidden('timeline')) renderTimeline();
   renderCalendar();
   renderBudget();
-  renderSettlementAll();
+  if (!_tabHidden('settlement')) renderSettlementAll();
   renderWorkspace();
-  renderNTAdmin();
-  renderLeaderboard();
+  if (!_tabHidden('ntadmin')) renderNTAdmin();
+  if (!_tabHidden('leaderboard')) renderLeaderboard();
   renderQuestBoard();refreshMemberView();
   updateInboxBadge();
   saveData();
@@ -6985,7 +6995,7 @@ function autoSaveToFeishu() {
   clearTimeout(feishuSaveTimer);
   feishuSaveTimer = setTimeout(function() {
     try {
-      var payload = JSON.parse(JSON.stringify(data)); // 深拷贝
+      var payload = data; // ponytail: JSON.stringify already produces a copy, skip deep clone
       // 附上 localStorage 中的账号和邀请码数据
       payload._nt_users = {};
       try { payload._nt_users = JSON.parse(localStorage.getItem('nt_users')) || {}; } catch(e) {}
@@ -7307,7 +7317,7 @@ function renderDailyView(role) {
     return;
   }
 
-  center.innerHTML = activeToday.map(function(t, i) {
+  center.innerHTML = activeToday.map(function(t) {
     var idx = data.tasks.indexOf(t);
     var cardHTML = renderQuestCard(t, {context:'taskhall', userName:currentUser?currentUser.name:'', isMember:true, showAssignee:true, taskIndex:idx});
     var collabs = [...new Set(tasks.filter(function(ct) { return ct !== t && (ct.name.includes(t.name.slice(0,4)) || t.name.includes(ct.name.slice(0,4))); }).map(function(ct) { return ct.assignee; }).filter(Boolean))].slice(0, 4);
