@@ -740,7 +740,7 @@
         <div style="font-weight:700;margin-bottom:2px">小云 · 任务大厅接待员</div>
         <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px" id="npcDialogue">你好！我是小云～ 想找什么任务？</div>
         <div style="display:flex;gap:6px;margin-bottom:6px">
-          <input type="text" id="villageSearchInput" placeholder="🔍 搜索任务名称…" oninput="refreshQuestViews()" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;background:var(--bg);color:var(--text)">
+          <input type="text" id="villageSearchInput" placeholder="🔍 搜索任务名称…" oninput="villageSearchText=this.value.trim().toLowerCase();_debounce('vs',300,refreshQuestViews)" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;background:var(--bg);color:var(--text)">
           <button class="btn pri" id="villagePeriodCurrent" onclick="villagePeriod='current';this.classList.add('pri');document.getElementById('villagePeriodArchive').classList.remove('pri');refreshQuestViews()" style="font-size:.72rem;padding:4px 10px;white-space:nowrap">📋 当期</button>
           <button class="btn" id="villagePeriodArchive" onclick="villagePeriod='archive';this.classList.add('pri');document.getElementById('villagePeriodCurrent').classList.remove('pri');refreshQuestViews()" style="font-size:.72rem;padding:4px 10px;white-space:nowrap">📦 往期</button>
         </div>
@@ -784,7 +784,7 @@
         <div style="font-size:.8rem;color:var(--muted)" id="hubNpcText">你好！欢迎来到任务大厅～</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
-        <input id="hubSearch" placeholder="🔍 搜索任务…" oninput="renderHubQuestHall()" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;width:160px;background:var(--bg)">
+        <input id="hubSearch" placeholder="🔍 搜索任务…" oninput="_debounce('hs',300,renderHubQuestHall)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;width:160px;background:var(--bg)">
         <div style="font-size:.65rem;color:var(--accent);margin-top:4px;cursor:pointer" onclick="villagePeriod='archive';refreshQuestViews()">📦 往期档案</div>
       </div>
     </div>
@@ -1011,7 +1011,7 @@
 
 <!-- Reviewer Picker Dropdown -->
 <div class="picker-dropdown hidden" id="pickerDropdown">
-  <div class="pk-header"><input type="text" id="pickerSearch" placeholder="🔍 搜索…" oninput="renderReviewerList()"></div>
+  <div class="pk-header"><input type="text" id="pickerSearch" placeholder="🔍 搜索…" oninput="_debounce('pk',200,renderReviewerList)"></div>
   <div class="pk-list" id="pickerList"></div>
 </div>
 
@@ -1021,7 +1021,7 @@
 
 <!-- Item Picker (集市选物品，复用 picker-dropdown 样式) -->
 <div class="picker-dropdown hidden" id="itemPickerDropdown">
-  <div class="pk-header"><input type="text" id="itemPickerSearch" placeholder="🔍 搜索我的物品…" oninput="renderItemPickerList()"></div>
+  <div class="pk-header"><input type="text" id="itemPickerSearch" placeholder="🔍 搜索我的物品…" oninput="_debounce('ip',200,renderItemPickerList)"></div>
   <div class="pk-list" id="itemPickerList"></div>
   <div id="itemPickerDetail" style="display:none;border-top:1px solid var(--border);padding:8px 10px"></div>
 </div>
@@ -1354,6 +1354,9 @@ var safeStorage = {
   setItem: function(key, val) { try { localStorage.setItem(key, val); } catch(e) { safeStorage.available = false; } },
   removeItem: function(key) { try { localStorage.removeItem(key); } catch(e) { safeStorage.available = false; } }
 };
+
+// ── 防抖工具（搜索框等高频输入用）──
+function _debounce(key, ms, fn) { clearTimeout(window['_dt_'+key]); window['_dt_'+key] = setTimeout(fn, ms); }
 
 // ── 统一持久化入口（替代散落的 safeStorage.setItem('camp_data', ...)）──
 var _saveTimer = null;
@@ -2570,8 +2573,9 @@ function refreshQuestViews() {
 }
 function refreshAfterAction(msg) {
   saveData();
-  renderQuestBoard(); refreshMemberView(); renderMyProfile();
-  if (!document.getElementById('tab-workspace').classList.contains('hidden')) renderWorkspace();
+  if (!_tabHidden('questboard')) renderQuestBoard();
+  refreshMemberView();
+  if (!_tabHidden('workspace')) renderWorkspace();
   var vm = document.getElementById('villageModalQuesthall');
   if (vm && !vm.classList.contains('hidden')) renderVillageQuestHall();
   var hm = document.getElementById('hubQuestHallModal');
@@ -3966,16 +3970,16 @@ function renderWorkspace() {
   } else if (workspacePanel === 'settings') {
     html += '<div class="card"><h3>⚙️ 设置</h3>';
     html += '<div style="max-width:400px"><div style="margin-bottom:10px"><label style="font-size:.8rem">名字</label><br><input class="inline-input" value="'+escAttr(name)+'" disabled style="width:100%"><div style="font-size:.68rem;color:var(--muted)">改名功能即将开放</div></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()">'+esc(memInfo.bio||'')+'</textarea></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">简介</label><br><textarea class="inline-input" id="wsSettingsBio" style="width:100%;height:60px" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].bio=this.value;saveData()">'+esc(memInfo.bio||'')+'</textarea></div>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">身份</label><br><input class="inline-input" value="'+escAttr(_getIdentityLabel(user, memInfo)) +'" disabled style="width:100%;background:#f8f4ec;color:var(--text)"><div style="font-size:.65rem;color:var(--muted);margin-top:2px">身份由系统记录，不可手动修改</div></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">电话</label><br><input class="inline-input" value="'+escAttr(memInfo.phone||'')+'" id="wsPhone" style="width:100%" placeholder="138****6789" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].phone=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data));renderWorkspace()"></div>';
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">住址</label><br><input class="inline-input" value="'+escAttr(memInfo.address||'')+'" id="wsAddress" style="width:100%" placeholder="福建南平…" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].address=this.value;localStorage.setItem(\x27camp_data\x27,JSON.stringify(data));renderWorkspace()"></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">电话</label><br><input class="inline-input" value="'+escAttr(memInfo.phone||'')+'" id="wsPhone" style="width:100%" placeholder="138****6789" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].phone=this.value;saveData()"></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">住址</label><br><input class="inline-input" value="'+escAttr(memInfo.address||'')+'" id="wsAddress" style="width:100%" placeholder="福建南平…" onchange="var m=data.members||{};if(!m[\x27'+escAttr(name)+'\x27])m[\x27'+escAttr(name)+'\x27]={};m[\x27'+escAttr(name)+'\x27].address=this.value;saveData()"></div>';
     var _skillsArr = memInfo.skills||[];
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">技能标签</label><br><div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px" id="wsSkillsTags">';
     _skillsArr.forEach(function(s){ html += '<span style="background:var(--accent);color:#fff;padding:3px 8px;border-radius:12px;font-size:.7rem;display:inline-flex;align-items:center;gap:4px">'+esc(s)+' <span onclick="event.stopPropagation();_removeSkill(\x27'+escAttr(s)+'\x27)" style="cursor:pointer;opacity:.7;font-size:.8rem">&times;</span></span>'; });
     html += '</div><div style="display:flex;gap:4px"><input id="wsSkillsInput" placeholder="输入技能后回车添加" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:.72rem;font-family:var(--font);background:var(--card)" onkeydown="if(event.key===\x27Enter\x27){event.preventDefault();_addSkill()}"><button class="btn" onclick="_addSkill()" style="font-size:.7rem;padding:3px 8px">＋</button></div></div>';
 
-    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;localStorage.setItem(\'camp_data\',JSON.stringify(data));renderWorkspace()" placeholder="0x..."></div>';
+    html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">钱包地址（web3）</label><br><input class="inline-input" value="'+escAttr(memInfo.wallet||'')+'" id="wsSettingsWallet" style="width:100%" onchange="var m=data.members||{};if(!m[\''+escAttr(name)+'\'])m[\''+escAttr(name)+'\']={};m[\''+escAttr(name)+'\'].wallet=this.value;saveData()" placeholder="0x..."></div>';
     html += '<button class="btn green" onclick="renderWorkspace()" style="font-size:.72rem;padding:4px 12px;width:100%;margin-bottom:10px">💾 保存并刷新档案进度</button>';
     html += '<div style="margin-bottom:10px"><label style="font-size:.8rem">修改密码</label><br><input class="inline-input" type="password" id="wsOldPwd" placeholder="旧密码" style="width:100%;margin-bottom:4px"><input class="inline-input" type="password" id="wsNewPwd" placeholder="新密码（6位以上）" style="width:100%;margin-bottom:4px"><button class="btn pri" onclick="var old=document.getElementById(\'wsOldPwd\').value;var pwd=document.getElementById(\'wsNewPwd\').value;if(pwd.length<6){alert(\'密码至少6位\');return};var users=getUsers();var u=users[\''+escAttr(name)+'\'];if(!u||u.password!==encodePassword(old,\''+escAttr(name)+'\')){alert(\'旧密码错误\');return};u.password=encodePassword(pwd,\''+escAttr(name)+'\');saveUsers(users);alert(\'密码已修改\')" style="font-size:.78rem;padding:4px 14px">修改密码</button></div>';
     var _pff = ["bio","phone","address","skills","wallet"]; var _pfc = _pff.filter(function(f){ return memInfo[f] || (f==="skills"?memInfo.skills&&memInfo.skills.length:false) || (f==="bio"?memInfo.bio&&memInfo.bio.trim():false) || (f==="wallet"?memInfo.wallet&&memInfo.wallet.trim():false); }).length; var _pct = Math.round(_pfc/_pff.length*100);
@@ -5133,7 +5137,7 @@ function renderHubSlideContent(page) {
     var bazaarSearch = appState.bazaarSearch || '';
 
     // ── Search + Publish toggle ──
-    h += '<div style="display:flex;gap:6px;margin-bottom:8px"><div style="flex:1;position:relative"><input id="bazaarSearchInput" placeholder="🔍 搜索物品或摊主…" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-size:.75rem;font-family:var(--font);background:var(--card)" value="'+escAttr(bazaarSearch)+'" oninput="appState.bazaarSearch=this.value;openHubSub(\'bazaar\')"></div>';
+    h += '<div style="display:flex;gap:6px;margin-bottom:8px"><div style="flex:1;position:relative"><input id="bazaarSearchInput" placeholder="🔍 搜索物品或摊主…" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-size:.75rem;font-family:var(--font);background:var(--card)" value="'+escAttr(bazaarSearch)+'" oninput="appState.bazaarSearch=this.value;_debounce(\'bz\',300,function(){openHubSub(\'bazaar\')})"></div>';
     if (currentUser) h += '<button class="btn'+(!bazaarAddOpen?' pri':'')+'" onclick="appState.bazaarAddOpen=!appState.bazaarAddOpen;openHubSub(\'bazaar\')" style="font-size:.72rem;padding:4px 10px;white-space:nowrap">'+(bazaarAddOpen?'✕ 关闭':'＋ 发布')+'</button>';
     h += '</div>';
 
@@ -5506,7 +5510,7 @@ function renderQuestCard(t, opts) {
   }
   if (opts.showStatusEdit) {
     var statuses = ['待开始','进行中','已完成'];
-    h += '<select onchange="data.tasks['+idx+'].status=this.value;updateAll();'+(_refreshFn[ctx]||'')+'" style="font-size:.68rem;padding:1px 4px;border:1px solid var(--border);border-radius:4px;margin-right:4px">';
+    h += '<select onchange="data.tasks['+idx+'].status=this.value;refreshAfterAction(\'状态已更新\')" style="font-size:.68rem;padding:1px 4px;border:1px solid var(--border);border-radius:4px;margin-right:4px">';
     statuses.forEach(function(s){ h += '<option value="'+s+'"'+(t.status===s?' selected':'')+'>'+s+'</option>'; });
     h += '</select>';
   }
@@ -5552,7 +5556,7 @@ function renderQuestBoard() {
     customTags.forEach(function(ct){
       fhtml += '<button class="btn'+(questTagFilter===ct?' pri':'')+'" onclick="questTagFilter=questTagFilter===ct?\'\':ct;renderQuestBoard()" style="font-size:.7rem;padding:2px 8px">'+esc(ct)+'<span onclick="event.stopPropagation();var t=data.custom_tags||[];var idx=t.indexOf(\''+escAttr(ct)+'\');if(idx>=0)t.splice(idx,1);saveData();renderQuestBoard()" style="cursor:pointer;opacity:.4;font-size:.6rem;margin-left:3px" title="删除标签">×</span></button>';
     });
-    fhtml += '<input id="questNewTag" placeholder="+标签" style="width:48px;font-size:.68rem;padding:2px 4px;border:1px dashed var(--border);border-radius:4px;background:transparent" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v&&(!data.custom_tags||data.custom_tags.indexOf(v)<0)){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(v);localStorage.setItem(\'camp_data\',JSON.stringify(data));this.value=\'\';renderQuestBoard()}}">';
+    fhtml += '<input id="questNewTag" placeholder="+标签" style="width:48px;font-size:.68rem;padding:2px 4px;border:1px dashed var(--border);border-radius:4px;background:transparent" onkeydown="if(event.key===\'Enter\'){var v=this.value.trim();if(v&&(!data.custom_tags||data.custom_tags.indexOf(v)<0)){if(!data.custom_tags)data.custom_tags=[];data.custom_tags.push(v);this.value=\'\';saveData();renderQuestBoard()}}">';
   }
   fhtml += '<span style="flex:1"></span>';
   if (currentUser) fhtml += '<button class="btn pri" onclick="showPostTask()" style="font-size:.78rem;padding:5px 14px">＋ 发布委托</button>';
@@ -5903,6 +5907,9 @@ function reviewWithdrawal(idx, action) {
 function reviewTask(idx, claimantName, action) { if (!currentUser) return; var t = data.tasks[idx]; if (!t || !t.claimants) return; var cl = t.claimants.find(function(c) { return c.name === claimantName; }); if (!cl || cl.status !== 'submitted') return; var taskScope = t.scope || 'camp'; if (t.reviewer && currentUser.name !== t.reviewer && currentUser.name !== t.poster) { alert('该任务指定由 ' + t.reviewer + ' 审核'); return; } if (action === 'approve') { if (taskScope !== 'personal') { var poolTotal = (data.budget && data.budget.nt_total_pool) || (data.budget && data.budget.nt_pool) || 30000; var totalIssued = (data.finance || []).filter(function(tx) { return tx.type === 'task_reward' && (tx.scope||'camp')==='camp'; }).reduce(function(s, tx) { return s + (tx.amount||0); }, 0); if (totalIssued + (t.points||0) > poolTotal) { alert('⚠️ NT 池余额不足！剩余 ' + (poolTotal - totalIssued) + ' NT'); return; } } cl.status = 'completed'; cl.reviewed_by = currentUser.name; cl.reviewed_at = Clock.today(); recordTransaction({ type: TX_TYPES.TASK_REWARD, from: taskScope === 'personal' ? (t.poster || '委托方') : '系统', to: claimantName, amount: t.points || 0, task_name: t.name, confirmed_by: currentUser.name, scope: taskScope }); } else { cl.status = 'rejected'; cl.review_note = prompt('退回原因（可选）：') || ''; } saveData(); updateAll(); setStatus(action === 'approve' ? '已确认：' + claimantName + ' → ' + t.name : '已退回：' + claimantName + ' → ' + t.name); if (!data.activity_log) data.activity_log = []; data.activity_log.push({ time: Clock.iso(), type: 'review', text: (currentUser?currentUser.name:'系统') + (action==='approve'?' 通过了 ':' 退回了 ') + claimantName + ' 的「' + t.name + '」' + (action==='approve'?' +'+(t.points||0)+'NT':'' ) }); }
 function showPostTask() {
   if (!currentUser) { alert('请先登录'); return; }
+  _pendingPostTask = null;
+  document.getElementById('postTaskConfirmWrap').style.display = 'none';
+  document.getElementById('postTaskFormWrap').style.display = '';
   document.getElementById('postTaskName').value = '';
   document.getElementById('postTaskPoints').value = '5';
   document.getElementById('postTaskSlots').value = '1';
@@ -5925,7 +5932,7 @@ function showPostTask() {
   var drafts = (data.tasks||[]).filter(function(t){ return t.status==='draft' && t.poster===currentUser.name; }); var dl = document.getElementById('postTaskDraftList'); if (drafts.length > 0) { var dh = '<div style="font-size:.75rem;font-weight:600;margin-bottom:4px">📦 草稿箱（'+drafts.length+'）</div>'; drafts.forEach(function(t){ var idx=data.tasks.indexOf(t); dh+='<div style="font-size:.72rem;padding:3px 0;cursor:pointer;color:var(--accent)" onclick="closePostTaskModal();editDraft('+idx+')">📝 '+esc(t.name)+(t.points?' · NT'+t.points:'')+'</div>'; }); dl.innerHTML = dh; dl.style.display = ''; } else { dl.innerHTML = ''; dl.style.display = 'none'; }
   document.getElementById('postTaskModal').classList.add('show');
 }
-function closePostTaskModal() { document.getElementById('postTaskModal').classList.remove('show'); }
+function closePostTaskModal() { document.getElementById('postTaskModal').classList.remove('show'); _pendingPostTask = null; }
 
 // ═══ 发布表单：类型标签 ═══
 function addCustomType() {
@@ -6971,17 +6978,16 @@ function _tabHidden(id) { var el = document.getElementById('tab-'+id); return el
 function updateAll() {
   recalcFinanceByPerson();
   updateStats();
-  renderTasks();
-  renderCompleteness();
+  if (!_tabHidden('taskhall')) { renderTasks(); renderCompleteness(); }
   if (!_tabHidden('members')) renderMembers();
-  if (!_tabHidden('timeline')) renderTimeline();
-  renderCalendar();
-  renderBudget();
+  if (!_tabHidden('timeline')) { renderTimeline(); renderCalendar(); }
+  if (!_tabHidden('budget')) renderBudget();
   if (!_tabHidden('settlement')) renderSettlementAll();
-  renderWorkspace();
+  if (!_tabHidden('workspace')) renderWorkspace();
   if (!_tabHidden('ntadmin')) renderNTAdmin();
   if (!_tabHidden('leaderboard')) renderLeaderboard();
-  renderQuestBoard();refreshMemberView();
+  if (!_tabHidden('questboard')) renderQuestBoard();
+  refreshMemberView();
   updateInboxBadge();
   saveData();
   autoSaveToFeishu();
