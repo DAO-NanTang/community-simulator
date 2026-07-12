@@ -6608,7 +6608,6 @@ function confirmPostTask() {
   document.getElementById('postTaskConfirmWrap').style.display = '';
   document.getElementById('postTaskConfirmWrap').innerHTML = renderPostConfirmCard(task);
 }
-var _settlementPending = null; // { idx, claimantName } 或 { task } 预付款待发布
 function executePostTask() {
   var task = _pendingPostTask;
   if (!task) return;
