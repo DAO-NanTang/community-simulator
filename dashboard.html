@@ -1270,13 +1270,15 @@ function getTaskDoneDate(task, claim) {
 function toggleArchive(sectionId) {
   var el = document.getElementById(sectionId);
   if (!el) return;
-  var isHidden = el.style.display === 'none';
-  el.style.display = isHidden ? '' : 'none';
+  var key = 'archiveFold_'+sectionId;
+  var isHidden = (appState[key] !== undefined) ? appState[key] : (el.style.display === 'none');
+  appState[key] = !isHidden;
+  el.style.display = appState[key] ? 'none' : '';
   // 更新按钮文字
   var btns = document.querySelectorAll('[data-archive-toggle="' + sectionId + '"]');
   btns.forEach(function(btn) {
     var cnt = btn.getAttribute('data-count') || '';
-    btn.textContent = isHidden ? ('📦 存档（' + cnt + '项）▴') : ('📦 存档（' + cnt + '项）▾');
+    btn.textContent = appState[key] ? ('📦 存档（' + cnt + '项）▾') : ('📦 存档（' + cnt + '项）▴');
   });
 }
 
@@ -1311,8 +1313,8 @@ function renderArchiveList(containerId, archiveTasks, viewMode, context) {
   viewMode = viewMode || 'week';
 
   if (viewMode === 'all') {
-    archiveTasks.slice().sort(function(a, b) { return (b.doneDate || '').localeCompare(a.doneDate || ''); })
-      .forEach(function(e) { html += renderQuestCard(e.task, {context:context, userName:currentUser?currentUser.name:'', isMember:true, taskIndex:e.idx}); });
+    html += '<div class="card-grid">'; archiveTasks.slice().sort(function(a, b) { return (b.doneDate || '').localeCompare(a.doneDate || ''); })
+      .forEach(function(e) { html += renderQuestCard(e.task, {context:context, userName:currentUser?currentUser.name:'', isMember:true, taskIndex:e.idx}); }); html += '</div>';
     container.innerHTML = html; return;
   }
 
@@ -1365,7 +1367,7 @@ function renderArchiveList(containerId, archiveTasks, viewMode, context) {
     html += '<div style="font-size:.72rem;font-weight:600;margin:6px 0 4px;color:var(--muted);cursor:pointer" onclick="var d=document.getElementById(\'' + groupId + '\');d.style.display=d.style.display===\'none\'?\'\':\'none\'">▸ ' + label + ' (' + list.length + ')</div>';
     html += '<div id="' + groupId + '" style="display:none">';
     list.sort(function(a,b){ return (b.doneDate||'').localeCompare(a.doneDate||''); });
-    list.forEach(function(e) { html += renderQuestCard(e.task, {context:context, userName:currentUser?currentUser.name:'', isMember:true, taskIndex:e.idx}); });
+    html += '<div class="card-grid">'; list.forEach(function(e) { html += renderQuestCard(e.task, {context:context, userName:currentUser?currentUser.name:'', isMember:true, taskIndex:e.idx}); }); html += '</div>';
     html += '</div>';
   });
 
@@ -3441,23 +3443,23 @@ function renderVillageQuestHall() {
   }
   if (urgentClaim.length>0) {
     cardHTML += '<div class="card"><div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--red)">⚠️ 即将截止（'+urgentClaim.length+'项）</div>';
-    urgentClaim.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); });
+    cardHTML += '<div class="card-grid">'; urgentClaim.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); }); cardHTML += '</div>';
     cardHTML += '</div>';
   }
   if (normalClaim.length>0) {
     cardHTML += '<div class="card"><div style="font-size:.78rem;font-weight:600;margin-bottom:6px;color:var(--accent)">📋 可领取（'+normalClaim.length+'项）</div>';
-    normalClaim.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); });
+    cardHTML += '<div class="card-grid">'; normalClaim.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); }); cardHTML += '</div>';
     cardHTML += '</div>';
   }
   if (myTasks.length>0) {
     cardHTML += '<div class="card"><div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--text)">📋 我已领取（'+myTasks.length+'项）</div>';
-    myTasks.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); });
+    cardHTML += '<div class="card-grid">'; myTasks.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); }); cardHTML += '</div>';
     cardHTML += '</div>';
   }
   if (doneTasks.length>0) {
     cardHTML += '<div class="card"><div style="font-size:.78rem;font-weight:600;margin:10px 0 6px;color:var(--muted);cursor:pointer" onclick="toggleVillageDone(this,'+doneTasks.length+')">📦 已完成/已领满（'+doneTasks.length+'项）▾</div>';
     cardHTML += '<div id="villageDoneList" style="display:none">';
-    doneTasks.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); });
+    cardHTML += '<div class="card-grid">'; doneTasks.forEach(function(t){ cardHTML += renderQuestCard(t, cardOpts); }); cardHTML += '</div>';
     cardHTML += '</div></div>';
   }
 
@@ -4753,9 +4755,9 @@ function renderWorkspace() {
     html += '<div class="card" style="padding:16px 18px;margin-bottom:12px"><h3 style="margin:0 0 10px;font-size:.95rem">📤 我发布的任务</h3>';
     if (myPubFiltered.length > 0) {
       html += '<div style="font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--text)">▸ 进行中（' + myPubFiltered.length + '项）</div>';
-      myPubFiltered.forEach(function(p) {
+      html += '<div class="card-grid">'; myPubFiltered.forEach(function(p) {
         html += renderQuestCard(p.task, { context: 'workspace', userName: currentUser.name, isMember: !!selfId, taskIndex: p.idx });
-      });
+      }); html += '</div>';
     } else {
       html += '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">暂无进行中的任务</div>';
     }
@@ -4771,19 +4773,19 @@ function renderWorkspace() {
     } else {
       html += '<div style="font-size:.82rem;font-weight:600;margin-bottom:6px;color:var(--text)">▸ 进行中（' + activeTasks.length + '项）</div>';
       if (activeTasks.length > 0) {
-        activeTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
+        html += '<div class="card-grid">'; activeTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); }); html += '</div>';
       } else {
         html += '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">暂无进行中的任务</div>';
       }
       html += '<div style="font-size:.82rem;font-weight:600;margin:12px 0 6px;color:var(--accent)">▸ 审核中（' + submittedTasks.length + '项）</div>';
       if (submittedTasks.length > 0) {
-        submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
+        html += '<div class="card-grid">'; submittedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); }); html += '</div>';
       } else {
         html += '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">暂无审核中的任务</div>';
       }
       html += '<div style="font-size:.82rem;font-weight:600;margin:12px 0 6px;color:var(--green)">▸ 待结算（' + approvedTasks.length + '项）</div>';
       if (approvedTasks.length > 0) {
-        approvedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); });
+        html += '<div class="card-grid">'; approvedTasks.forEach(function(e){ html += renderQuestCard(e.task, {context:'workspace',userName:currentUser.name,isMember:true,taskIndex:e.idx}); }); html += '</div>';
       } else {
         html += '<div style="font-size:.78rem;color:var(--muted);padding:8px 0">暂无待结算的任务</div>';
       }
@@ -4805,9 +4807,10 @@ function renderWorkspace() {
   var archiveTotal = pubArchive.length + claimArchive.length;
 
   // ── 存档：折叠标题 + 两标签切换 + 共享时间筛选 ──
+  var wsArchiveFolded = appState['archiveFold_wsArchiveRoot'];
   html += '<div class="card" style="padding:16px 18px;margin-bottom:12px">';
-  html += '<h3 style="margin:0 0 10px;font-size:1rem;cursor:pointer" data-archive-toggle="wsArchiveRoot" data-count="' + archiveTotal + '" onclick="toggleArchive(\'wsArchiveRoot\')">存档（' + archiveTotal + '项）▾</h3>';
-  html += '<div id="wsArchiveRoot" style="display:none">';
+  html += '<h3 style="margin:0 0 10px;font-size:1rem;cursor:pointer" data-archive-toggle="wsArchiveRoot" data-count="' + archiveTotal + '" onclick="toggleArchive(\'wsArchiveRoot\')">存档（' + archiveTotal + '项）'+(wsArchiveFolded?'▾':'▴')+'</h3>';
+  html += '<div id="wsArchiveRoot" style="display:'+(wsArchiveFolded?'none':'')+'">';
   // 标签切换
   html += '<div style="display:flex;gap:4px;margin-bottom:8px">';
   [{k:'published',l:'📤 我发布的',n:pubArchive.length},{k:'claimed',l:'📥 我领取的',n:claimArchive.length}].forEach(function(tab) {
@@ -6187,7 +6190,7 @@ function renderQuestCard(t, opts) {
   var userName = opts.userName || '';
   var isMember = opts.isMember !== false;
   var tasks = data.tasks || []; var idx = (opts.taskIndex !== undefined) ? opts.taskIndex : tasks.indexOf(t);
-  var _refreshFn = { village:'renderVillageQuestHall()', questboard:'renderQuestBoard()', workspace:'renderWorkspace()', member:opts.memberName?"renderMemberDetail('"+escAttr(opts.memberName)+"')":'', taskhall:"renderDailyView('staff')" };
+  var _refreshFn = { village:'renderVillageQuestHall()', questboard:'renderQuestBoard()', workspace:'renderWorkspace()', member:opts.memberName?"renderMemberDetail('"+escAttr(opts.memberName)+"')":'', taskhall:"renderDailyView('staff')", hub:"refreshHubArchiveTasks()" };
   var isCoCreate = t.type==='共创' || t.camp_category==='共创';
   var activeC = (t.claimants||[]).filter(function(c){return c.status!=='dropped';});
   var slots = t.max_slots>0 ? activeC.length+'/'+t.max_slots : '不限';
@@ -6231,46 +6234,76 @@ function renderQuestCard(t, opts) {
   // Header row (click to expand)
   h += '<div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="event.stopPropagation();appState.cardExpanded[\''+escAttr(t.name)+'_'+ctx+'\']=!appState.cardExpanded[\''+escAttr(t.name)+'_'+ctx+'\'];'+(_refreshFn[ctx]||'')+'">';
   h += '<span style="font-size:.6rem;font-weight:700;background:'+typeBadgeColor+';color:#fff;padding:2px 6px;border-radius:4px" title="'+escAttr(typeBadgeTitle)+'">'+typeBadge+'</span>';
-  h += '<span style="font-weight:600;flex:1;'+(grey||locked?'color:var(--muted)':'')+'">'+esc(t.name)+'</span>';
+  h += '<span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+(grey||locked?'color:var(--muted)':'')+'">'+esc(t.name)+'</span>';
   h += '<span style="font-weight:700;font-size:.9rem;color:var(--accent);white-space:nowrap;margin:0 6px"><img src="豆子.png" style="width:1em;height:1em;vertical-align:text-bottom;margin-right:5px;position:relative;top:-1px">'+(t.points||0)+' NT</span>';
   h += '<span style="font-size:.6rem;background:'+scopeColorBg+';color:'+scopeColorTxt+';padding:1px 5px;border-radius:3px">'+scopeTag+'</span>'+coopWarn;
   h += '<span style="font-size:.6rem;color:var(--muted);margin-left:4px">'+(expanded?'收起 ▴':'展开 ▾')+'</span>';
   h += '</div>';
-  // Meta row
-  h += '<div style="display:flex;gap:8px;font-size:.72rem;color:var(--muted);flex-wrap:wrap;margin-top:3px">';
+  // Meta row — slim: poster, deadline, slots, progress inline
+  h += '<div style="display:flex;gap:8px;font-size:.72rem;color:var(--muted);flex-wrap:wrap;margin-top:4px;align-items:center">';
   h += '<span>🧙 '+esc(t.poster||'?')+'</span>';
-  var visLabel = getVisibilityLabel(t); if (visLabel) h += '<span style="background:#e8f0e8;color:#4a7a3a;padding:1px 6px;border-radius:3px;font-size:.68rem;font-weight:600">'+visLabel+'</span>';
-  var locLabel = t.location==='local'?'📍在地':t.location==='remote'?'💻云端':'';
-  if (locLabel) h += '<span style="background:#e8f0f0;color:#4a7a6a;padding:1px 6px;border-radius:3px;font-size:.68rem;font-weight:600">'+locLabel+'</span>';
-  if (activeC.length>0) h += '<span>👤 '+activeC.map(function(c){return esc(c.name)}).join(' ')+'</span>';
-  if (t.reviewer) h += '<span>✅ '+esc(t.reviewer)+'</span>';
-  if (t.start) h += '<span>🗓️ '+esc(t.start)+'</span>'; h += '<span>📅 '+(t.posted_at||t.deadline||'—')+'</span>';
   var dlStyle = ''; var dlText = t.deadline||'—';
   if (t.deadline) { var dl = parseMD(t.deadline); if (dl) { var hoursLeft = (dl - new Date(today+'T00:00:00')) / 3600000; if (hoursLeft <= 24 && hoursLeft >= 0) dlStyle = 'color:var(--red);font-weight:700'; else if (hoursLeft <= 48 && hoursLeft >= 0) dlStyle = 'color:#c8892e;font-weight:600'; } }
-  h += '<span style="'+dlStyle+'">⏰ '+esc(dlText)+'</span><span>👥 '+slots+'</span>';
-  if (opts.showAssignee) h += '<span>👤 '+esc(t.assignee||'—')+'</span>';
+  h += '<span style="'+dlStyle+'">⏰ '+esc(dlText)+'</span>';
+  h += '<span>👥 '+slots+'</span>';
+  if (subCount>0) h += '<span style="color:var(--green)">📋 '+subCount+'人已提交'+(doneCount>0?' · '+doneCount+'人已确认':'')+'</span>';
+  if (isMine && ctx!=='workspace') h += '<span style="color:var(--accent)">📋 你已领取'+(myClaim.status==='submitted'?' · ⏳审核中':myClaim.status==='in_progress'?' · 🔄进行中':'')+'</span>';
   h += '</div>';
-  // Progress
-  if (subCount>0) h += '<div style="font-size:.68rem;color:var(--green);margin-top:2px">📋 '+subCount+'人已提交'+(doneCount>0?' · '+doneCount+'人已确认':'')+'</div>';
   if (isCoCreate && activeC.length>0 && !grey) {
     var needMore = (t.max_slots||activeC.length) - subCount;
     if (needMore>0) h += '<div style="font-size:.68rem;color:#b8781e;margin-top:1px">⚠️ 还需 '+needMore+' 人提交后才能结算</div>';
   }
-  if (isMine && ctx!=='workspace') h += '<div style="font-size:.68rem;color:var(--accent);margin-top:2px">📋 你已领取 · '+(myClaim.status==='submitted'?'⏳审核中':myClaim.status==='in_progress'?'🔄进行中':'')+'</div>';
-  // Expanded detail
+  // Expanded detail — rich: meta moved here + timeline + review notes
   if (expanded) {
-    h += '<div style="border-top:1px dotted var(--border);margin-top:6px;padding-top:6px;font-size:.72rem">';
+    h += '<div style="border-top:1px dotted var(--border);margin-top:6px;padding-top:6px;font-size:.78rem">';
+    // Task note
     if (t.note) h += '<div style="color:var(--text);margin-bottom:4px">📝 '+esc(t.note)+'</div>';
+    // Row: Location + Visibility + Source
+    var visLabel = getVisibilityLabel(t);
+    var locLabel = t.location==='local'?'📍 在地':t.location==='remote'?'💻 云端':'';
+    var sourceLabel = t.source==='camp_package'?'🏕️ 营队分包':t.source==='quest'?'📋 大厅委托':t.source==='personal'?'✏️ 私人委托':(t.source?'📋 '+esc(t.source):'');
+    var row1 = []; if (locLabel) row1.push(locLabel); if (visLabel) row1.push('🌐 '+visLabel); if (sourceLabel) row1.push(sourceLabel);
+    if (row1.length>0) h += '<div style="color:var(--muted);margin-bottom:2px">'+row1.join(' · ')+'</div>';
+    // Row: Start + Posted + Deadline + Slots
+    var row2 = [];
+    if (t.start) row2.push('🗓️ '+esc(t.start)+' 开始');
+    if (t.posted_at) row2.push('📅 '+esc(t.posted_at)+' 发布');
+    if (t.deadline) row2.push('⏰ '+esc(t.deadline)+' 截止');
+    h += '<div style="color:var(--muted);margin-bottom:2px">'+row2.join(' · ')+'</div>';
+    // Row: Reviewer + Confirmer + Slots + Repeat
+    var row3 = [];
+    if (t.reviewer) row3.push('✅ '+esc(t.reviewer)+' 审核');
+    if (t.confirmer) row3.push('☑️ '+esc(t.confirmer)+' 确认');
+    row3.push('👥 '+slots+' 名额');
+    if (t.repeat) row3.push('🔁 '+esc(t.repeat));
+    if (t.min_season>0) row3.push('📅 第'+t.min_season+'季起');
+    if (opts.showAssignee && t.assignee) row3.push('👤 '+esc(t.assignee));
+    if (row3.length>0) h += '<div style="color:var(--muted);margin-bottom:2px">'+row3.join(' · ')+'</div>';
+    // Claimant timeline
     if (activeC.length>0) {
-      h += '<div style="color:var(--muted);margin-bottom:4px">👤 已领取：';
-      h += activeC.map(function(c){var icon=c.status==='completed'?'✅':c.status==='submitted'?'📤':'🔄';return esc(c.name)+' '+icon;}).join(' · ');
-      h += '</div>';
+      h += '<div style="border-top:1px dashed #e8e0d0;margin:6px 0"></div>';
+      h += '<div style="font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:3px">👤 领取详情（'+activeC.length+'人）</div>';
+      activeC.forEach(function(c){
+        var icon = c.status==='completed'?'✅':c.status==='submitted'?'📤':c.status==='rejected'?'❌':c.status==='in_progress'?'🔄':'🚶';
+        var line = icon+' '+esc(c.name);
+        if (c.submitted_at) line += ' → 📤 '+esc(c.submitted_at)+' 提交';
+        if (c.reviewed_at && (c.status==='completed'||c.status==='approved')) line += ' → ✅ '+esc(c.reviewed_at)+' 通过';
+        if (c.settled_at && c.settled_at!=='pending') line += ' → 💰 '+esc(c.settled_at)+' 结算';
+        if (c.status==='submitted') line += ' → <span style="color:#c8892e">⏳ 待审核</span>';
+        if (c.status==='approved' && !c.settled_at) line += ' → <span style="color:var(--accent)">⏳ 待结算</span>';
+        if (c.status==='rejected' && c.review_note) line += ' → <span style="color:#d04040">退回：'+esc(c.review_note)+'</span>';
+        else if (c.status==='rejected') line += ' → <span style="color:#d04040">已退回</span>';
+        h += '<div style="font-size:.75rem;color:var(--muted);margin-bottom:1px">'+line+'</div>';
+      });
     }
+    // Remaining slots
     if (t.max_slots>0 && !grey && !locked) {
       var remain = t.max_slots - activeC.length;
-      if (remain>0) h += '<div style="color:var(--accent)">⚠️ 还剩 '+remain+' 个名额</div>';
+      if (remain>0) h += '<div style="border-top:1px dashed #e8e0d0;margin:6px 0"></div><div style="color:var(--accent);margin-bottom:2px">⚠️ 还剩 '+remain+' 个名额</div>';
     }
-    if (myClaim && myClaim.submit_note) h += '<div style="color:var(--muted);margin-top:2px">📝 我的提交：'+esc(myClaim.submit_note)+'</div>';
+    // My submission + review note
+    if (myClaim && myClaim.submit_note) h += '<div style="color:#4080c0;margin-top:2px">📝 我的提交：'+esc(myClaim.submit_note)+'</div>';
+    if (myClaim && myClaim.status==='rejected' && myClaim.review_note) h += '<div style="color:#d04040;margin-top:2px">❌ 审核退回：'+esc(myClaim.review_note)+'</div>';
     h += '</div>';
   }
   // Actions
@@ -6425,13 +6458,13 @@ function renderQuestBoard() {
   if (urgentC.length>0) {
     html += '<div class="card"><h3 style="color:var(--red);cursor:pointer" onclick="toggleQuestSection(\'urgent\','+urgentC.length+',this)">⚠️ 即将截止（'+urgentC.length+'项）'+(appState.questFoldUrgent?' ▾':' ▴')+'</h3>';
     html += '<div id="qsUrgent" style="display:'+(appState.questFoldUrgent?'none':'')+'">';
-    urgentC.forEach(function(t) { html += renderQuestCard(t, cardOpts); });
+    html += '<div class="card-grid">'; urgentC.forEach(function(t) { html += renderQuestCard(t, cardOpts); }); html += '</div>';
     html += '</div></div>';
   }
   html += '<div class="card"><h3 style="cursor:pointer" onclick="toggleQuestSection(\'normal\','+normalC.length+',this)">🟢 可领取（' + normalC.length + '项）'+(appState.questFoldNormal?' ▾':' ▴')+'</h3>';
   html += '<div id="qsNormal" style="display:'+(appState.questFoldNormal?'none':'')+'">';
   if (normalC.length === 0) { html += '<div style="color:var(--muted);text-align:center;padding:12px">暂无可用委托</div>'; }
-  else { normalC.forEach(function(t) { html += renderQuestCard(t, cardOpts); }); }
+  else { html += '<div class="card-grid">'; normalC.forEach(function(t) { html += renderQuestCard(t, cardOpts); }); html += '</div>'; }
   html += '</div></div>';
   // ── 已领取：按状态分组 ──
   if (claimed.length > 0) {
@@ -6441,13 +6474,13 @@ function renderQuestBoard() {
     var completedC = claimed.filter(function(t){ var c = getActiveClaimant(t, name); return c && c.status === 'completed'; });
     var rejectedC = claimed.filter(function(t){ var c = getActiveClaimant(t, name); return c && c.status === 'rejected'; });
     html += '<div class="card"><h3 style="cursor:pointer" onclick="toggleQuestSection(\'claimed\','+claimed.length+',this)">📋 已领取（' + claimed.length + '项）'+(appState.questFoldClaimed?' ▾':' ▴')+'</h3>';
-    html += '<div id="qsClaimed" style="display:'+(appState.questFoldClaimed?'none':'')+'">';
-    if (triggeredC.length > 0) { html += '<div style="font-size:.75rem;font-weight:600;color:var(--accent);margin:8px 0 4px">🔓 待领取（'+triggeredC.length+'）</div>'; triggeredC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
-    if (inProgressC.length > 0) { html += '<div style="font-size:.75rem;font-weight:600;color:var(--accent);margin:8px 0 4px">🔄 进行中（'+inProgressC.length+'）</div>'; inProgressC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
-    if (submittedC.length > 0) { html += '<div style="font-size:.75rem;font-weight:600;color:var(--accent);margin:8px 0 4px">⏳ 待审核（'+submittedC.length+'）</div>'; submittedC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
-    if (rejectedC.length > 0) { html += '<div style="font-size:.75rem;font-weight:600;color:var(--red);margin:8px 0 4px">❌ 已退回（'+rejectedC.length+'）</div>'; rejectedC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
-    if (completedC.length > 0) { html += '<div style="font-size:.75rem;font-weight:600;color:var(--green);margin:8px 0 4px">✅ 近期完成（'+completedC.length+' · 7天后归档）</div>'; completedC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
-    html += '</div></div>';
+    html += '<div id="qsClaimed" style="display:'+(appState.questFoldClaimed?'none':'')+'">'; html += '<div class="card-grid">';
+    if (triggeredC.length > 0) { html += '<div class="grid-full" style="font-size:.75rem;font-weight:600;color:var(--accent);margin:8px 0 4px">🔓 待领取（'+triggeredC.length+'）</div>'; triggeredC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
+    if (inProgressC.length > 0) { html += '<div class="grid-full" style="font-size:.75rem;font-weight:600;color:var(--accent);margin:8px 0 4px">🔄 进行中（'+inProgressC.length+'）</div>'; inProgressC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
+    if (submittedC.length > 0) { html += '<div class="grid-full" style="font-size:.75rem;font-weight:600;color:var(--accent);margin:8px 0 4px">⏳ 待审核（'+submittedC.length+'）</div>'; submittedC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
+    if (rejectedC.length > 0) { html += '<div class="grid-full" style="font-size:.75rem;font-weight:600;color:var(--red);margin:8px 0 4px">❌ 已退回（'+rejectedC.length+'）</div>'; rejectedC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
+    if (completedC.length > 0) { html += '<div class="grid-full" style="font-size:.75rem;font-weight:600;color:var(--green);margin:8px 0 4px">✅ 近期完成（'+completedC.length+' · 7天后归档）</div>'; completedC.forEach(function(t){ html += renderQuestCard(t, cardOpts); }); }
+    html += '</div>'; html += '</div></div>';
   }
 
   // ── Archive: 统一用 getTaskDoneDate 判断，复用 renderArchiveList ──
@@ -6459,8 +6492,9 @@ function renderQuestBoard() {
     }
   });
   if (archiveTasks.length > 0) {
-    html += '<div class="card"><h3 style="cursor:pointer" onclick="toggleArchive(\'questArchive\')" data-archive-toggle="questArchive" data-count="' + archiveTasks.length + '">📦 已归档（' + archiveTasks.length + '项）▾</h3>';
-    html += '<div id="questArchive" style="display:none">';
+    var qaFolded = appState['archiveFold_questArchive'];
+    html += '<div class="card"><h3 style="cursor:pointer" onclick="toggleArchive(\'questArchive\')" data-archive-toggle="questArchive" data-count="' + archiveTasks.length + '">📦 已归档（' + archiveTasks.length + '项）'+(qaFolded?'▾':'▴')+'</h3>';
+    html += '<div id="questArchive" style="display:'+(qaFolded?'none':'')+'">';
     html += '<div style="display:flex;gap:4px;margin-bottom:8px" id="questArchiveBar">';
     [{v:'week',l:'周'},{v:'month',l:'月'},{v:'year',l:'年'},{v:'all',l:'全部'}].forEach(function(m){
       html += '<button class="btn'+(m.v==='week'?' pri':'')+'" data-mode="'+m.v+'" onclick="switchArchiveView(\'questArchive\',\''+m.v+'\')" style="font-size:.7rem;padding:3px 10px">'+m.l+'</button>';
@@ -6512,7 +6546,7 @@ function renderNTAdmin() {
   // Approval queue
   var pendingCamp = tasks.filter(function(t) { return t.status === 'pending_approval'; });
   var html = '';
-  if (pendingCamp.length > 0) { html += '<h3 style="margin-bottom:8px">⏳ 营队任务待审核（' + pendingCamp.length + '项）</h3>'; pendingCamp.forEach(function(t) { var idx = tasks.indexOf(t); var campType = t.camp_category || t.type || ''; var campClr = {'主线':'#e04040','支线':'#d89020','共创':'#4a9a3a','隐藏':'#8b40c0','身份':'#4080c0'}[campType]||'var(--accent)'; html += '<div class="card" style="background:#fef9ee;border-color:#e8c840;padding:10px 14px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b>' + esc(t.name) + '</b> <span style="font-size:.7rem;background:'+campClr+';color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">' + esc(campType) + '</span> <span style="font-size:.75rem;color:var(--muted)">NT ' + (t.points||0) + '</span></div><div style="display:flex;gap:4px"><button class="btn green" onclick="approveCampTask(' + idx + ',true)" style="font-size:.7rem;padding:3px 10px">✅ 通过</button><button class="btn danger" onclick="approveCampTask(' + idx + ',false)" style="font-size:.7rem;padding:3px 10px">❌ 退回</button></div></div><div style="font-size:.72rem;color:var(--muted)">发布者：' + esc(t.poster||'') + (t.reviewer ? ' · 审核人：' + esc(t.reviewer) : '') + ' · ' + esc(t.posted_at||'') + '</div></div>'; }); }
+  if (pendingCamp.length > 0) { html += '<h3 style="margin-bottom:8px">⏳ 营队任务待审核（' + pendingCamp.length + '项）</h3>'; html += '<div class="card-grid">'; pendingCamp.forEach(function(t) { var idx = tasks.indexOf(t); var campType = t.camp_category || t.type || ''; var campClr = {'主线':'#e04040','支线':'#d89020','共创':'#4a9a3a','隐藏':'#8b40c0','身份':'#4080c0'}[campType]||'var(--accent)'; html += '<div class="card" style="background:#fef9ee;border-color:#e8c840;padding:10px 14px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b>' + esc(t.name) + '</b> <span style="font-size:.7rem;background:'+campClr+';color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">' + esc(campType) + '</span> <span style="font-size:.75rem;color:var(--muted)">NT ' + (t.points||0) + '</span></div><div style="display:flex;gap:4px"><button class="btn green" onclick="approveCampTask(' + idx + ',true)" style="font-size:.7rem;padding:3px 10px">✅ 通过</button><button class="btn danger" onclick="approveCampTask(' + idx + ',false)" style="font-size:.7rem;padding:3px 10px">❌ 退回</button></div></div><div style="font-size:.72rem;color:var(--muted)">发布者：' + esc(t.poster||'') + (t.reviewer ? ' · 审核人：' + esc(t.reviewer) : '') + ' · ' + esc(t.posted_at||'') + '</div></div>'; }); html += '</div>'; }
   html += '<h3>📋 已发布任务</h3>';
   if (ntTasks.length === 0) { html += '<div style="color:var(--muted);padding:8px">暂无已发布任务</div>'; }
   else { html += '<table style="width:100%;font-size:.78rem"><thead><tr><th style="text-align:left;padding:4px 8px">任务名</th><th style="padding:4px 8px">类型</th><th style="text-align:right;padding:4px 8px">NT</th><th style="text-align:right;padding:4px 8px">已领/限额</th><th style="padding:4px 8px">状态</th><th style="padding:4px 8px"></th></tr></thead><tbody>'; ntTasks.forEach(function(t) { var idx = tasks.indexOf(t); var activeClaimants = (t.claimants || []).filter(function(c) { return c.status !== 'dropped'; }); var slots = t.max_slots > 0 ? activeClaimants.length + '/' + t.max_slots : '不限'; var campType = t.camp_category || t.type || ''; var campClr = {'主线':'#e04040','支线':'#d89020','共创':'#4a9a3a','隐藏':'#8b40c0','身份':'#4080c0'}[campType]||'var(--muted)'; var isHidden = (t.camp_category === '隐藏' || t.type === '隐藏'); html += '<tr><td style="padding:3px 8px"><b>' + esc(t.name) + '</b></td><td style="padding:3px 8px"><span style="font-size:.7rem;background:'+campClr+';color:#fff;padding:1px 5px;border-radius:3px">' + esc(campType) + '</span></td><td style="text-align:right;padding:3px 8px">' + (t.points||0) + '</td><td style="text-align:right;padding:3px 8px">' + slots + '</td><td style="padding:3px 8px">' + (t.status||'active') + '</td><td style="padding:3px 8px">' + (isHidden ? '<button class="btn" onclick="triggerHiddenTask(' + idx + ')" style="font-size:.65rem;padding:2px 6px">🔓 触发</button>' : '') + '</td></tr>'; }); html += '</tbody></table>'; }
@@ -6522,7 +6556,7 @@ function renderNTAdmin() {
   var reviewItems = []; ntTasks.forEach(function(t) { var idx = tasks.indexOf(t); (t.claimants || []).forEach(function(c) { if (c.status === 'submitted') reviewItems.push({ task: t, idx: idx, claimant: c }); }); });
   html = '<h3 style="margin-top:16px">⏳ 待审核（' + reviewItems.length + '项）</h3>';
   if (reviewItems.length === 0) { html += '<div style="color:var(--muted);padding:8px">暂无待审核项</div>'; }
-  else { reviewItems.forEach(function(item) { html += '<div id="ntReview_' + escAttr(item.claimant.name) + '" style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:.82rem"><div><b>' + esc(item.claimant.name) + '</b> · ' + esc(item.task.name) + ' · NT ' + (item.task.points||0) + '</div><div style="font-size:.72rem;color:var(--muted);margin:4px 0">提交于 ' + esc(item.claimant.submitted_at||'') + (item.claimant.submit_note ? ' · "' + esc(item.claimant.submit_note) + '"' : '') + '</div><div style="display:flex;gap:6px"><button class="btn green" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'approve\')" style="font-size:.7rem;padding:3px 10px">✅ 确认通过</button> <input id="rejectNote_'+escAttr(item.claimant.name.replace(/[^a-zA-Z0-9一-龥]/g,'_'))+'" placeholder="原因" style="width:80px;font-size:.65rem;padding:2px 4px;border:1px solid var(--border);border-radius:3px;margin-right:5px"><button class="btn danger" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'reject\')" style="font-size:.7rem;padding:3px 10px">❌ 退回</button></div></div>'; }); }
+  else { html += '<div class="card-grid">'; reviewItems.forEach(function(item) { html += '<div id="ntReview_' + escAttr(item.claimant.name) + '" style="border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:.82rem"><div><b>' + esc(item.claimant.name) + '</b> · ' + esc(item.task.name) + ' · NT ' + (item.task.points||0) + '</div><div style="font-size:.72rem;color:var(--muted);margin:4px 0">提交于 ' + esc(item.claimant.submitted_at||'') + (item.claimant.submit_note ? ' · "' + esc(item.claimant.submit_note) + '"' : '') + '</div><div style="display:flex;gap:6px"><button class="btn green" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'approve\')" style="font-size:.7rem;padding:3px 10px">✅ 确认通过</button> <input id="rejectNote_'+escAttr(item.claimant.name.replace(/[^a-zA-Z0-9一-龥]/g,'_'))+'" placeholder="原因" style="width:80px;font-size:.65rem;padding:2px 4px;border:1px solid var(--border);border-radius:3px;margin-right:5px"><button class="btn danger" onclick="reviewTask(' + item.idx + ',\'' + escAttr(item.claimant.name) + '\',\'reject\')" style="font-size:.7rem;padding:3px 10px">❌ 退回</button></div></div>'; }); html += '</div>'; }
   var el2 = document.getElementById('ntadminReviewList'); if (el2) el2.innerHTML = html;
 
   // ── 应付未付 ──
@@ -7786,10 +7820,8 @@ function renderArchiveHub() {
   h += '</div>';
   // 根据标签渲染
   if (tab === 'tasks') {
-    var archiveTasks = []; var allTasks = data.tasks || [];
-    allTasks.forEach(function(t, i){ var dd = getTaskDoneDate(t, null); if (dd && daysSince(dd) > ARCHIVE_DAYS) archiveTasks.push({task:t, idx:i, doneDate:dd}); });
-    if (archiveTasks.length === 0) { h += '<div style="text-align:center;color:var(--muted);padding:30px">📋 暂无归档任务</div>'; }
-    else { h += '<div id="hubArchiveTaskList"></div>'; setTimeout(function(){ renderArchiveList('hubArchiveTaskList', archiveTasks, 'week', 'hub'); }, 10); }
+    h += '<div id="hubArchiveTasksContainer"></div>';
+    setTimeout(function(){ refreshHubArchiveTasks(); }, 10);
     return h;
   }
   if (tab === 'periods') {
@@ -7845,6 +7877,119 @@ function renderArchiveHub() {
 }
 
 // ═══ 物品渲染共用（集市+工作台同步）═══
+
+// ── Hub 归档任务（分类/搜索/密集列表/展开复用卡片）──
+function refreshHubArchiveTasks() {
+  var el = document.getElementById('hubArchiveTasksContainer');
+  if (el) el.innerHTML = renderHubArchiveTasks();
+}
+function renderHubArchiveTasks() {
+  var h = '';
+  var allTasks = data.tasks || [];
+  var archiveTasks = [];
+  allTasks.forEach(function(t, i) {
+    var dd = getTaskDoneDate(t, null);
+    if (dd && daysSince(dd) > ARCHIVE_DAYS) archiveTasks.push({task: t, idx: i, doneDate: dd});
+  });
+  archiveTasks.sort(function(a, b) { return (b.doneDate||'').localeCompare(a.doneDate||''); });
+
+  // --- filters ---
+  var typeFilter = appState.hubArchiveType || 'all';
+  var viewMode = appState.hubArchiveView || 'all';
+  var searchText = (appState.hubArchiveSearch || '').toLowerCase();
+
+  // filter bar
+  h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;align-items:center">';
+  [{k:'all',l:'📋 全部'},{k:'camp',l:'🏕️ 团队'},{k:'personal',l:'✏️ 私人'}].forEach(function(tab) {
+    h += '<button class="btn'+(typeFilter===tab.k?' pri':'')+'" onclick="appState.hubArchiveType=\''+tab.k+'\';refreshHubArchiveTasks()" style="font-size:.7rem;padding:3px 8px">'+tab.l+'</button>';
+  });
+  h += '<span style="color:var(--border);margin:0 4px">|</span>';
+  [{k:'all',l:'全部'},{k:'week',l:'周'},{k:'month',l:'月'},{k:'year',l:'年'}].forEach(function(m) {
+    h += '<button class="btn'+(viewMode===m.k?' pri':'')+'" onclick="appState.hubArchiveView=\''+m.k+'\';refreshHubArchiveTasks()" style="font-size:.7rem;padding:3px 8px">'+m.l+'</button>';
+  });
+  h += '<input id="hubArchiveSearch" placeholder="🔍 搜索..." value="'+escAttr(appState.hubArchiveSearch||'')+'" oninput="appState.hubArchiveSearch=this.value;refreshHubArchiveTasks()" style="font-size:.7rem;padding:3px 8px;border:1px solid var(--border);border-radius:4px;width:120px;margin-left:auto">';
+  h += '</div>';
+
+  // --- apply filters ---
+  var filtered = archiveTasks;
+  if (typeFilter === 'camp') filtered = filtered.filter(function(e) { return (e.task.scope||'camp') !== 'personal'; });
+  if (typeFilter === 'personal') filtered = filtered.filter(function(e) { return (e.task.scope||'camp') === 'personal'; });
+  if (searchText) filtered = filtered.filter(function(e) {
+    return (e.task.name||'').toLowerCase().indexOf(searchText) >= 0 ||
+           (e.task.poster||'').toLowerCase().indexOf(searchText) >= 0;
+  });
+
+  // date grouping (week/month/year)
+  if (viewMode !== 'all' && filtered.length > 0) {
+    var groups = {};
+    filtered.forEach(function(e) {
+      var d = parseMD(e.doneDate); var key;
+      if (!d || isNaN(d.getTime())) { key = '_unknown'; }
+      else if (viewMode === 'week') {
+        var day = d.getDay() || 7;
+        var mon = new Date(d); mon.setDate(d.getDate() - day + 1);
+        key = mon.getFullYear()+'-'+String(mon.getMonth()+1).padStart(2,'0')+'-'+String(mon.getDate()).padStart(2,'0');
+      } else if (viewMode === 'month') {
+        key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      } else { key = String(d.getFullYear()); }
+      (groups[key] = groups[key] || []).push(e);
+    });
+    var groupKeys = Object.keys(groups).sort().reverse();
+    if (groupKeys.length === 0) { h += '<div style="text-align:center;color:var(--muted);padding:20px">📋 暂无匹配的归档任务</div>'; return h; }
+    h += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">'+filtered.length+' 个任务</div>';
+    groupKeys.forEach(function(key) {
+      var list = groups[key];
+      var label = key;
+      if (key === '_unknown') label = '未知日期';
+      else if (viewMode === 'week') {
+        var p = key.split('-'); var mon2 = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+        var sun = new Date(mon2); sun.setDate(mon2.getDate()+6);
+        label = (mon2.getMonth()+1)+'/'+mon2.getDate()+' - '+(sun.getMonth()+1)+'/'+sun.getDate();
+      } else if (viewMode === 'month') {
+        label = key.split('-')[0]+'年'+parseInt(key.split('-')[1])+'月';
+      } else { label = key+'年'; }
+      h += '<div style="font-size:.68rem;font-weight:600;color:var(--muted);margin:8px 0 4px">▸ '+label+' ('+list.length+')</div>';
+      list.forEach(function(e) { h += renderArchiveTaskRow(e); });
+    });
+  } else {
+    if (filtered.length === 0) { h += '<div style="text-align:center;color:var(--muted);padding:20px">📋 暂无匹配的归档任务</div>'; return h; }
+    h += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">'+filtered.length+' 个任务</div>';
+    filtered.forEach(function(e) { h += renderArchiveTaskRow(e); });
+  }
+  return h;
+}
+
+function renderArchiveTaskRow(e) {
+  var t = e.task; var ctx = 'hub'; var expanded = appState.cardExpanded[t.name+'_'+ctx];
+  var campLabel = t.camp_category || '';
+  var badgeColors = {'主线':'#e04040','支线':'#d89020','共创':'#4a9a3a','隐藏':'#8b40c0','身份':'#4080c0'};
+  var badgeLetters = {'主线':'M','支线':'S','共创':'C','隐藏':'H','身份':'I'};
+  var badge = badgeLetters[campLabel]||((t.scope||'camp')==='personal'?'P':'T');
+  var badgeColor = badgeColors[campLabel]||((t.scope||'camp')==='personal'?'#8b5e9e':'#5a8a3c');
+  var h = '';
+  h += '<div style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:4px;font-size:.75rem" onclick="event.stopPropagation()">';
+  // dense row
+  h += '<div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="event.stopPropagation();appState.cardExpanded[\''+escAttr(t.name)+'_'+ctx+'\']=!appState.cardExpanded[\''+escAttr(t.name)+'_'+ctx+'\'];refreshHubArchiveTasks()">';
+  h += '<span style="font-size:.6rem;font-weight:700;background:'+badgeColor+';color:#fff;padding:1px 5px;border-radius:3px;flex-shrink:0">'+badge+'</span>';
+  h += '<span style="font-weight:600;flex:1">'+esc(t.name)+'</span>';
+  h += '<span style="color:var(--muted);font-size:.68rem">🧙 '+esc(t.poster||'?')+'</span>';
+  h += '<span style="color:var(--accent);font-weight:600;font-size:.7rem"><img src="豆子.png" style="width:1em;height:1em;vertical-align:text-bottom;margin-right:5px;position:relative;top:-1px">'+(t.points||0)+'</span>';
+  h += '<span style="color:var(--muted);font-size:.65rem">'+esc(e.doneDate||'')+'</span>';
+  h += '<span style="font-size:.6rem;color:var(--muted)">'+(expanded?'▴':'▾')+'</span>';
+  h += '</div>';
+  // expanded: full card
+  if (expanded) {
+    h += '<div style="margin-top:6px">';
+    h += renderQuestCard(t, {context:'hub', userName:currentUser?currentUser.name:'', isMember:true, taskIndex:e.idx});
+    h += '</div>';
+  }
+  // copy button
+  h += '<div style="display:flex;gap:4px;margin-top:2px">';
+  h += '<button class="btn" onclick="event.stopPropagation();var txt=\''+escAttr(t.name)+' — '+escAttr(t.poster||'?')+' — '+escAttr(e.doneDate||'')+'\';if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){setStatus(\'已复制：'+escAttr(t.name)+'\')}).catch(function(){prompt(\'复制：\',txt)})}else{prompt(\'复制：\',txt)}" style="font-size:.6rem;padding:2px 6px" title="复制任务信息">📋 复制</button>';
+  h += '</div>';
+  h += '</div>';
+  return h;
+}
 var _CAT_ICONS = {艺术品:'🎨',文具:'📝',手工:'🧶',书籍:'📚',工具:'🔧',食材:'🥬',交换:'🤝',其他:'📦'};
 
 
@@ -9274,14 +9419,14 @@ function renderMemberDetailFor(type, name, m) {
           doneT=doneT.filter(function(t){return getTaskSource(t)===memTaskFilter;});
         }
         h += '<div style="font-size:.75rem;font-weight:600;margin-bottom:4px;color:var(--text)">📋 进行中（'+activeT.length+'项）</div>';
-        if (activeT.length>0) { activeT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); }
+        if (activeT.length>0) { h += '<div class="card-grid">'; activeT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); h += '</div>'; }
         else { h += '<div style="color:var(--muted);font-size:.72rem;padding:6px 0">暂无进行中的任务</div>'; }
         h += '<div style="font-size:.75rem;font-weight:600;margin:8px 0 4px;color:var(--accent)">⏳ 审核中（'+submittedT.length+'项）</div>';
-        if (submittedT.length>0) { submittedT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); }
+        if (submittedT.length>0) { h += '<div class="card-grid">'; submittedT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); h += '</div>'; }
         else { h += '<div style="color:var(--muted);font-size:.72rem;padding:6px 0">暂无审核中的任务</div>'; }
         h += '<div style="font-size:.75rem;font-weight:600;margin:8px 0 4px;color:var(--muted);cursor:pointer" onclick="toggleMemDone(this,'+doneT.length+')">'+(appState.memDoneOpen?'📦 已完成（'+doneT.length+'项）▴':'📦 已完成（'+doneT.length+'项）▾')+'</div>';
         h += '<div id="memDoneList" style="display:'+(appState.memDoneOpen?'':'none')+'" onclick="event.stopPropagation()">';
-        if (doneT.length>0) { doneT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); }
+        if (doneT.length>0) { h += '<div class="card-grid">'; doneT.forEach(function(t){ var idx = data.tasks.indexOf(t); h += renderQuestCard(t, {context:'member',userName:name,isMember:true,showStatusEdit:true,showAssignee:true,taskIndex:idx,memberName:name}); }); h += '</div>'; }
         else { h += '<div style="color:var(--muted);font-size:.72rem;padding:6px 0">暂无已完成的任务</div>'; }
         h += '</div>';
         return h + '</div>';
