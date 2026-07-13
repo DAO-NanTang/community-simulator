@@ -26,9 +26,10 @@
      2. 如果是，其对应的标准名是什么？（若与别名相同则不需要映射）
    - 在用户确认前，不进行 gNT 计算
 
-6. 运行命令：`python c:\Users\苏砚仁\thinknote\南塘 DAO\gnt计算机制\计算机制\gnt_stats.py`
+6. 运行命令：`python c:\Users\苏砚仁\thinknote\gnt计算机制\gnt_stats.py`
    - 依赖：python-docx（解析 .docx 格式会议记录）、openpyxl（导出 Excel）
-   - 脚本同时输出 JSON（计算机制/gnt_stats.json）和 Excel（计算结果/gnt_stats_YYYYMMDD_HHMM.xlsx）
+   - 脚本同时输出 JSON（gnt_stats.json）和 Excel（计算结果/gnt_stats_YYYYMMDD_HHMM.xlsx）
    - Excel 包含 4 个工作表：S5季度核算、S6季度核算、季度汇总、会议明细
+   - 注意：可用 GNT < 500 时不燃烧、无票权，本季新增作废仅上季保留滚存
 
 7. 输出结果并解读。
